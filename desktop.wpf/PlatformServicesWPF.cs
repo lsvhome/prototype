@@ -8,5 +8,9 @@ namespace desktop.wpf
 {
     public class PlatformServicesWPF : desktop.common.IPlatformServices
     {
+        public void AddTrayIcon()
+        {
+            throw new NotImplementedException();
+        }
     }
 }

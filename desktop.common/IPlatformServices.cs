@@ -6,5 +6,6 @@ namespace desktop.common
 {
     public interface IPlatformServices
     {
+        void AddTrayIcon();
     }
 }
