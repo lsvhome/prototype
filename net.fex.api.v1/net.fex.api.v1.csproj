@@ -4,9 +4,9 @@
 <!--
     <TargetFramework>netstandard1.6</TargetFramework>
     <TargetFramework>net461</TargetFramework>
-    <TargetFrameworks>netstandard1.6;net45;net461</TargetFrameworks>
+    <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
 -->
-    <TargetFrameworks>netstandard1.6</TargetFrameworks>
+    <TargetFramework>netstandard1.6</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
