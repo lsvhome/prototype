@@ -108,8 +108,8 @@ namespace net.fex.api.v1
              captcha_token:i3EH14pVJ8gviQGHEjOiAnHcEL2obeAM
             captcha_value:54261
                          */
-            try
-            {
+            //try
+            //{
                 var uri = this.BuildUrl("j_signin");
                 uri = uri
                     .AppendQuery("login", login)
@@ -147,18 +147,18 @@ namespace net.fex.api.v1
                         throw new ConnectionException() { ErrorCode = 1002, HttpResponse = responseJson };
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                ex.Process();
-                throw;
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    ex.Process();
+            //    throw;
+            //}
         }
 
         public async Task SignOutAsync()
         {
-            try
-            {
+            //try
+            //{
                 var uri = this.BuildUrl("j_signout");
 
                 using (var response = await client.GetAsync(uri))
@@ -174,12 +174,12 @@ namespace net.fex.api.v1
                         throw new ConnectionException() { ErrorCode = 1003, HttpResponse = responseJson };
                     }
                 }
-            }
-            catch (Exception ex)
-            {
-                ex.Process();
-                throw;
-            }
+            //}
+            //catch (Exception ex)
+            //{
+            //    ex.Process();
+            //    throw;
+            //}
         }
 
         public async Task IndexAsync()
