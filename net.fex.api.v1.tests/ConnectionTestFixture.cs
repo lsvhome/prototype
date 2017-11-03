@@ -1,41 +1,38 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Threading.Tasks;
+using NUnit.Framework;
 
 namespace net.fex.api.v1.tests
 {
-    [TestClass]
+    [TestFixture]
     public class ConnectionTestFixture
     {
         const string loginValid = "slutai";
         const string passwordValid = "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_";
 
-        [TestMethod]
-        public async Task SignInSignOuTestOk()
+        [Test]
+        public void SignInSignOuTestOk()
         {
             using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
             {
-                var user = await conn.SignInAsync(loginValid, passwordValid, false);
+                var user = conn.SignIn(loginValid, passwordValid, false);
                 Assert.IsNotNull(user);
                 Assert.AreEqual(loginValid, user.Login);
 
-                await conn.SignOutAsync();
+                conn.SignOut();
             }
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(Connection.LoginException))]
-        public async Task SignInFailFakeLogin()
+        [Test]
+        public void SignInFailFakeLogin()
         {
             try
             {
                 using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
                 {
-                    await conn.SignInAsync("fakelogin", "fakepassword", false);
+                    Assert.That(() => conn.SignIn("fakelogin", "fakepassword", false), Throws.TypeOf<LoginException>());
                 }
-
             }
-            catch (Connection.LoginException)
+            catch (LoginException)
             {
                 throw;
             }
@@ -45,23 +42,21 @@ namespace net.fex.api.v1.tests
             }
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(Connection.LoginException))]
-        public async Task SignInFailFakePassword()
+        [Test]
+        public void SignInFailFakePassword()
         {
             using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
             {
-                await conn.SignInAsync(loginValid, "fakepassword", false);
+                Assert.That(() => conn.SignIn(loginValid, "fakepassword", false), Throws.TypeOf<LoginException>());
             }
         }
 
-        [TestMethod]
-        [ExpectedException(typeof(Connection.ConnectionException))]
-        public async Task SignInOnFakeUrl()
+        [Test]
+        public void SignInOnFakeUrl()
         {
             using (var conn = new net.fex.api.v1.Connection(new Uri("https://fake.net")))
             {
-                var user = await conn.SignInAsync("fakelogin", "fakepassword", false);
+                Assert.That(() => conn.SignIn("fakelogin", "fakepassword", false), Throws.TypeOf<ConnectionException>());
             }
         }
     }

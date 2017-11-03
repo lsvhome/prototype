@@ -11,42 +11,43 @@ namespace net.fex.api.v1
 {
     public interface IConnection : IDisposable
     {
-        Task<User> SignInAsync(string login, string password, bool stay_signed);
-        Task SignOutAsync();
+        User SignIn(string login, string password, bool stay_signed);
+        void SignOut();
     }
+
+    public class ConnectionException : Exception
+    {
+        public ConnectionException()
+        {
+        }
+
+        public ConnectionException(string message) : base(message)
+        {
+        }
+
+        public ConnectionException(string message, Exception innerException) : base(message, innerException)
+        {
+        }
+
+        public int ErrorCode { get; set; }
+
+        public string HttpResponse { get; set; }
+    }
+
+    public class LoginException : ConnectionException
+    {
+        public LoginException(string message, int id) : base(message)
+        {
+            this.Id = id;
+        }
+
+        public int Id { get; set; }
+    }
+
 
     public class Connection : IConnection
     {
         System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
-
-        public class ConnectionException : Exception
-        {
-            public ConnectionException()
-            {
-            }
-
-            public ConnectionException(string message) : base(message)
-            {
-            }
-
-            public ConnectionException(string message, Exception innerException) : base(message, innerException)
-            {
-            }
-
-            public int ErrorCode { get; set; }
-
-            public string HttpResponse { get; set; }
-        }
-
-        public class LoginException : ConnectionException
-        {
-            public LoginException(string message, int id) : base(message)
-            {
-                this.Id = id;
-            }
-
-            public int Id { get; set; }
-        }
 
         private Uri endpoint;
 
@@ -95,6 +96,8 @@ namespace net.fex.api.v1
             bool isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             osPlatform = isLinux ? OSPlatform.Linux : osPlatform;
             return osPlatform.ToString();
+#elif NET45
+            return Environment.OSVersion.VersionString;
 #elif NET461
             return Environment.OSVersion.VersionString;
 #else
@@ -102,12 +105,63 @@ namespace net.fex.api.v1
 #endif
         }
 
-        public async Task<User> SignInAsync(string login, string password, bool stay_signed)
+        public User SignIn(string login, string password, bool stay_signed)
         {
+            //return this.SignInAsync(login, password, stay_signed).Result;
             /*
              captcha_token:i3EH14pVJ8gviQGHEjOiAnHcEL2obeAM
             captcha_value:54261
                          */
+            try
+            {
+                var uri = this.BuildUrl("j_signin");
+                uri = uri
+                    .AppendQuery("login", login)
+                    .AppendQuery("password", password)
+                    .AppendQuery("stay_signed", stay_signed ? "1" : "0");
+
+                using (var response = client.GetAsync(uri).Result)
+                {
+                    string responseJson = string.Empty;
+                    try
+                    {
+                        responseJson = response.Content.ReadAsStringAsync().Result;
+                        JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
+                        if (responseObject.Value<int>("result") == 1)
+                        {
+                            JObject jUser = responseObject.Value<JObject>("user");
+                            return new User(jUser.Value<string>("login"), jUser.Value<int>("priv"));
+                        }
+                        else
+                        {
+                            JObject jErr = responseObject.Value<JObject>("err");
+                            string message = jErr.Value<string>("msg");
+                            int id = jErr.Value<int>("id");
+                            string captcha = responseObject.Value<string>("captcha");
+                            var ex = new LoginException(message, id) { ErrorCode = 1001, HttpResponse = responseJson };
+                            throw ex;
+                        }
+                    }
+                    catch (LoginException)
+                    {
+                        throw;
+                    }
+                    catch
+                    {
+                        throw new ConnectionException() { ErrorCode = 1002, HttpResponse = responseJson };
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Process();
+                throw;
+            }
+
+        }
+        /*
+        public async Task<User> SignInAsync(string login, string password, bool stay_signed)
+        {
             try
             {
                 var uri = this.BuildUrl("j_signin");
@@ -154,16 +208,16 @@ namespace net.fex.api.v1
                 throw;
             }
         }
-
-        public async Task SignOutAsync()
+        */
+        public void SignOut()
         {
             try
             {
                 var uri = this.BuildUrl("j_signout");
 
-                using (var response = await client.GetAsync(uri))
+                using (var response = client.GetAsync(uri).Result)
                 {
-                    string responseJson = await response.Content.ReadAsStringAsync();
+                    string responseJson = response.Content.ReadAsStringAsync().Result;
                     JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
                     if (responseObject.Value<int>("result") == 1)
                     {
