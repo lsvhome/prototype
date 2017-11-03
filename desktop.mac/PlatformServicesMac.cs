@@ -26,5 +26,9 @@ namespace desktop.mac
             // (works without adjusting the LSUIElement setting in Info.plist)
             NSApplication.SharedApplication.ActivationPolicy = NSApplicationActivationPolicy.Accessory;
         }
+
+        public void Dispose()
+        {
+        }
     }
 }

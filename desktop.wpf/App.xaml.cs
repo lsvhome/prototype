@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using Hardcodet.Wpf.TaskbarNotification;
+using desktop.common;
 
 namespace desktop.wpf
 {
@@ -14,33 +15,46 @@ namespace desktop.wpf
     /// </summary>
     public partial class App : Application
     {
-        public static desktop.common.IIocWrapper container = new desktop.common.IocWrapper();
-
-        private TaskbarIcon notifyIcon;
+        public readonly IIocWrapper Container = new desktop.common.IocWrapper();
 
         public App()
         {
-            InitContainer();
+            try
+            {
+                InitContainer();
+            }
+            catch (Exception ex)
+            {
+                ex.Process();
+                throw;
+            }
         }
 
         public void InitContainer()
         {
             Dictionary<Type, object> mappings = new Dictionary<Type, object>();
             mappings.Add(typeof(desktop.common.IPlatformServices), new PlatformServicesWPF());
-            container.Init(mappings);
+            this.Container.Init(mappings);
         }
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            base.OnStartup(e);
-
-            //create the notifyicon (it's a resource declared in NotifyIconResources.xaml
-            notifyIcon = (TaskbarIcon) FindResource("NotifyIcon");
+            try
+            {
+                base.OnStartup(e);
+                //create the notifyicon (it's a resource declared in NotifyIconResources.xaml
+                this.Container.Get<IPlatformServices>().AddTrayIcon();
+            }
+            catch (Exception ex)
+            {
+                ex.Process();
+                throw;
+            }
         }
 
         protected override void OnExit(ExitEventArgs e)
         {
-            notifyIcon.Dispose(); //the icon would clean up automatically, but this is cleaner
+            this.Container.Dispose();
             base.OnExit(e);
         }
     }
