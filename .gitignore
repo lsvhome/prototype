@@ -14,8 +14,8 @@ Makefile.in
 *.suo
 *.cache
 *.pidb
-#*.userprefs
-#*.usertasks
+*.userprefs
+*.usertasks
 config.log
 config.make
 config.status

@@ -104,82 +104,62 @@ namespace net.fex.api.v1
 
         public async Task<User> SignInAsync(string login, string password, bool stay_signed)
         {
-            /*
-             captcha_token:i3EH14pVJ8gviQGHEjOiAnHcEL2obeAM
-            captcha_value:54261
-                         */
-            //try
-            //{
-                var uri = this.BuildUrl("j_signin");
-                uri = uri
-                    .AppendQuery("login", login)
-                    .AppendQuery("password", password)
-                    .AppendQuery("stay_signed", stay_signed ? "1" : "0");
+            var uri = this.BuildUrl("j_signin");
+            uri = uri
+                .AppendQuery("login", login)
+                .AppendQuery("password", password)
+                .AppendQuery("stay_signed", stay_signed ? "1" : "0");
 
-                using (var response = await client.GetAsync(uri))
+            using (var response = await client.GetAsync(uri))
+            {
+                string responseJson = string.Empty;
+                try
                 {
-                    string responseJson = string.Empty;
-                    try
+                    responseJson = await response.Content.ReadAsStringAsync();
+                    JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
+                    if (responseObject.Value<int>("result") == 1)
                     {
-                        responseJson = await response.Content.ReadAsStringAsync();
-                        JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
-                        if (responseObject.Value<int>("result") == 1)
-                        {
-                            JObject jUser = responseObject.Value<JObject>("user");
-                            return new User(jUser.Value<string>("login"), jUser.Value<int>("priv"));
-                        }
-                        else
-                        {
-                            JObject jErr = responseObject.Value<JObject>("err");
-                            string message = jErr.Value<string>("msg");
-                            int id = jErr.Value<int>("id");
-                            string captcha = responseObject.Value<string>("captcha");
-                            var ex = new LoginException(message, id) { ErrorCode = 1001, HttpResponse = responseJson };
-                            throw ex;
-                        }
+                        JObject jUser = responseObject.Value<JObject>("user");
+                        return new User(jUser.Value<string>("login"), jUser.Value<int>("priv"));
                     }
-                    catch (LoginException)
+                    else
                     {
-                        throw;
-                    }
-                    catch
-                    {
-                        throw new ConnectionException() { ErrorCode = 1002, HttpResponse = responseJson };
+                        JObject jErr = responseObject.Value<JObject>("err");
+                        string message = jErr.Value<string>("msg");
+                        int id = jErr.Value<int>("id");
+                        string captcha = responseObject.Value<string>("captcha");
+                        var ex = new LoginException(message, id) { ErrorCode = 1001, HttpResponse = responseJson };
+                        throw ex;
                     }
                 }
-            //}
-            //catch (Exception ex)
-            //{
-            //    ex.Process();
-            //    throw;
-            //}
+                catch (LoginException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    throw new ConnectionException() { ErrorCode = 1002, HttpResponse = responseJson };
+                }
+            }
         }
 
         public async Task SignOutAsync()
         {
-            //try
-            //{
-                var uri = this.BuildUrl("j_signout");
+            var uri = this.BuildUrl("j_signout");
 
-                using (var response = await client.GetAsync(uri))
+            using (var response = await client.GetAsync(uri))
+            {
+                string responseJson = await response.Content.ReadAsStringAsync();
+                JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
+                if (responseObject.Value<int>("result") == 1)
                 {
-                    string responseJson = await response.Content.ReadAsStringAsync();
-                    JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
-                    if (responseObject.Value<int>("result") == 1)
-                    {
-                        return;
-                    }
-                    else
-                    {
-                        throw new ConnectionException() { ErrorCode = 1003, HttpResponse = responseJson };
-                    }
+                    return;
                 }
-            //}
-            //catch (Exception ex)
-            //{
-            //    ex.Process();
-            //    throw;
-            //}
+                else
+                {
+                    throw new ConnectionException() { ErrorCode = 1003, HttpResponse = responseJson };
+                }
+            }
         }
 
         public async Task IndexAsync()
