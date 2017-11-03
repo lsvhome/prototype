@@ -6,7 +6,7 @@
     <TargetFramework>net461</TargetFramework>
     <TargetFrameworks>netstandard1.6;net45;net461</TargetFrameworks>
 -->
-    <TargetFrameworks>netstandard1.6;net45;net461</TargetFrameworks>
+    <TargetFrameworks>netstandard1.6</TargetFrameworks>
   </PropertyGroup>
 
   <ItemGroup>
