@@ -97,7 +97,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="Red.ico" />
+    <Resource Include="Resources\TrayIcon.ico" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

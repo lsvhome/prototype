@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+<!--
+    <TargetFramework>netstandard1.6</TargetFramework>
+    <TargetFramework>net461</TargetFramework>
+    <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
+-->
+    <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
+    <PackageReference Include="System.Net.Http" Version="4.3.3" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+    <PackageReference Include="Unity" Version="5.1.2" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <PackageReference Include="System.Web.Http.Common">
+      <Version>4.0.20126.16343</Version>
+    </PackageReference>
+  </ItemGroup>
+
+</Project>

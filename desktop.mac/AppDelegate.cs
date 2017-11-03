@@ -10,7 +10,7 @@ namespace desktop.mac
     [Register("AppDelegate")]
     public class AppDelegate : NSApplicationDelegate, IDisposable
     {
-        public static desktop.common.IIocWrapper container = new desktop.common.IocWrapper();
+        public static desktop.common.IIocWrapper Container = new desktop.common.IocWrapper();
 
         public AppDelegate()
         {
@@ -21,7 +21,7 @@ namespace desktop.mac
         {
             Dictionary<Type, object> mappings = new Dictionary<Type, object>();
             mappings.Add(typeof(desktop.common.IPlatformServices), new PlatformServicesMac());
-            container.Init(mappings);
+            Container.Init(mappings);
         }
 
         public override void DidFinishLaunching(NSNotification notification)
@@ -43,8 +43,7 @@ namespace desktop.mac
 
             // Remove the system tray icon from upper-right hand corner of the screen
             // (works without adjusting the LSUIElement setting in Info.plist)
-            NSApplication.SharedApplication.ActivationPolicy =
-                NSApplicationActivationPolicy.Accessory;
+            NSApplication.SharedApplication.ActivationPolicy = NSApplicationActivationPolicy.Accessory;
         }
 
         public override void WillTerminate(NSNotification notification)

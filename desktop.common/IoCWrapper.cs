@@ -17,15 +17,31 @@ namespace desktop.common
 
         public void Init(IDictionary<Type,object> mappings)
         {
-            foreach (var each in mappings.Keys)
+            try
             {
-                container.RegisterInstance(each, mappings[each]);
+                foreach (var each in mappings.Keys)
+                {
+                    container.RegisterInstance(each, mappings[each]);
+                }
+            }
+            catch (Exception ex)
+            {
+                ex.Process();
+                throw;
             }
         }
 
         public T Get<T>()
         {
-            return this.container.Resolve<T>();
+            try
+            {
+                return this.container.Resolve<T>();
+            }
+            catch (Exception ex)
+            {
+                ex.Process();
+                throw;
+            }
         }
 
         #region IDisposable

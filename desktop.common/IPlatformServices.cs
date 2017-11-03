@@ -4,7 +4,7 @@ using System.Text;
 
 namespace desktop.common
 {
-    public interface IPlatformServices
+    public interface IPlatformServices: IDisposable
     {
         void AddTrayIcon();
     }
