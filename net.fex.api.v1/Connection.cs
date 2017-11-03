@@ -12,6 +12,7 @@ namespace net.fex.api.v1
     public interface IConnection : IDisposable
     {
         Task<User> SignInAsync(string login, string password, bool stay_signed);
+        Task SignOutAsync();
     }
 
     public class Connection : IConnection

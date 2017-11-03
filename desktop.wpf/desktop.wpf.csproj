@@ -112,8 +112,8 @@
     <PackageReference Include="Hardcodet.NotifyIcon.Wpf">
       <Version>1.0.8</Version>
     </PackageReference>
-    <PackageReference Include="Unity">
-      <Version>5.1.2</Version>
+    <PackageReference Include="Autofac">
+      <Version>4.6.2</Version>
     </PackageReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

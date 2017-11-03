@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity;
+using Autofac;
+using System.Linq;
 
 namespace desktop.common
 {
@@ -13,16 +14,24 @@ namespace desktop.common
 
     public class IocWrapper: IIocWrapper
     {
-        IUnityContainer container = new Unity.UnityContainer();
+        private Autofac.IContainer container;
+
+        public IocWrapper()
+        {
+        }
 
         public void Init(IDictionary<Type,object> mappings)
         {
             try
             {
+            var builder = new ContainerBuilder();
                 foreach (var each in mappings.Keys)
                 {
-                    container.RegisterInstance(each, mappings[each]);
+                builder.RegisterType(mappings[each].GetType()).As(each).SingleInstance();
                 }
+
+            this.container = builder.Build();
+
             }
             catch (Exception ex)
             {
@@ -60,17 +69,16 @@ namespace desktop.common
             {
                 if (disposing)
                 {
-                    foreach (var each in this.container.Registrations)
-                    {
-                        var eachObject = this.container.Resolve(each.MappedToType);
-                        var eachDisposableObject = eachObject as IDisposable;
-                        if (eachDisposableObject != null)
-                        {
-                            eachDisposableObject.Dispose();
-                        }
-                    }
+                    var allRegisteredTypes =
+                        from r in this.container.ComponentRegistry.Registrations
+                        from s in r.Services
+                        where  s != null && s is IDisposable
+                        select s as IDisposable;
 
-                    // Free other state (managed objects).
+                    foreach (var each in allRegisteredTypes.ToList())
+                    {
+                        each.Dispose();
+                        }
 
                     this.container.Dispose();
                 }
