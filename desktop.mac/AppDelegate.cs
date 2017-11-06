@@ -60,7 +60,7 @@ namespace desktop.mac
                     }
                     //System.Environment.Exit(0);
                 });
-            notifyMenu.AddItem(exitMenuItem);
+            notifyMenu.AddItem(loginLogoutMenuItem);
 
             // Display tray icon in upper-right-hand corner of the screen
             var sItem = NSStatusBar.SystemStatusBar.CreateStatusItem(30);
