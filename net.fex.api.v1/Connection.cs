@@ -102,6 +102,11 @@ namespace net.fex.api.v1
 #endif
         }
 
+        public User SignIn(string login, string password, bool stay_signed)
+        {
+            return this.SignInAsync(login, password, stay_signed).Result;
+        }
+
         public async Task<User> SignInAsync(string login, string password, bool stay_signed)
         {
             var uri = this.BuildUrl("j_signin");
@@ -141,6 +146,11 @@ namespace net.fex.api.v1
                     throw new ConnectionException() { ErrorCode = 1002, HttpResponse = responseJson };
                 }
             }
+        }
+
+        public void SignOut()
+        {
+            this.SignOutAsync().Wait();
         }
 
         public async Task SignOutAsync()
