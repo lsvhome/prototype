@@ -104,7 +104,46 @@ namespace net.fex.api.v1
 
         public User SignIn(string login, string password, bool stay_signed)
         {
-            return this.SignInAsync(login, password, stay_signed).Result;
+            //return this.SignInAsync(login, password, stay_signed).Result;
+
+            var uri = this.BuildUrl("j_signin");
+            uri = uri
+                .AppendQuery("login", login)
+                .AppendQuery("password", password)
+                .AppendQuery("stay_signed", stay_signed ? "1" : "0");
+
+            using (var response = client.GetAsync(uri).Result)
+            {
+                string responseJson = string.Empty;
+                try
+                {
+                    responseJson = response.Content.ReadAsStringAsync().Result;
+                    JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
+                    if (responseObject.Value<int>("result") == 1)
+                    {
+                        JObject jUser = responseObject.Value<JObject>("user");
+                        return new User(jUser.Value<string>("login"), jUser.Value<int>("priv"));
+                    }
+                    else
+                    {
+                        JObject jErr = responseObject.Value<JObject>("err");
+                        string message = jErr.Value<string>("msg");
+                        int id = jErr.Value<int>("id");
+                        string captcha = responseObject.Value<string>("captcha");
+                        var ex = new LoginException(message, id) { ErrorCode = 1001, HttpResponse = responseJson };
+                        throw ex;
+                    }
+                }
+                catch (LoginException)
+                {
+                    throw;
+                }
+                catch
+                {
+                    throw new ConnectionException() { ErrorCode = 1002, HttpResponse = responseJson };
+                }
+            }
+
         }
 
         public async Task<User> SignInAsync(string login, string password, bool stay_signed)
