@@ -53,7 +53,7 @@ namespace desktop.mac
                     {
                         SignInSignOuTestOk();
                     }
-                    catch (Exception ex)
+                    catch (Exception)
                     {
                         System.Diagnostics.Debugger.Break();
                         throw;
