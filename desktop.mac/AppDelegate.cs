@@ -31,7 +31,7 @@ namespace desktop.mac
             const string passwordValid = "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_";
             using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
             {
-                var user = conn.SignInAsync(loginValid, passwordValid, false);
+                var user = conn.SignIn(loginValid, passwordValid, false);
                 System.Threading.Thread.Sleep(10000);
                 conn.SignOut();
             }
