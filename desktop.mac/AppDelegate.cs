@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 using AppKit;
 using Foundation;
@@ -24,6 +25,18 @@ namespace desktop.mac
             Container.Init(mappings);
         }
 
+        public async Task SignInSignOuTestOk()
+        {
+            const string loginValid = "slutai";
+            const string passwordValid = "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_";
+            using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
+            {
+                var user = await conn.SignInAsync(loginValid, passwordValid, false);
+                System.Threading.Thread.Sleep(10000);
+                await conn.SignOutAsync();
+            }
+        }
+
         public override void DidFinishLaunching(NSNotification notification)
         {
             // Insert code here to initialize your application
@@ -32,6 +45,21 @@ namespace desktop.mac
             var notifyMenu = new NSMenu();
             var exitMenuItem = new NSMenuItem("Quit My Application",
                 (a, b) => { System.Environment.Exit(0); }); // Just add 'Quit' command
+            notifyMenu.AddItem(exitMenuItem);
+
+            var loginLogoutMenuItem = new NSMenuItem("LoginLogout",
+                (a, b) => {
+                    try
+                    {
+                        SignInSignOuTestOk().Wait();
+                    }
+                    catch (Exception ex)
+                    {
+                        System.Diagnostics.Debugger.Break();
+                        throw;
+                    }
+                    //System.Environment.Exit(0);
+                });
             notifyMenu.AddItem(exitMenuItem);
 
             // Display tray icon in upper-right-hand corner of the screen

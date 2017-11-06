@@ -86,6 +86,10 @@
       <Project>{44897f34-dd07-4333-b0c8-475129b71555}</Project>
       <Name>desktop.common</Name>
     </ProjectReference>
+    <ProjectReference Include="..\net.fex.api.v1\net.fex.api.v1.csproj">
+      <Project>{943e71a6-b25b-4f7d-9641-799b926e1e8b}</Project>
+      <Name>net.fex.api.v1</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Autofac">
