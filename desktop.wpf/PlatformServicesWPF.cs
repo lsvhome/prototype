@@ -9,11 +9,20 @@ namespace desktop.wpf
 {
     public class PlatformServicesWPF : desktop.common.IPlatformServices
     {
-        private TaskbarIcon notifyIcon;
+        public TaskbarIcon notifyIcon;
 
         public void AddTrayIcon()
         {
             this.notifyIcon = (TaskbarIcon)App.Current.FindResource("NotifyIcon");
+        }
+
+        public void SetTrayIconStatusConnected()
+        {
+        }
+
+        public void SetTrayIconStatusDisconnected()
+        {
+
         }
 
         public void Dispose()

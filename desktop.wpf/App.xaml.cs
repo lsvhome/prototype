@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using Hardcodet.Wpf.TaskbarNotification;
 using desktop.common;
+using Autofac;
 
 namespace desktop.wpf
 {
@@ -32,9 +33,17 @@ namespace desktop.wpf
 
         public void InitContainer()
         {
-            Dictionary<Type, object> mappings = new Dictionary<Type, object>();
-            mappings.Add(typeof(desktop.common.IPlatformServices), new PlatformServicesWPF());
-            this.Container.Init(mappings);
+            //Dictionary<Type, object> mappings = new Dictionary<Type, object>();
+            //mappings.Add(typeof(desktop.common.IPlatformServices), new PlatformServicesWPF());
+            //mappings.Add(typeof(net.fex.api.v1.IConnection), new net.fex.api.v1.Connection(new Uri("https://fex.net")));
+            //this.Container.Init(mappings);
+
+            var builder = new ContainerBuilder();
+            builder.RegisterInstance<desktop.common.IPlatformServices>(new PlatformServicesWPF());
+            builder.RegisterInstance<net.fex.api.v1.IConnection>(new net.fex.api.v1.Connection(new Uri("https://fex.net")));
+
+            ((IocWrapper)this.Container).container = builder.Build();
+
         }
 
         protected override void OnStartup(StartupEventArgs e)

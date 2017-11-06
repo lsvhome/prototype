@@ -1,5 +1,8 @@
-﻿using System;
+﻿using desktop.common;
+using net.fex.api.v1;
+using System;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Input;
 
 namespace desktop.wpf
@@ -54,6 +57,138 @@ namespace desktop.wpf
             get
             {
                 return new DelegateCommand {CommandAction = () => Application.Current.Shutdown()};
+            }
+        }
+
+        private void ToggleRunningStatus(object sender, RoutedEventArgs e)
+        {
+            var menuItem = (MenuItem)e.OriginalSource;
+            menuItem.Header = "Pause";
+        }
+
+        public ICommand ConnectCommand
+        {
+            get
+            {
+
+
+                //return new DelegateCommand { CommandAction = () => Application.Current.Shutdown() };
+                return new DelegateCommand {
+                    CanExecuteFunc = () => { return !this.IsConnected; },
+                    CommandAction = () =>
+                {
+
+                    //Application.Current.MainWindow
+                    var signInOrSignUpWindow = new SignIn();
+                    bool shouldSignIn = signInOrSignUpWindow.ShowDialog() == true;
+                    signInOrSignUpWindow.Close();
+
+                    if (shouldSignIn)
+                    {
+                        IConnection conn = ((App)App.Current).Container.Get<IConnection>();
+                        try
+                        {
+                            var user = conn.SignIn("slutai", "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_", false);
+                        }
+                        catch (Connection.LoginException ex)
+                        {
+                            ex.Process();
+                            throw;
+                        }
+                        catch (Connection.ConnectionException ex)
+                        {
+                            ex.Process();
+                            throw;
+                        }
+                        catch (Exception ex)
+                        {
+                            ex.Process();
+                            throw;
+                        }
+                    }
+
+
+                }
+
+                };
+            }
+        }
+
+        //public bool IsConnected { get; set; } = false;
+        public bool IsConnected
+        {
+            get
+            {
+                IConnection conn = ((App)App.Current).Container.Get<IConnection>();
+                var ret = conn.IsSignedIn;
+                return ret;
+            }
+        }
+
+        public Visibility ConnectVisibility
+        {
+            get
+            {
+                IConnection conn = ((App)App.Current).Container.Get<IConnection>();
+                var ret = conn.IsSignedIn ? Visibility.Collapsed : Visibility.Visible;
+                return ret;
+            }
+        }
+
+        public ICommand DisconnectCommand
+        {
+            get
+            {
+                return new DelegateCommand {
+                    CanExecuteFunc = () => { return this.IsConnected; },
+
+                    CommandAction = () =>
+                    //Application.Current.Shutdown()
+
+                    {
+
+                        //Application.Current.MainWindow
+                        //var signInOrSignUpWindow = new SignIn();
+                        //bool shouldSignIn = signInOrSignUpWindow.ShowDialog() == true;
+                        //signInOrSignUpWindow.Close();
+
+                        //if (shouldSignIn)
+                        {
+                            IConnection conn = ((App)App.Current).Container.Get<IConnection>();
+                            try
+                            {
+                                conn.SignOut();
+                            }
+                            catch (Connection.LoginException ex)
+                            {
+                                ex.Process();
+                                throw;
+                            }
+                            catch (Connection.ConnectionException ex)
+                            {
+                                ex.Process();
+                                throw;
+                            }
+                            catch (Exception ex)
+                            {
+                                ex.Process();
+                                throw;
+                            }
+                        }
+
+
+                    }
+
+                };
+            }
+        }
+
+        public Visibility DisconnectVisibility
+        {
+            get
+            {
+                IConnection conn = ((App)App.Current).Container.Get<IConnection>();
+                return conn.IsSignedIn ? Visibility.Visible : Visibility.Collapsed;
             }
         }
     }

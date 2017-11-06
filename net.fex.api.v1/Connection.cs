@@ -11,7 +11,13 @@ namespace net.fex.api.v1
 {
     public interface IConnection : IDisposable
     {
+        bool IsSignedIn { get; }
+        User UserSignedIn { get; }
+
+        User SignIn(string login, string password, bool stay_signed);
         Task<User> SignInAsync(string login, string password, bool stay_signed);
+
+        void SignOut();
         Task SignOutAsync();
     }
 
@@ -102,6 +108,10 @@ namespace net.fex.api.v1
 #endif
         }
 
+        public bool IsSignedIn { get { return this.UserSignedIn != null; } }
+
+        public User UserSignedIn { get; private set; }
+
         public User SignIn(string login, string password, bool stay_signed)
         {
             //return this.SignInAsync(login, password, stay_signed).Result;
@@ -122,7 +132,8 @@ namespace net.fex.api.v1
                     if (responseObject.Value<int>("result") == 1)
                     {
                         JObject jUser = responseObject.Value<JObject>("user");
-                        return new User(jUser.Value<string>("login"), jUser.Value<int>("priv"));
+                        this.UserSignedIn = new User(jUser.Value<string>("login"), jUser.Value<int>("priv"));
+                        return this.UserSignedIn;
                     }
                     else
                     {
@@ -148,48 +159,12 @@ namespace net.fex.api.v1
 
         public async Task<User> SignInAsync(string login, string password, bool stay_signed)
         {
-            var uri = this.BuildUrl("j_signin");
-            uri = uri
-                .AppendQuery("login", login)
-                .AppendQuery("password", password)
-                .AppendQuery("stay_signed", stay_signed ? "1" : "0");
-
-            using (var response = await client.GetAsync(uri))
-            {
-                string responseJson = string.Empty;
-                try
-                {
-                    responseJson = await response.Content.ReadAsStringAsync();
-                    JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
-                    if (responseObject.Value<int>("result") == 1)
-                    {
-                        JObject jUser = responseObject.Value<JObject>("user");
-                        return new User(jUser.Value<string>("login"), jUser.Value<int>("priv"));
-                    }
-                    else
-                    {
-                        JObject jErr = responseObject.Value<JObject>("err");
-                        string message = jErr.Value<string>("msg");
-                        int id = jErr.Value<int>("id");
-                        string captcha = responseObject.Value<string>("captcha");
-                        var ex = new LoginException(message, id) { ErrorCode = 1001, HttpResponse = responseJson };
-                        throw ex;
-                    }
-                }
-                catch (LoginException)
-                {
-                    throw;
-                }
-                catch
-                {
-                    throw new ConnectionException() { ErrorCode = 1002, HttpResponse = responseJson };
-                }
-            }
+            return await Task.Run<User>(()=> { return this.SignIn(login, password, stay_signed); });
         }
 
         public void SignOut()
         {
-            //this.SignOutAsync().Wait();
+            this.UserSignedIn = null;
             var uri = this.BuildUrl("j_signout");
 
             using (var response = client.GetAsync(uri).Result)
@@ -210,48 +185,7 @@ namespace net.fex.api.v1
 
         public async Task SignOutAsync()
         {
-            var uri = this.BuildUrl("j_signout");
-
-            using (var response = await client.GetAsync(uri))
-            {
-                string responseJson = await response.Content.ReadAsStringAsync();
-                JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
-                if (responseObject.Value<int>("result") == 1)
-                {
-                    return;
-                }
-                else
-                {
-                    throw new ConnectionException() { ErrorCode = 1003, HttpResponse = responseJson };
-                }
-            }
-        }
-
-        public async Task IndexAsync()
-        {
-            try
-            {
-                var uri = this.BuildUrl("/j_index");
-
-                using (var response = await client.GetAsync(uri))
-                {
-                    string responseJson = await response.Content.ReadAsStringAsync();
-                    JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
-                    if (responseObject.Value<int>("result") == 1)
-                    {
-                        return;
-                    }
-                    else
-                    {
-                        throw new ConnectionException() { ErrorCode = 1004, HttpResponse = responseJson };
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                ex.Process();
-                throw;
-            }
+            await Task.Run(() => { this.SignOut(); });
         }
     }
 }

@@ -7,5 +7,6 @@ namespace desktop.common
     public interface IPlatformServices: IDisposable
     {
         void AddTrayIcon();
+        //TaskbarIcon GetTrayIcon();
     }
 }

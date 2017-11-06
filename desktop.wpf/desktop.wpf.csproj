@@ -41,7 +41,6 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="System.Net.Http" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
     </Reference>
@@ -54,6 +53,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="SignIn.xaml.cs">
+      <DependentUpon>SignIn.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -69,6 +71,10 @@
     <Page Include="NotifyIconResources.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="SignIn.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
@@ -106,6 +112,10 @@
     <ProjectReference Include="..\desktop.common\desktop.common.csproj">
       <Project>{44897f34-dd07-4333-b0c8-475129b71555}</Project>
       <Name>desktop.common</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\net.fex.api.v1\net.fex.api.v1.csproj">
+      <Project>{943e71a6-b25b-4f7d-9641-799b926e1e8b}</Project>
+      <Name>net.fex.api.v1</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

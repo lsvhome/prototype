@@ -14,31 +14,52 @@ namespace desktop.common
 
     public class IocWrapper: IIocWrapper
     {
-        private Autofac.IContainer container;
+        public Autofac.IContainer container;
 
         public IocWrapper()
         {
         }
 
-        public void Init(IDictionary<Type,object> mappings)
+        public virtual void Init(IDictionary<Type,object> mappings)
         {
-            try
-            {
-            var builder = new ContainerBuilder();
-                foreach (var each in mappings.Keys)
+            /*
+                try
                 {
-                builder.RegisterType(mappings[each].GetType()).As(each).SingleInstance();
+                    var builder = new ContainerBuilder();
+                    foreach (var each in mappings.Keys)
+                    {
+                        builder.RegisterInstance<IConn>(mappings[each]);
+                        builder.RegisterType(mappings[each].GetType()).As(each);
+                    }
+
+                this.container = builder.Build();
+
+    #if DEBUG
+                    try
+                    {
+                        foreach (var each in mappings.Keys)
+                        {
+                            this.container.Resolve(each);
+                        }
+
+                    }
+                    catch (Exception)
+                    {
+
+                        throw;
+                    }
+
+    #endif
+
                 }
-
-            this.container = builder.Build();
-
-            }
-            catch (Exception ex)
-            {
-                ex.Process();
-                throw;
-            }
+                catch (Exception ex)
+                {
+                    ex.Process();
+                    throw;
+                }
+            */
         }
+
 
         public T Get<T>()
         {
