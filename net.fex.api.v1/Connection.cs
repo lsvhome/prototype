@@ -189,7 +189,23 @@ namespace net.fex.api.v1
 
         public void SignOut()
         {
-            this.SignOutAsync().Wait();
+            //this.SignOutAsync().Wait();
+            var uri = this.BuildUrl("j_signout");
+
+            using (var response = client.GetAsync(uri).Result)
+            {
+                string responseJson = response.Content.ReadAsStringAsync().Result;
+                JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
+                if (responseObject.Value<int>("result") == 1)
+                {
+                    return;
+                }
+                else
+                {
+                    throw new ConnectionException() { ErrorCode = 1003, HttpResponse = responseJson };
+                }
+            }
+
         }
 
         public async Task SignOutAsync()
