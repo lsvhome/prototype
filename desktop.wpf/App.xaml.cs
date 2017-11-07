@@ -22,28 +22,18 @@ namespace desktop.wpf
         {
             try
             {
-                InitContainer();
+                var builder = new ContainerBuilder();
+                builder.RegisterInstance<desktop.common.IPlatformServices>(new PlatformServicesWPF());
+                builder.RegisterInstance<net.fex.api.v1.IConnection>(new net.fex.api.v1.Connection(new Uri("https://fex.net")));
+                //// builder.RegisterInstance<net.fex.api.v1.IConnection>(new net.fex.api.v1.BaseConnection());
+
+                ((IocWrapper)this.Container).container = builder.Build();
             }
             catch (Exception ex)
             {
                 ex.Process();
                 throw;
             }
-        }
-
-        public void InitContainer()
-        {
-            //Dictionary<Type, object> mappings = new Dictionary<Type, object>();
-            //mappings.Add(typeof(desktop.common.IPlatformServices), new PlatformServicesWPF());
-            //mappings.Add(typeof(net.fex.api.v1.IConnection), new net.fex.api.v1.Connection(new Uri("https://fex.net")));
-            //this.Container.Init(mappings);
-
-            var builder = new ContainerBuilder();
-            builder.RegisterInstance<desktop.common.IPlatformServices>(new PlatformServicesWPF());
-            builder.RegisterInstance<net.fex.api.v1.IConnection>(new net.fex.api.v1.Connection(new Uri("https://fex.net")));
-
-            ((IocWrapper)this.Container).container = builder.Build();
-
         }
 
         protected override void OnStartup(StartupEventArgs e)

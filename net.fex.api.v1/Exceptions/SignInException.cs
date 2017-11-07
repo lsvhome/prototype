@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace net.fex.api.v1
+namespace Net.Fex.Api
 {
-    public class LoginException : ConnectionException
+    public class SignInException : ConnectionException
     {
-        public LoginException(string message, int id) : base(message)
+        public SignInException(string message, int id) : base(message)
         {
             this.Id = id;
         }

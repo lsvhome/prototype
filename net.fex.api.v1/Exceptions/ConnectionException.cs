@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace net.fex.api.v1
+namespace Net.Fex.Api
 {
     public class ConnectionException : Exception
     {
@@ -19,7 +19,5 @@ namespace net.fex.api.v1
         }
 
         public int ErrorCode { get; set; }
-
-        public string HttpResponse { get; set; }
     }
 }

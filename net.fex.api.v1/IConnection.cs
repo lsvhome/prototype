@@ -3,10 +3,14 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace net.fex.api.v1
+namespace Net.Fex.Api
 {
     public interface IConnection : IDisposable
     {
+        Uri Endpoint { get; }
+
+        System.Net.Http.HttpClient Client { get; }
+
         bool IsSignedIn { get; }
 
         User UserSignedIn { get; }
@@ -16,5 +20,8 @@ namespace net.fex.api.v1
 
         void SignOut();
         Task SignOutAsync();
+
+        bool LoginCheck(string login);
+        Task<bool> LoginCheckAsync(string login);
     }
 }

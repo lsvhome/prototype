@@ -7,7 +7,26 @@
     <TargetFrameworks>netstandard1.6;net461</TargetFrameworks>
 -->
     <TargetFramework>netstandard1.6</TargetFramework>
+    <RootNamespace>Net.Fex.Api</RootNamespace>
+    <AssemblyName>net.fex.api</AssemblyName>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ConnectionCommands\**" />
+    <EmbeddedResource Remove="ConnectionCommands\**" />
+    <None Remove="ConnectionCommands\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="ConnectionCommands\BaseConnectionCommands\CommandBase.cs" />
+    <Compile Include="ConnectionCommands\BaseConnectionCommands\CommandBaseAuthorizedUser.cs" />
+    <Compile Include="ConnectionCommands\BaseConnectionCommands\CommandBaseUnAuthorizedUser.cs" />
+    <Compile Include="ConnectionCommands\BaseConnectionCommands\IConnectionCommand.cs" />
+    <Compile Include="ConnectionCommands\CommandSignOut.cs" />
+    <Compile Include="ConnectionCommands\CommandLoginCheck.cs" />
+    <Compile Include="ConnectionCommands\CommandSignIn.cs" />
+    <Compile Include="ConnectionCommands\CommandSignUp.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />

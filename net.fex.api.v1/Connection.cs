@@ -1,37 +1,68 @@
-﻿using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
-namespace net.fex.api.v1
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+
+namespace Net.Fex.Api
 {
-    public class Connection : BaseConnection
+    public class Connection : IConnection
     {
         #region
 
-        System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
+        public static string GetOSName()
+        {
+#if NETSTANDARD1_6
+            OSPlatform platform = OSPlatform.Create("Other Platform");
+            //// Check if it's windows 
+            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            platform = isWindows ? OSPlatform.Windows : platform;
+            //// Check if it's osx 
+            bool isOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+            platform = isOSX ? OSPlatform.OSX : platform;
+            //// Check if it's Linux 
+            bool isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+            platform = isLinux ? OSPlatform.Linux : platform;
+            return platform.ToString();
+#elif NET461
+            return Environment.OSVersion.VersionString;
+#else
+            throw new NotImplementedException();
+#endif
+        }
 
-        private Uri endpoint;
+        public System.Net.Http.HttpClient Client { get; private set; } = new System.Net.Http.HttpClient();
+
+        public Uri Endpoint { get; private set; }
+
+        public bool IsSignedIn
+        {
+            get
+            {
+                return this.UserSignedIn != null;
+            }
+        }
+
+        public User UserSignedIn { get; protected set; }
 
         public Connection(Uri endpoint)
         {
-            this.endpoint = endpoint;
-            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", string.Format("FEX Desktop ({0})", GetOSName()));
+            this.Endpoint = endpoint;
+            this.Client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", string.Format("FEX Desktop ({0})", GetOSName()));
         }
 
-        public override void Dispose()
+        public void Dispose()
         {
-            this.client.Dispose();
-            base.Dispose();
+            this.Client.Dispose();
         }
 
         private Uri BuildUrl(string suffix, params KeyValuePair<string, string>[] queryParams)
         {
-            var uriBuilder = new UriBuilder(this.endpoint);
+            var uriBuilder = new UriBuilder(this.Endpoint);
 
             uriBuilder.Path += suffix;
 
@@ -42,103 +73,109 @@ namespace net.fex.api.v1
 
         private Uri BuildUrl(string suffix)
         {
-            var uriBuilder = new UriBuilder(this.endpoint);
+            var uriBuilder = new UriBuilder(this.Endpoint);
 
             uriBuilder.Path += suffix;
 
             return uriBuilder.Uri;
         }
 
-        public static string GetOSName()
-        {
-#if NETSTANDARD1_6
-            OSPlatform osPlatform = OSPlatform.Create("Other Platform");
-            // Check if it's windows 
-            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-            osPlatform = isWindows ? OSPlatform.Windows : osPlatform;
-            // Check if it's osx 
-            bool isOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-            osPlatform = isOSX ? OSPlatform.OSX : osPlatform;
-            // Check if it's Linux 
-            bool isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-            osPlatform = isLinux ? OSPlatform.Linux : osPlatform;
-            return osPlatform.ToString();
-#elif NET461
-            return Environment.OSVersion.VersionString;
-#else
-            throw new NotImplementedException();
-#endif
-        }
-
         #endregion
 
         #region IConnection
 
-        public override User SignIn(string login, string password, bool stay_signed)
+        public async Task<User> SignInAsync(string login, string password, bool stay_signed)
         {
-            //return this.SignInAsync(login, password, stay_signed).Result;
-
-            var uri = this.BuildUrl("j_signin");
-            uri = uri
-                .AppendQuery("login", login)
-                .AppendQuery("password", password)
-                .AppendQuery("stay_signed", stay_signed ? "1" : "0");
-
-            using (var response = client.GetAsync(uri).Result)
-            {
-                string responseJson = string.Empty;
-                try
-                {
-                    responseJson = response.Content.ReadAsStringAsync().Result;
-                    JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
-                    if (responseObject.Value<int>("result") == 1)
-                    {
-                        JObject jUser = responseObject.Value<JObject>("user");
-                        this.UserSignedIn = new User(jUser.Value<string>("login"), jUser.Value<int>("priv"));
-                        return this.UserSignedIn;
-                    }
-                    else
-                    {
-                        JObject jErr = responseObject.Value<JObject>("err");
-                        string message = jErr.Value<string>("msg");
-                        int id = jErr.Value<int>("id");
-                        string captcha = responseObject.Value<string>("captcha");
-                        var ex = new LoginException(message, id) { ErrorCode = 1001, HttpResponse = responseJson };
-                        throw ex;
-                    }
-                }
-                catch (LoginException)
-                {
-                    throw;
-                }
-                catch
-                {
-                    throw new ConnectionException() { ErrorCode = 1002, HttpResponse = responseJson };
-                }
-            }
-
+            return await Task.Run<User>(() => { return this.SignIn(login, password, stay_signed); });
         }
 
-        public override void SignOut()
+        public User SignIn(string login, string password, bool stay_signed)
         {
-            this.UserSignedIn = null;
-            var uri = this.BuildUrl("j_signout");
-
-            using (var response = client.GetAsync(uri).Result)
+            Dictionary<string, string> parameters = new Dictionary<string, string>
             {
-                string responseJson = response.Content.ReadAsStringAsync().Result;
-                JObject responseObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
-                if (responseObject.Value<int>("result") == 1)
-                {
-                    return;
-                }
-                else
-                {
-                    throw new ConnectionException() { ErrorCode = 1003, HttpResponse = responseJson };
-                }
+                { "login", login },
+                { "password", password },
+                { "stay_signed", stay_signed ? "1" : "0" }
+            };
+
+            using (var cmd = new CommandSignIn(parameters))
+            {
+                cmd.Execute(this);
+                this.UserSignedIn = cmd.Result;
+                return this.UserSignedIn;
             }
         }
-        
+
+        public async Task SignOutAsync()
+        {
+            await Task.Run(() => { this.SignOut(); });
+        }
+
+        public void SignOut()
+        {
+            using (var cmd = new CommandSignOut())
+            {
+                cmd.Execute(this);
+                this.UserSignedIn = null;
+            }
+        }
+
+        public async Task<bool> LoginCheckAsync(string login)
+        {
+            return await Task.Run<bool>(() => { return this.LoginCheck(login); });
+        }
+
+        public bool LoginCheck(string login)
+        {
+            Dictionary<string, string> parameters = new Dictionary<string, string>
+            {
+                { "login", login }
+            };
+            using (var cmd = new CommandLoginCheck(parameters))
+            {
+                cmd.Execute(this);
+                return cmd.Result;
+            }
+        }
+
+        public async Task SignUpStep01Async(string phone)
+        {
+            await Task.Run(() => { this.SignUpStep01(phone); });
+        }
+
+        public void SignUpStep01(string phone)
+        {
+            Dictionary<string, string> parameters = new Dictionary<string, string>
+            {
+                { "phone", phone }
+            };
+
+            using (var cmd = new CommandSignUp(parameters))
+            {
+                cmd.Execute(this);
+            }
+        }
+
+        public async Task SignUpStep02Async(string phone, string captcha_token, string captcha_value)
+        {
+            await Task.Run(() => { this.SignUpStep02(phone, captcha_token, captcha_value); });
+        }
+
+        public void SignUpStep02(string phone, string captcha_token, string captcha_value)
+        {
+            Dictionary<string, string> parameters = new Dictionary<string, string>
+            {
+                { "phone", phone },
+                { "captcha_token", captcha_token },
+                { "captcha_value", captcha_value }
+            };
+
+            using (var cmd = new CommandSignUp(parameters))
+            {
+                cmd.Execute(this);
+            }
+        }
+
         #endregion IConnection
     }
 }

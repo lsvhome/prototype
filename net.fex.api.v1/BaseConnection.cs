@@ -1,9 +1,10 @@
-﻿using System;
+﻿/*
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace net.fex.api.v1
+namespace Net.Fex.Api
 {
     public class BaseConnection : IConnection
     {
@@ -38,3 +39,4 @@ namespace net.fex.api.v1
         }
     }
 }
+*/

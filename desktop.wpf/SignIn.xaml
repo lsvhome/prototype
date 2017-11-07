@@ -13,6 +13,9 @@
             <TextBox Name="txtCaptcha" HorizontalAlignment="Left" Height="23" Margin="72,49,0,0" TextWrapping="Wrap" Text="TextBox" VerticalAlignment="Top" Width="120"/>
             <Button Name="btnOk" Content="Ok" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="72,105,0,0" Width="58" Click="btnOk_Click"/>
             <Button Name="btnCancel" Content="Cancel" HorizontalAlignment="Left" VerticalAlignment="Top" Margin="135,105,0,0" Width="58" Click="btnCancel_Click"/>
+            <Label Name="lblLogin" Content="{Binding LabelLoginText}" HorizontalAlignment="Left" Margin="10,17,0,0" VerticalAlignment="Top"/>
+            <Label Name="lblPassword"  Content="Label" HorizontalAlignment="Left" Margin="10,46,0,0" VerticalAlignment="Top"/>
+            <Label Name="lblCaptcha" Content="Label" HorizontalAlignment="Left" Margin="10,77,0,0" VerticalAlignment="Top"/>
         </Grid>
 
     </Grid>

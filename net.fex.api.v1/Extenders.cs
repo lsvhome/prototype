@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace net.fex.api.v1
+namespace Net.Fex.Api
 {
     public static class Extenders
     {

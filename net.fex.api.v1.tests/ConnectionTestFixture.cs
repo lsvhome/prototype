@@ -1,6 +1,9 @@
 ﻿using System;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+using Net.Fex.Api;
 
 namespace net.fex.api.v1.tests
 {
@@ -15,16 +18,45 @@ namespace net.fex.api.v1.tests
         {
             using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
             {
+                Assert.IsTrue(conn.LoginCheck(loginValid));
+
+                Assert.IsFalse(conn.IsSignedIn);
+
                 var user = await conn.SignInAsync(loginValid, passwordValid, false);
                 Assert.IsNotNull(user);
                 Assert.AreEqual(loginValid, user.Login);
 
+                Assert.IsTrue(conn.IsSignedIn);
+
                 await conn.SignOutAsync();
+
+                Assert.IsFalse(conn.IsSignedIn);
+
+                Assert.IsTrue(conn.LoginCheck(loginValid));
             }
         }
 
         [TestMethod]
-        [ExpectedException(typeof(LoginException))]
+        public async Task SignUp()
+        {
+            var r = new Random();
+            int[] numbers = new int[7];
+            for (int i = 0; i < numbers.Length; i++)
+            {
+                numbers[i] = r.Next(0, 9);
+            }
+
+            //string phone = "38068" + string.Join("", numbers.Select(digit => digit.ToString()));
+            string phone = "380681111111";
+
+            using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
+            {
+                await conn.SignUpStep01Async(phone);
+            }
+        }
+
+        [TestMethod]
+        [ExpectedException(typeof(SignInException))]
         public async Task SignInFailFakeLogin()
         {
             try
@@ -35,7 +67,7 @@ namespace net.fex.api.v1.tests
                 }
 
             }
-            catch (LoginException)
+            catch (SignInException)
             {
                 throw;
             }
@@ -46,7 +78,7 @@ namespace net.fex.api.v1.tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(LoginException))]
+        [ExpectedException(typeof(SignInException))]
         public async Task SignInFailFakePassword()
         {
             using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
