@@ -14,7 +14,7 @@ namespace desktop.wpf
     /// </summary>
     public class NotifyIconViewModel
     {
-        private IConnection connect
+        private IConnection Connect
         {
             get
             {
@@ -22,7 +22,7 @@ namespace desktop.wpf
             }
         }
 
-        public bool IsConnected => connect.IsSignedIn;
+        public bool IsConnected => Connect.IsSignedIn;
 
         /// <summary>
         /// Shows a window, if none is already open.
@@ -86,7 +86,7 @@ namespace desktop.wpf
                             {
                                 try
                                 {
-                                    var user = this.connect.SignIn("slutai", "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_", false);
+                                    var user = this.Connect.SignIn("slutai", "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_", false);
                                 }
                                 catch (SignInException ex)
                                 {
@@ -123,7 +123,7 @@ namespace desktop.wpf
                     {
                         try
                         {
-                            this.connect.SignOut();
+                            this.Connect.SignOut();
                         }
                         catch (SignInException ex)
                         {

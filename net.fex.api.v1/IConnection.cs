@@ -16,12 +16,15 @@ namespace Net.Fex.Api
         User UserSignedIn { get; }
 
         User SignIn(string login, string password, bool stay_signed);
+
         Task<User> SignInAsync(string login, string password, bool stay_signed);
 
         void SignOut();
+
         Task SignOutAsync();
 
         bool LoginCheck(string login);
+
         Task<bool> LoginCheckAsync(string login);
     }
 }

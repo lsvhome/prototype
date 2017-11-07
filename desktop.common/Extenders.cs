@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace desktop.common
+namespace Desktop.Common
 {
     public static class Extenders
     {

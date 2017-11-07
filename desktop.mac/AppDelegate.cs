@@ -11,7 +11,7 @@ namespace desktop.mac
     [Register("AppDelegate")]
     public class AppDelegate : NSApplicationDelegate, IDisposable
     {
-        public static desktop.common.IIocWrapper Container = new desktop.common.IocWrapper();
+        public static Desktop.Common.IIocWrapper Container = new Desktop.Common.IocWrapper();
 
         public AppDelegate()
         {
@@ -20,8 +20,11 @@ namespace desktop.mac
 
         public void InitContainer()
         {
-            Dictionary<Type, object> mappings = new Dictionary<Type, object>();
-            mappings.Add(typeof(desktop.common.IPlatformServices), new PlatformServicesMac());
+            Dictionary<Type, object> mappings = new Dictionary<Type, object>
+            {
+                { typeof(Desktop.Common.IPlatformServices), new PlatformServicesMac() }
+            };
+
             Container.Init(mappings);
         }
 
@@ -29,7 +32,7 @@ namespace desktop.mac
         {
             const string loginValid = "slutai";
             const string passwordValid = "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_";
-            using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
+            using (var conn = new Net.Fex.Api.Connection(new Uri("https://fex.net")))
             {
                 var user = conn.SignIn(loginValid, passwordValid, false);
                 System.Threading.Thread.Sleep(10000);

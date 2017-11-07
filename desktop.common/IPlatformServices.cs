@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace desktop.common
+namespace Desktop.Common
 {
-    public interface IPlatformServices: IDisposable
+    public interface IPlatformServices : IDisposable
     {
         void AddTrayIcon();
-        //TaskbarIcon GetTrayIcon();
     }
 }

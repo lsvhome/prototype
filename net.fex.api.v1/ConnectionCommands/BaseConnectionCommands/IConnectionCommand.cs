@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Net.Fex.Api
 {
-    public interface IConnectionCommand: IDisposable
+    public interface IConnectionCommand : IDisposable
     {
         bool CanExecute(IConnection connection);
 

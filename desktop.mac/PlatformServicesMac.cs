@@ -7,7 +7,7 @@ using Foundation;
 
 namespace desktop.mac
 {
-    public class PlatformServicesMac : desktop.common.IPlatformServices
+    public class PlatformServicesMac : Desktop.Common.IPlatformServices
     {
         public void AddTrayIcon()
         {

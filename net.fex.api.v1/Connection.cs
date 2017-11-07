@@ -60,26 +60,6 @@ namespace Net.Fex.Api
             this.Client.Dispose();
         }
 
-        private Uri BuildUrl(string suffix, params KeyValuePair<string, string>[] queryParams)
-        {
-            var uriBuilder = new UriBuilder(this.Endpoint);
-
-            uriBuilder.Path += suffix;
-
-            uriBuilder.Query = string.Join("&", queryParams.Select(item => string.Format(item.Key, System.Net.WebUtility.UrlEncode(item.Value))));
-
-            return uriBuilder.Uri;
-        }
-
-        private Uri BuildUrl(string suffix)
-        {
-            var uriBuilder = new UriBuilder(this.Endpoint);
-
-            uriBuilder.Path += suffix;
-
-            return uriBuilder.Uri;
-        }
-
         #endregion
 
         #region IConnection

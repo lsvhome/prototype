@@ -5,26 +5,26 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Net.Fex.Api;
 
-namespace net.fex.api.v1.tests
+namespace Net.Fex.Api.Testss
 {
     [TestClass]
     public class ConnectionTestFixture
     {
-        const string loginValid = "slutai";
-        const string passwordValid = "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_";
+        private const string LoginValid = "slutai";
+        private const string PasswordValid = "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_";
 
         [TestMethod]
         public async Task SignInSignOuTestOk()
         {
-            using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
+            using (var conn = new Net.Fex.Api.Connection(new Uri("https://fex.net")))
             {
-                Assert.IsTrue(conn.LoginCheck(loginValid));
+                Assert.IsTrue(conn.LoginCheck(LoginValid));
 
                 Assert.IsFalse(conn.IsSignedIn);
 
-                var user = await conn.SignInAsync(loginValid, passwordValid, false);
+                var user = await conn.SignInAsync(LoginValid, PasswordValid, false);
                 Assert.IsNotNull(user);
-                Assert.AreEqual(loginValid, user.Login);
+                Assert.AreEqual(LoginValid, user.Login);
 
                 Assert.IsTrue(conn.IsSignedIn);
 
@@ -32,7 +32,7 @@ namespace net.fex.api.v1.tests
 
                 Assert.IsFalse(conn.IsSignedIn);
 
-                Assert.IsTrue(conn.LoginCheck(loginValid));
+                Assert.IsTrue(conn.LoginCheck(LoginValid));
             }
         }
 
@@ -46,10 +46,9 @@ namespace net.fex.api.v1.tests
                 numbers[i] = r.Next(0, 9);
             }
 
-            //string phone = "38068" + string.Join("", numbers.Select(digit => digit.ToString()));
-            string phone = "380681111111";
+            string phone = "38068" + string.Join(string.Empty, numbers.Select(digit => digit.ToString()));
 
-            using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
+            using (var conn = new Net.Fex.Api.Connection(new Uri("https://fex.net")))
             {
                 await conn.SignUpStep01Async(phone);
             }
@@ -61,11 +60,10 @@ namespace net.fex.api.v1.tests
         {
             try
             {
-                using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
+                using (var conn = new Net.Fex.Api.Connection(new Uri("https://fex.net")))
                 {
                     await conn.SignInAsync("fakelogin", "fakepassword", false);
                 }
-
             }
             catch (SignInException)
             {
@@ -81,9 +79,9 @@ namespace net.fex.api.v1.tests
         [ExpectedException(typeof(SignInException))]
         public async Task SignInFailFakePassword()
         {
-            using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
+            using (var conn = new Net.Fex.Api.Connection(new Uri("https://fex.net")))
             {
-                await conn.SignInAsync(loginValid, "fakepassword", false);
+                await conn.SignInAsync(LoginValid, "fakepassword", false);
             }
         }
 
@@ -91,7 +89,7 @@ namespace net.fex.api.v1.tests
         [ExpectedException(typeof(ConnectionException))]
         public async Task SignInOnFakeUrl()
         {
-            using (var conn = new net.fex.api.v1.Connection(new Uri("https://fake.net")))
+            using (var conn = new Net.Fex.Api.Connection(new Uri("https://fake.net")))
             {
                 var user = await conn.SignInAsync("fakelogin", "fakepassword", false);
             }

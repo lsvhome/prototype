@@ -7,7 +7,7 @@ using Hardcodet.Wpf.TaskbarNotification;
 
 namespace desktop.wpf
 {
-    public class PlatformServicesWPF : desktop.common.IPlatformServices
+    public class PlatformServicesWPF : Desktop.Common.IPlatformServices
     {
         public TaskbarIcon notifyIcon;
 

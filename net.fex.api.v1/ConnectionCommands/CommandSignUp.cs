@@ -5,9 +5,10 @@ using Newtonsoft.Json.Linq;
 
 namespace Net.Fex.Api
 {
-    public class CommandSignUp: CommandBaseUnAuthorizedUser
+    public class CommandSignUp : CommandBaseUnAuthorizedUser
     {
-        /*
+
+/*
 "step 1: При отправке только телефона, высылается код на номер телефона
 {captcha: 1, err: {msg: ""Проверочное слово указано неверно."", id: 1008}, result: 0}
 Если ""captcha"":1
@@ -25,7 +26,7 @@ step 2: При отправке логина, регистрирует в БД �
 		 1019: ""singup_used_login"": ""Логин уже зарегистрирован"",
 		 1016: ""singup_login_with_letter"": ""Логин может начинаться только с буквы"""         
              
-             */
+*/
         public CommandSignUp(IDictionary<string, string> parameters) : base(parameters)
         {
         }
@@ -38,15 +39,15 @@ step 2: При отправке логина, регистрирует в БД �
             {
                 if (this.ResultJObject.Value<int>("result") == 1)
                 {
-                    JObject jUser = this.ResultJObject.Value<JObject>("user");
-                    var ret = new User(jUser.Value<string>("login"), jUser.Value<int>("priv"));
+                    JObject jsonUser = this.ResultJObject.Value<JObject>("user");
+                    var ret = new User(jsonUser.Value<string>("login"), jsonUser.Value<int>("priv"));
                     return ret;
                 }
                 else
                 {
-                    JObject jErr = this.ResultJObject.Value<JObject>("err");
-                    string message = jErr.Value<string>("msg");
-                    int id = jErr.Value<int>("id");
+                    JObject jsonError = this.ResultJObject.Value<JObject>("err");
+                    string message = jsonError.Value<string>("msg");
+                    int id = jsonError.Value<int>("id");
                     string captcha = this.ResultJObject.Value<string>("captcha");
                     var ex = new SignInException(message, id) { ErrorCode = 5003 };
                     throw ex;
@@ -79,12 +80,11 @@ step 2: При отправке логина, регистрирует в БД �
                     throw new CaptchaRequiredException();
                 }
 
-                JObject jErr = this.ResultJObject.Value<JObject>("err");
-                string message = jErr.Value<string>("msg");
-                int id = jErr.Value<int>("id");
+                JObject jsonError = this.ResultJObject.Value<JObject>("err");
+                string message = jsonError.Value<string>("msg");
+                int id = jsonError.Value<int>("id");
                 throw new SignInException(message, id) { ErrorCode = 5004 };
             }
         }
-
     }
 }

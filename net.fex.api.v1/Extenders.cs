@@ -16,7 +16,7 @@ namespace Net.Fex.Api
             UriBuilder uriBuilder = new UriBuilder(uri);
             if (string.IsNullOrWhiteSpace(uriBuilder.Query))
             {
-                uriBuilder.Query = string.Format("{0}={1}",key, System.Net.WebUtility.UrlEncode(value));
+                uriBuilder.Query = string.Format("{0}={1}", key, System.Net.WebUtility.UrlEncode(value));
             }
             else
             {

@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\net.fex.api.v1\net.fex.api.v1.csproj" />
+    <ProjectReference Include="..\net.fex.api.v1\Net.Fex.Api.v1.csproj" />
   </ItemGroup>
 
 </Project>

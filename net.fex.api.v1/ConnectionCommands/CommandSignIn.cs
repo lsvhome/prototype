@@ -26,15 +26,15 @@ namespace Net.Fex.Api
             {
                 if (this.ResultJObject.Value<int>("result") == 1)
                 {
-                    JObject jUser = this.ResultJObject.Value<JObject>("user");
-                    var ret = new User(jUser.Value<string>("login"), jUser.Value<int>("priv"));
+                    JObject jsonUser = this.ResultJObject.Value<JObject>("user");
+                    var ret = new User(jsonUser.Value<string>("login"), jsonUser.Value<int>("priv"));
                     return ret;
                 }
                 else
                 {
-                    JObject jErr = this.ResultJObject.Value<JObject>("err");
-                    string message = jErr.Value<string>("msg");
-                    int id = jErr.Value<int>("id");
+                    JObject jsonError = this.ResultJObject.Value<JObject>("err");
+                    string message = jsonError.Value<string>("msg");
+                    int id = jsonError.Value<int>("id");
                     string captcha = this.ResultJObject.Value<string>("captcha");
                     throw new SignInException(message, id) { ErrorCode = 5001 };
                 }

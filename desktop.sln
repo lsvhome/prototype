@@ -4,15 +4,15 @@ VisualStudioVersion = 15.0.27004.2002
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "desktop.mac", "desktop.mac\desktop.mac.csproj", "{6816E1F2-3329-4331-9AD6-5619C2EFCD61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "desktop.wpf", "desktop.wpf\desktop.wpf.csproj", "{79491DA1-9CDF-4D2E-B50C-D55EC72B814A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Desktop.WPF", "desktop.wpf\Desktop.WPF.csproj", "{79491DA1-9CDF-4D2E-B50C-D55EC72B814A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "desktop.common", "desktop.common\desktop.common.csproj", "{44897F34-DD07-4333-B0C8-475129B71555}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Desktop.Common", "desktop.common\Desktop.Common.csproj", "{44897F34-DD07-4333-B0C8-475129B71555}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "net.fex.api.v1", "net.fex.api.v1\net.fex.api.v1.csproj", "{943E71A6-B25B-4F7D-9641-799B926E1E8B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Net.Fex.Api.v1", "net.fex.api.v1\Net.Fex.Api.v1.csproj", "{943E71A6-B25B-4F7D-9641-799B926E1E8B}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "net.fex.api.v1.tests", "net.fex.api.v1.tests\net.fex.api.v1.tests.csproj", "{C2C207B7-2492-4E7A-85EB-27B474EAD025}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Net.Fex.Api.v1.Tests", "net.fex.api.v1.tests\Net.Fex.Api.v1.Tests.csproj", "{C2C207B7-2492-4E7A-85EB-27B474EAD025}"
 EndProject
-Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "desktop.shared", "desktop.shared\desktop.shared.shproj", "{3D8A89C0-E4F0-45AE-9531-4E8B30A50E66}"
+Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Desktop.Shared", "desktop.shared\Desktop.Shared.shproj", "{3D8A89C0-E4F0-45AE-9531-4E8B30A50E66}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution

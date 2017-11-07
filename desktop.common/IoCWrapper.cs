@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using Autofac;
 using System.Linq;
 
-namespace desktop.common
+namespace Desktop.Common
 {
     public interface IIocWrapper: IDisposable
     {
@@ -94,12 +94,12 @@ namespace desktop.common
                         from r in this.container.ComponentRegistry.Registrations
                         from s in r.Services
                         where  s != null && s is IDisposable
-                        select s as IDisposable;
+                        select s ;
 
-                    foreach (var each in allRegisteredTypes.ToList())
+                    foreach (var each in allRegisteredTypes.OfType<IDisposable>().ToList())
                     {
                         each.Dispose();
-                        }
+                    }
 
                     this.container.Dispose();
                 }
