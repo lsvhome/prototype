@@ -1,11 +1,12 @@
-﻿using desktop.common;
-using net.fex.api.v1;
-using System;
+﻿using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using Autofac;
+using Desktop.Common;
+using Net.Fex.Api;
 
-namespace desktop.wpf
+namespace Desktop.Wpf
 {
     /// <summary>
     /// Provides bindable properties and commands for the NotifyIcon. In this sample, the
@@ -18,11 +19,11 @@ namespace desktop.wpf
         {
             get
             {
-                return ((App)App.Current).Container.Get<IConnection>();
+                return ((App)App.Current).Container.Resolve<IConnection>();
             }
         }
 
-        public bool IsConnected => Connect.IsSignedIn;
+        public bool IsConnected => this.Connect.IsSignedIn;
 
         /// <summary>
         /// Shows a window, if none is already open.
@@ -58,7 +59,6 @@ namespace desktop.wpf
             }
         }
 
-
         /// <summary>
         /// Shuts down the application.
         /// </summary>
@@ -66,7 +66,7 @@ namespace desktop.wpf
         {
             get
             {
-                return new DelegateCommand {CommandAction = () => Application.Current.Shutdown()};
+                return new DelegateCommand { CommandAction = () => Application.Current.Shutdown() };
             }
         }
 

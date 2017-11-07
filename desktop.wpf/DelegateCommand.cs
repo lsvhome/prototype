@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace desktop.wpf
+namespace Desktop.Wpf
 {
     /// <summary>
     /// Simplistic delegate command for the demo.
@@ -13,16 +13,17 @@ namespace desktop.wpf
     public class DelegateCommand : ICommand
     {
         public Action CommandAction { get; set; }
+
         public Func<bool> CanExecuteFunc { get; set; }
 
         public void Execute(object parameter)
         {
-            CommandAction();
+            this.CommandAction();
         }
 
         public bool CanExecute(object parameter)
         {
-            return CanExecuteFunc == null || CanExecuteFunc();
+            return this.CanExecuteFunc == null || this.CanExecuteFunc();
         }
 
         public event EventHandler CanExecuteChanged

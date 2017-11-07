@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 
 using AppKit;
+using Autofac;
+using Desktop.Common;
 using Foundation;
 
 namespace desktop.mac
@@ -11,21 +13,22 @@ namespace desktop.mac
     [Register("AppDelegate")]
     public class AppDelegate : NSApplicationDelegate, IDisposable
     {
-        public static Desktop.Common.IIocWrapper Container = new Desktop.Common.IocWrapper();
+        public readonly Autofac.IContainer Container;
 
         public AppDelegate()
-        {
-            InitContainer();
-        }
-
-        public void InitContainer()
         {
             Dictionary<Type, object> mappings = new Dictionary<Type, object>
             {
                 { typeof(Desktop.Common.IPlatformServices), new PlatformServicesMac() }
             };
 
-            Container.Init(mappings);
+
+            var builder = new ContainerBuilder();
+            builder.RegisterInstance<Desktop.Common.IPlatformServices>(new PlatformServicesMac());
+            builder.RegisterInstance<Net.Fex.Api.IConnection>(new Net.Fex.Api.Connection(new Uri("https://fex.net")));
+            //// builder.RegisterInstance<net.fex.api.v1.IConnection>(new net.fex.api.v1.BaseConnection());
+
+            this.Container = builder.Build();
         }
 
         public void SignInSignOuTestOk()
@@ -80,6 +83,7 @@ namespace desktop.mac
         public override void WillTerminate(NSNotification notification)
         {
             // Insert code here to tear down your application
+            this.Container.Dispose();
         }
     }
 }

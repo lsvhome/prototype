@@ -5,15 +5,15 @@ using System.Text;
 using System.Threading.Tasks;
 using Hardcodet.Wpf.TaskbarNotification;
 
-namespace desktop.wpf
+namespace Desktop.Wpf
 {
     public class PlatformServicesWPF : Desktop.Common.IPlatformServices
     {
-        public TaskbarIcon notifyIcon;
+        public TaskbarIcon NotifyIcon { get; set; }
 
         public void AddTrayIcon()
         {
-            this.notifyIcon = (TaskbarIcon)App.Current.FindResource("NotifyIcon");
+            this.NotifyIcon = (TaskbarIcon)App.Current.FindResource("NotifyIcon");
         }
 
         public void SetTrayIconStatusConnected()
@@ -22,12 +22,11 @@ namespace desktop.wpf
 
         public void SetTrayIconStatusDisconnected()
         {
-
         }
 
         public void Dispose()
         {
-            this.notifyIcon.Dispose(); //the icon would clean up automatically, but this is cleaner
+            this.NotifyIcon.Dispose(); //// the icon would clean up automatically, but this is cleaner
         }
     }
 }

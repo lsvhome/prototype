@@ -1,71 +1,48 @@
-﻿using System;
+﻿/*
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using Autofac;
 using System.Linq;
+using Autofac;
 
 namespace Desktop.Common
 {
-    public interface IIocWrapper: IDisposable
+    public interface IIocWrapper : IDisposable
     {
         void Init(IDictionary<Type, object> mappings);
-        T Get<T>();
+
+        T Resolve<T>();
     }
 
-    public class IocWrapper: IIocWrapper
+    public class IocWrapper : IIocWrapper
     {
-        public Autofac.IContainer container;
+        public Autofac.IContainer Container { get; set; }
 
         public IocWrapper()
         {
         }
 
-        public virtual void Init(IDictionary<Type,object> mappings)
+        public virtual void Init(IDictionary<Type, object> mappings)
         {
-            /*
-                try
-                {
-                    var builder = new ContainerBuilder();
-                    foreach (var each in mappings.Keys)
-                    {
-                        builder.RegisterInstance<IConn>(mappings[each]);
-                        builder.RegisterType(mappings[each].GetType()).As(each);
-                    }
 
-                this.container = builder.Build();
+            var builder = new ContainerBuilder();
+            foreach (var each in mappings)
+            {
+                //builder.Regist erInstance(new PlatformServicesMac());
+            }
 
-    #if DEBUG
-                    try
-                    {
-                        foreach (var each in mappings.Keys)
-                        {
-                            this.container.Resolve(each);
-                        }
+            //builder.RegisterInstance<Desktop.Common.IPlatformServices>(new PlatformServicesMac());
+            //builder.RegisterInstance<Net.Fex.Api.IConnection>(new Net.Fex.Api.Connection(new Uri("https://fex.net")));
+            //// builder.RegisterInstance<net.fex.api.v1.IConnection>(new net.fex.api.v1.BaseConnection());
 
-                    }
-                    catch (Exception)
-                    {
-
-                        throw;
-                    }
-
-    #endif
-
-                }
-                catch (Exception ex)
-                {
-                    ex.Process();
-                    throw;
-                }
-            */
+            this.Container = builder.Build();
         }
 
-
-        public T Get<T>()
+        public T Resolve<T>()
         {
             try
             {
-                return this.container.Resolve<T>();
+                return this.Container.Resolve<T>();
             }
             catch (Exception ex)
             {
@@ -80,41 +57,43 @@ namespace Desktop.Common
 
         public void Dispose()
         {
-            Dispose(true);
+            this.Dispose(true);
             GC.SuppressFinalize(this);
         }
 
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposed)
+            if (!this.disposed)
             {
                 if (disposing)
                 {
-                    var allRegisteredTypes =
-                        from r in this.container.ComponentRegistry.Registrations
-                        from s in r.Services
-                        where  s != null && s is IDisposable
-                        select s ;
+                    var allRegisteredTypes = this.Container
+                        .ComponentRegistry
+                        .Registrations
+                        .SelectMany(registration => registration.Services)
+                        .OfType<IDisposable>()
+                        .ToList();
 
-                    foreach (var each in allRegisteredTypes.OfType<IDisposable>().ToList())
+                    foreach (var each in allRegisteredTypes)
                     {
                         each.Dispose();
                     }
 
-                    this.container.Dispose();
+                    this.Container.Dispose();
                 }
 
                 // Free your own state (unmanaged objects).
                 // Set large fields to null.
-                disposed = true;
+                this.disposed = true;
             }
         }
 
         ~IocWrapper()
         {
-            Dispose(false);
+            this.Dispose(false);
         }
 
         #endregion IDisposable
     }
 }
+*/

@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace desktop.wpf
+namespace Desktop.Wpf
 {
     /// <summary>
     /// Interaction logic for SignInOrSignUp.xaml
@@ -21,16 +21,16 @@ namespace desktop.wpf
     {
         public SignIn()
         {
-            InitializeComponent();
+            this.InitializeComponent();
         }
 
-        private void btnOk_Click(object sender, RoutedEventArgs e)
+        private void BtnOk_Click(object sender, RoutedEventArgs e)
         {
             this.DialogResult = true;
             this.Close();
         }
 
-        private void btnCancel_Click(object sender, RoutedEventArgs e)
+        private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
             this.DialogResult = false;
             this.Close();

@@ -5,29 +5,29 @@ using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
-using Hardcodet.Wpf.TaskbarNotification;
-using desktop.common;
 using Autofac;
+using Desktop.Common;
+using Hardcodet.Wpf.TaskbarNotification;
 
-namespace desktop.wpf
+namespace Desktop.Wpf
 {
     /// <summary>
     /// Interaction logic for App.xaml
     /// </summary>
     public partial class App : Application
     {
-        public readonly IIocWrapper Container = new desktop.common.IocWrapper();
+        public readonly Autofac.IContainer Container;
 
         public App()
         {
             try
             {
                 var builder = new ContainerBuilder();
-                builder.RegisterInstance<desktop.common.IPlatformServices>(new PlatformServicesWPF());
-                builder.RegisterInstance<net.fex.api.v1.IConnection>(new net.fex.api.v1.Connection(new Uri("https://fex.net")));
+                builder.RegisterInstance<Desktop.Common.IPlatformServices>(new PlatformServicesWPF());
+                builder.RegisterInstance<Net.Fex.Api.IConnection>(new Net.Fex.Api.Connection(new Uri("https://fex.net")));
                 //// builder.RegisterInstance<net.fex.api.v1.IConnection>(new net.fex.api.v1.BaseConnection());
 
-                ((IocWrapper)this.Container).container = builder.Build();
+                this.Container = builder.Build();
             }
             catch (Exception ex)
             {
@@ -41,8 +41,8 @@ namespace desktop.wpf
             try
             {
                 base.OnStartup(e);
-                //create the notifyicon (it's a resource declared in NotifyIconResources.xaml
-                this.Container.Get<IPlatformServices>().AddTrayIcon();
+                //// create the notifyicon (it's a resource declared in NotifyIconResources.xaml
+                this.Container.Resolve<IPlatformServices>().AddTrayIcon();
             }
             catch (Exception ex)
             {
