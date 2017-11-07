@@ -24,7 +24,7 @@ namespace net.fex.api.v1.tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(Connection.LoginException))]
+        [ExpectedException(typeof(LoginException))]
         public async Task SignInFailFakeLogin()
         {
             try
@@ -35,7 +35,7 @@ namespace net.fex.api.v1.tests
                 }
 
             }
-            catch (Connection.LoginException)
+            catch (LoginException)
             {
                 throw;
             }
@@ -46,7 +46,7 @@ namespace net.fex.api.v1.tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(Connection.LoginException))]
+        [ExpectedException(typeof(LoginException))]
         public async Task SignInFailFakePassword()
         {
             using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
@@ -56,7 +56,7 @@ namespace net.fex.api.v1.tests
         }
 
         [TestMethod]
-        [ExpectedException(typeof(Connection.ConnectionException))]
+        [ExpectedException(typeof(ConnectionException))]
         public async Task SignInOnFakeUrl()
         {
             using (var conn = new net.fex.api.v1.Connection(new Uri("https://fake.net")))

@@ -14,6 +14,16 @@ namespace desktop.wpf
     /// </summary>
     public class NotifyIconViewModel
     {
+        private IConnection connect
+        {
+            get
+            {
+                return ((App)App.Current).Container.Get<IConnection>();
+            }
+        }
+
+        public bool IsConnected => connect.IsSignedIn;
+
         /// <summary>
         /// Shows a window, if none is already open.
         /// </summary>
@@ -60,78 +70,44 @@ namespace desktop.wpf
             }
         }
 
-        private void ToggleRunningStatus(object sender, RoutedEventArgs e)
-        {
-            var menuItem = (MenuItem)e.OriginalSource;
-            menuItem.Header = "Pause";
-        }
-
         public ICommand ConnectCommand
         {
             get
             {
-
-
-                //return new DelegateCommand { CommandAction = () => Application.Current.Shutdown() };
-                return new DelegateCommand {
-                    CanExecuteFunc = () => { return !this.IsConnected; },
-                    CommandAction = () =>
+                return new DelegateCommand
                 {
-
-                    //Application.Current.MainWindow
-                    var signInOrSignUpWindow = new SignIn();
-                    bool shouldSignIn = signInOrSignUpWindow.ShowDialog() == true;
-                    signInOrSignUpWindow.Close();
-
-                    if (shouldSignIn)
+                    CanExecuteFunc = () => !this.IsConnected,
+                    CommandAction = () =>
                     {
-                        IConnection conn = ((App)App.Current).Container.Get<IConnection>();
+                        var signInOrSignUpWindow = new SignIn();
                         try
                         {
-                            var user = conn.SignIn("slutai", "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_", false);
+                            if (signInOrSignUpWindow.ShowDialog() == true)
+                            {
+                                try
+                                {
+                                    var user = this.connect.SignIn("slutai", "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_", false);
+                                }
+                                catch (LoginException ex)
+                                {
+                                    ex.Process();
+                                }
+                                catch (ConnectionException ex)
+                                {
+                                    ex.Process();
+                                }
+                                catch (Exception ex)
+                                {
+                                    ex.Process();
+                                }
+                            }
                         }
-                        catch (Connection.LoginException ex)
+                        finally
                         {
-                            ex.Process();
-                            throw;
-                        }
-                        catch (Connection.ConnectionException ex)
-                        {
-                            ex.Process();
-                            throw;
-                        }
-                        catch (Exception ex)
-                        {
-                            ex.Process();
-                            throw;
+                            signInOrSignUpWindow.Close();
                         }
                     }
-
-
-                }
-
                 };
-            }
-        }
-
-        //public bool IsConnected { get; set; } = false;
-        public bool IsConnected
-        {
-            get
-            {
-                IConnection conn = ((App)App.Current).Container.Get<IConnection>();
-                var ret = conn.IsSignedIn;
-                return ret;
-            }
-        }
-
-        public Visibility ConnectVisibility
-        {
-            get
-            {
-                IConnection conn = ((App)App.Current).Container.Get<IConnection>();
-                var ret = conn.IsSignedIn ? Visibility.Collapsed : Visibility.Visible;
-                return ret;
             }
         }
 
@@ -139,83 +115,31 @@ namespace desktop.wpf
         {
             get
             {
-                return new DelegateCommand {
-                    CanExecuteFunc = () => { return this.IsConnected; },
+                return new DelegateCommand
+                {
+                    CanExecuteFunc = () => this.IsConnected,
 
                     CommandAction = () =>
-                    //Application.Current.Shutdown()
-
                     {
-
-                        //Application.Current.MainWindow
-                        //var signInOrSignUpWindow = new SignIn();
-                        //bool shouldSignIn = signInOrSignUpWindow.ShowDialog() == true;
-                        //signInOrSignUpWindow.Close();
-
-                        //if (shouldSignIn)
+                        try
                         {
-                            IConnection conn = ((App)App.Current).Container.Get<IConnection>();
-                            try
-                            {
-                                conn.SignOut();
-                            }
-                            catch (Connection.LoginException ex)
-                            {
-                                ex.Process();
-                                throw;
-                            }
-                            catch (Connection.ConnectionException ex)
-                            {
-                                ex.Process();
-                                throw;
-                            }
-                            catch (Exception ex)
-                            {
-                                ex.Process();
-                                throw;
-                            }
+                            this.connect.SignOut();
                         }
-
-
+                        catch (LoginException ex)
+                        {
+                            ex.Process();
+                        }
+                        catch (ConnectionException ex)
+                        {
+                            ex.Process();
+                        }
+                        catch (Exception ex)
+                        {
+                            ex.Process();
+                        }
                     }
-
                 };
             }
-        }
-
-        public Visibility DisconnectVisibility
-        {
-            get
-            {
-                IConnection conn = ((App)App.Current).Container.Get<IConnection>();
-                return conn.IsSignedIn ? Visibility.Visible : Visibility.Collapsed;
-            }
-        }
-    }
-
-
-    /// <summary>
-    /// Simplistic delegate command for the demo.
-    /// </summary>
-    public class DelegateCommand : ICommand
-    {
-        public Action CommandAction { get; set; }
-        public Func<bool> CanExecuteFunc { get; set; }
-
-        public void Execute(object parameter)
-        {
-            CommandAction();
-        }
-
-        public bool CanExecute(object parameter)
-        {
-            return CanExecuteFunc == null  || CanExecuteFunc();
-        }
-
-        public event EventHandler CanExecuteChanged
-        {
-            add { CommandManager.RequerySuggested += value; }
-            remove { CommandManager.RequerySuggested -= value; }
         }
     }
 }

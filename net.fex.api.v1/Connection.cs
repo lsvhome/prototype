@@ -9,50 +9,11 @@ using System.Threading.Tasks;
 
 namespace net.fex.api.v1
 {
-    public interface IConnection : IDisposable
+    public class Connection : BaseConnection
     {
-        bool IsSignedIn { get; }
-        User UserSignedIn { get; }
+        #region
 
-        User SignIn(string login, string password, bool stay_signed);
-        Task<User> SignInAsync(string login, string password, bool stay_signed);
-
-        void SignOut();
-        Task SignOutAsync();
-    }
-
-    public class Connection : IConnection
-    {
         System.Net.Http.HttpClient client = new System.Net.Http.HttpClient();
-
-        public class ConnectionException : Exception
-        {
-            public ConnectionException()
-            {
-            }
-
-            public ConnectionException(string message) : base(message)
-            {
-            }
-
-            public ConnectionException(string message, Exception innerException) : base(message, innerException)
-            {
-            }
-
-            public int ErrorCode { get; set; }
-
-            public string HttpResponse { get; set; }
-        }
-
-        public class LoginException : ConnectionException
-        {
-            public LoginException(string message, int id) : base(message)
-            {
-                this.Id = id;
-            }
-
-            public int Id { get; set; }
-        }
 
         private Uri endpoint;
 
@@ -62,9 +23,10 @@ namespace net.fex.api.v1
             client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", string.Format("FEX Desktop ({0})", GetOSName()));
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             this.client.Dispose();
+            base.Dispose();
         }
 
         private Uri BuildUrl(string suffix, params KeyValuePair<string, string>[] queryParams)
@@ -108,11 +70,11 @@ namespace net.fex.api.v1
 #endif
         }
 
-        public bool IsSignedIn { get { return this.UserSignedIn != null; } }
+        #endregion
 
-        public User UserSignedIn { get; private set; }
+        #region IConnection
 
-        public User SignIn(string login, string password, bool stay_signed)
+        public override User SignIn(string login, string password, bool stay_signed)
         {
             //return this.SignInAsync(login, password, stay_signed).Result;
 
@@ -157,12 +119,7 @@ namespace net.fex.api.v1
 
         }
 
-        public async Task<User> SignInAsync(string login, string password, bool stay_signed)
-        {
-            return await Task.Run<User>(()=> { return this.SignIn(login, password, stay_signed); });
-        }
-
-        public void SignOut()
+        public override void SignOut()
         {
             this.UserSignedIn = null;
             var uri = this.BuildUrl("j_signout");
@@ -180,12 +137,8 @@ namespace net.fex.api.v1
                     throw new ConnectionException() { ErrorCode = 1003, HttpResponse = responseJson };
                 }
             }
-
         }
-
-        public async Task SignOutAsync()
-        {
-            await Task.Run(() => { this.SignOut(); });
-        }
+        
+        #endregion IConnection
     }
 }
