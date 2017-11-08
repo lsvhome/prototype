@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Net.Fex.Api
 {
-    public class CommandSignUp : CommandBaseUnAuthorizedUser
+    public class CommandSignUp : CommandCaptchaRequestPossible
     {
         /*
 "step   1:   При   отправке   только   телефона,   высылается   код   на   номер   телефона
@@ -24,9 +24,15 @@ step   2:   При   отправке   логина,   регистрирует
          1008:   ""singup_wrong_captcha"":   ""Проверочное   слово   указано   неверно"",
          1019:   ""singup_used_login"":   ""Логин   уже   зарегистрирован"",
          1016:   ""singup_login_with_letter"":   ""Логин   может   начинаться   только   с   буквы"""                           
-                                       
+
+            
+            
+https://fex.net/j_signup?phone=380683662836
+{"captcha":0,"result":1}
+
+
 */
-        
+
         public CommandSignUp(string phone) : base(
             new Dictionary<string, string>
             {
@@ -48,46 +54,5 @@ step   2:   При   отправке   логина,   регистрирует
         }
 
         protected override string Suffix => "j_signup";
-
-        //public CommandSignIn.User Result
-        //{
-        //    get
-        //    {
-        //        var ret = this.ResultJObject.ToObject<CommandSignIn.User>();
-        //        //JObject jsonUser = this.ResultJObject.Value<JObject>("user");
-        //        //var ret = new CommandSignIn.User(jsonUser.Value<string>("login"), jsonUser.Value<int>("priv"));
-        //        return ret;
-        //    }
-        //}
-
-        //public override void Execute(IConnection connection)
-        //{
-        //    base.Execute(connection);
-
-        //    if (this.ResultJObject.Value<int>("result") == 1)
-        //    {
-        //        if (this.ResultJObject.Value<int>("captcha") == 1)
-        //        {
-        //            throw new CaptchaRequiredException();
-        //        }
-        //        //// Expected: {"captcha":0,"result":1}
-        //        return;
-        //    }
-        //    else
-        //    {
-        //        //// Expected: 
-        //        //// { captcha: 1, err: { msg: ""Проверочное слово указано неверно."", id: 1008}, result: 0}
-        //        //// { "result":0,"err":{ "msg":"Номер телефона указан неверно.","id":1007},"captcha":0}
-        //        //// { "captcha":0,"result":0,"err":{"id":1010,"msg":"Слишком много запросов для этого номера телефона."}}
-
-        //        if (this.ResultJObject.Value<int>("captcha") == 1)
-        //        {
-        //            throw new CaptchaRequiredException();
-        //        }
-
-        //        var result = this.ResultJObject.ToObject<CommandBase.ResponseResultFail>();
-        //        throw new ApiErrorException(result);
-        //    }
-        //}
     }
 }

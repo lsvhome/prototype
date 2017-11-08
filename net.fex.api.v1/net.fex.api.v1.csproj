@@ -29,6 +29,7 @@
     <Compile Include="ConnectionCommands\BaseConnectionCommands\CommandBase.cs" />
     <Compile Include="ConnectionCommands\BaseConnectionCommands\CommandBaseAuthorizedUser.cs" />
     <Compile Include="ConnectionCommands\BaseConnectionCommands\CommandBaseUnAuthorizedUser.cs" />
+    <Compile Include="ConnectionCommands\BaseConnectionCommands\CommandCaptchaRequestPossible.cs" />
     <Compile Include="ConnectionCommands\BaseConnectionCommands\IConnectionCommand.cs" />
     <Compile Include="ConnectionCommands\CommandArchive.cs" />
     <Compile Include="ConnectionCommands\CommandSignOut.cs" />

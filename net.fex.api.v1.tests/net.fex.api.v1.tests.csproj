@@ -4,6 +4,10 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
 
     <IsPackable>false</IsPackable>
+
+    <RootNamespace>Net.Fex.Api.Tests</RootNamespace>
+
+    <AssemblyName>Net.Fex.Api.Tests</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

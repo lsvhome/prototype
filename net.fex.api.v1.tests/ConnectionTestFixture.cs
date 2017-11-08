@@ -5,13 +5,16 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 using Net.Fex.Api;
 
-namespace Net.Fex.Api.Testss
+namespace Net.Fex.Api.Tests
 {
     [TestClass]
     public class ConnectionTestFixture
     {
         private const string LoginValid = "slutai";
-        private const string PasswordValid = "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_";
+
+        //// private const string PasswordValid = "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_";
+
+        private const string PasswordValid = "100%Milk";
 
         private readonly Uri uriValid = new Uri("https://fex.net");
 
@@ -20,12 +23,20 @@ namespace Net.Fex.Api.Testss
         {
             using (var conn = new Net.Fex.Api.Connection(this.uriValid))
             {
+                conn.OnCaptchaUserInputRequired += (sender, captchaRequestArgs) =>
+                {
+                    var answer = conn.RequestCaptchaAnswerAsync(captchaRequestArgs.Captcha).Result;
+                    captchaRequestArgs.CaptchaText = answer.UserInput;
+                };
+
                 Assert.IsFalse(conn.LoginCheck(LoginValid));
 
                 Assert.IsFalse(conn.IsSignedIn);
 
-                var user = await conn.SignInAsync(LoginValid, PasswordValid, false);
+                CommandSignIn.User user = await conn.SignInAsync(LoginValid, PasswordValid, false);
+
                 Assert.IsNotNull(user);
+
                 Assert.AreEqual(LoginValid, user.Login);
 
                 Assert.IsTrue(conn.IsSignedIn);
@@ -50,6 +61,13 @@ namespace Net.Fex.Api.Testss
 
             using (var conn = new Net.Fex.Api.Connection(this.uriValid))
             {
+                conn.OnCaptchaUserInputRequired += (sender, captchaRequestArgs) =>
+                {
+                    var answer = conn.RequestCaptchaAnswerAsync(captchaRequestArgs.Captcha).Result;
+                    captchaRequestArgs.CaptchaText = answer.UserInput;
+                };
+
+                Assert.IsTrue(conn.LoginCheck(LoginValid + phone));
                 await conn.SignUpStep01Async(phone);
             }
         }
@@ -58,20 +76,15 @@ namespace Net.Fex.Api.Testss
         [ExpectedException(typeof(ApiErrorException))]
         public async Task SignInFailFakeLogin()
         {
-            try
+            using (var conn = new Net.Fex.Api.Connection(this.uriValid))
             {
-                using (var conn = new Net.Fex.Api.Connection(this.uriValid))
+                conn.OnCaptchaUserInputRequired += (sender, captchaRequestArgs) =>
                 {
-                    await conn.SignInAsync("fakelogin", "fakepassword", false);
-                }
-            }
-            catch (ApiErrorException)
-            {
-                throw;
-            }
-            catch (Exception)
-            {
-                throw;
+                    var answer = conn.RequestCaptchaAnswerAsync(captchaRequestArgs.Captcha).Result;
+                    captchaRequestArgs.CaptchaText = answer.UserInput;
+                };
+
+                await conn.SignInAsync("fakelogin", "fakepassword", false);
             }
         }
 
@@ -81,6 +94,12 @@ namespace Net.Fex.Api.Testss
         {
             using (var conn = new Net.Fex.Api.Connection(this.uriValid))
             {
+                conn.OnCaptchaUserInputRequired += (sender, captchaRequestArgs) =>
+                {
+                    var answer = conn.RequestCaptchaAnswerAsync(captchaRequestArgs.Captcha).Result;
+                    captchaRequestArgs.CaptchaText = answer.UserInput;
+                };
+
                 await conn.SignInAsync(LoginValid, "fakepassword", false);
             }
         }
@@ -91,6 +110,12 @@ namespace Net.Fex.Api.Testss
         {
             using (var conn = new Net.Fex.Api.Connection(new Uri("https://fake.net")))
             {
+                conn.OnCaptchaUserInputRequired += (sender, captchaRequestArgs) =>
+                {
+                    var answer = conn.RequestCaptchaAnswerAsync(captchaRequestArgs.Captcha).Result;
+                    captchaRequestArgs.CaptchaText = answer.UserInput;
+                };
+
                 var user = await conn.SignInAsync("fakelogin", "fakepassword", false);
             }
         }
@@ -100,6 +125,12 @@ namespace Net.Fex.Api.Testss
         {
             using (var conn = new Net.Fex.Api.Connection(this.uriValid))
             {
+                conn.OnCaptchaUserInputRequired += (sender, captchaRequestArgs) =>
+                {
+                    var answer = conn.RequestCaptchaAnswerAsync(captchaRequestArgs.Captcha).Result;
+                    captchaRequestArgs.CaptchaText = answer.UserInput;
+                };
+
                 Assert.IsFalse(conn.LoginCheck(LoginValid));
 
                 Assert.IsFalse(conn.IsSignedIn);

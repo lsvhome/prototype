@@ -2,16 +2,15 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Text;
 
 using Newtonsoft.Json.Linq;
-using System.Runtime.Serialization;
 
 namespace Net.Fex.Api
 {
     public abstract class CommandBase : IConnectionCommand
     {
-
         [DataContract]
         public class ResponseResultFail
         {
@@ -87,14 +86,15 @@ namespace Net.Fex.Api
                         System.Diagnostics.Debug.WriteLine(responseJson);
                         this.ResultJObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
 
-                        if (this.ResultJObject.Value<int>("captcha") == 1)
-                        {
-                            throw new CaptchaRequiredException();
-                        }
-
                         if (this.ResultJObject.Value<int>("result") != 1)
                         {
-                            throw new ApiErrorException(this.ResultJObject.ToObject<ResponseResultFail>());
+                            var failResponse = this.ResultJObject.ToObject<ResponseResultFail>();
+                            if (failResponse.Captcha == 1 && failResponse.Error.Id == 1008)
+                            {
+                                throw new CaptchaRequiredException();
+                            }
+
+                            throw new ApiErrorException(failResponse);
                         }
                     }
                 }

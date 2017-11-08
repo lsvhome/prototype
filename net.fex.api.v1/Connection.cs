@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -79,6 +80,21 @@ namespace Net.Fex.Api
             }
         }
 
+        public async Task<CommandSignIn.User> SignInAsync(string login, string password, bool stay_signed, string captcha_token, string captcha_value)
+        {
+            return await Task.Run<CommandSignIn.User>(() => { return this.SignIn(login, password, stay_signed, captcha_token, captcha_value); });
+        }
+
+        public CommandSignIn.User SignIn(string login, string password, bool stay_signed, string captcha_token, string captcha_value)
+        {
+            using (var cmd = new CommandSignIn(login, password, stay_signed, captcha_token, captcha_value))
+            {
+                cmd.Execute(this);
+                this.UserSignedIn = cmd.Result.User;
+                return this.UserSignedIn;
+            }
+        }
+
         public async Task SignOutAsync()
         {
             await Task.Run(() => { this.SignOut(); });
@@ -146,6 +162,40 @@ namespace Net.Fex.Api
                 return cmd.Result;
             }
         }
+
+        public async Task<CommandCaptcha.CommandCaptchaResult> CaptchaAsync()
+        {
+            return await Task.Run<CommandCaptcha.CommandCaptchaResult>(() => { return this.Captcha(); });
+        }
+
+        public CommandCaptcha.CommandCaptchaResult Captcha()
+        {
+            using (var cmd = new CommandCaptcha())
+            {
+                cmd.Execute(this);
+                return cmd.Result;
+            }
+        }
+
+        public string CaptchaGetUserInput(CommandCaptcha.CommandCaptchaResult r)
+        {
+            if (this.OnCaptchaUserInputRequired == null)
+            {
+                throw new ConnectionException();
+            }
+
+            var args = new CommandCaptchaRequestPossible.CaptchaRequestedEventArgs(r);
+            this.OnCaptchaUserInputRequired(this, args);
+
+            if (string.IsNullOrWhiteSpace(args.CaptchaText))
+            {
+                throw new ConnectionException();
+            }
+
+            return args.CaptchaText;
+        }
+
+        public event EventHandler<CommandCaptchaRequestPossible.CaptchaRequestedEventArgs> OnCaptchaUserInputRequired;
 
         #endregion IConnection
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,5 +27,17 @@ namespace Net.Fex.Api
         bool LoginCheck(string login);
 
         Task<bool> LoginCheckAsync(string login);
+
+        CommandArchive.CommandArchiveResponse Archive(int offset, int limit);
+
+        Task<CommandArchive.CommandArchiveResponse> ArchiveAsync(int offset, int limit);
+
+        CommandCaptcha.CommandCaptchaResult Captcha();
+
+        Task<CommandCaptcha.CommandCaptchaResult> CaptchaAsync();
+
+        string CaptchaGetUserInput(CommandCaptcha.CommandCaptchaResult r);
+
+        event EventHandler<CommandCaptchaRequestPossible.CaptchaRequestedEventArgs> OnCaptchaUserInputRequired;
     }
 }

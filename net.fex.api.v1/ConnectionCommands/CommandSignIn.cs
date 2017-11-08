@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
-using Newtonsoft.Json.Linq;
 using System.Runtime.Serialization;
+using System.Text;
+
+using Newtonsoft.Json.Linq;
 
 namespace Net.Fex.Api
 {
-    public class CommandSignIn : CommandBaseUnAuthorizedUser
+    public class CommandSignIn : CommandCaptchaRequestPossible
     {
         [DataContract]
         public class CommandSignInResult
@@ -16,10 +17,8 @@ namespace Net.Fex.Api
 
             [DataMember]
             public User User { get; set; }
-
-            [DataMember]
-            public Info Info { get; set; }
         }
+
         /*
          
 "Если все ок: {""user"":{""login"":""dvzdvz"",""priv"":0},""result"":1}
@@ -74,6 +73,9 @@ namespace Net.Fex.Api
 
             [DataMember]
             public int Priv { get; private set; }
+
+            [DataMember]
+            public Info Info { get; set; }
         }
 
         public CommandSignIn(string login, string password, bool stay_signed) : base(
@@ -82,6 +84,18 @@ namespace Net.Fex.Api
                 { "login", login },
                 { "password", password },
                 { "stay_signed", stay_signed ? "1" : "0" }
+            })
+        {
+        }
+
+        public CommandSignIn(string login, string password, bool stay_signed, string captcha_token, string captcha_value) : base(
+            new Dictionary<string, string>
+            {
+                { "login", login },
+                { "password", password },
+                { "stay_signed", stay_signed ? "1" : "0" },
+                { "captcha_token", captcha_token },
+                { "captcha_value", captcha_value },
             })
         {
         }

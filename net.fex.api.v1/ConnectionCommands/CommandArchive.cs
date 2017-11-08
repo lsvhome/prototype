@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Runtime.Serialization;
 using System.Text;
 using System.Xml.Serialization;
 
 using Newtonsoft.Json.Linq;
-using System.Runtime.Serialization;
 
 namespace Net.Fex.Api
 {
@@ -93,19 +93,19 @@ response:
             public int UploadSize { get; set; }
 
             /// <summary>
-            /// помещен ли объект в платное хранилище (1/0)
+            /// Помещен ли объект в платное хранилище (1/0)
             /// </summary>
             [DataMember]
             public int Pay { get; set; }
 
             /// <summary>
-            /// установлен ли пароль на просмотр (1/0)
+            /// Установлен ли пароль на просмотр (1/0)
             /// </summary>
             [DataMember(Name = "with_view_pass")]
             public int WithViewPass { get; set; }
 
             /// <summary>
-            /// сокращенное описание
+            /// Сокращенное описание
             /// </summary>
             [DataMember]
             public string Preview { get; set; }
