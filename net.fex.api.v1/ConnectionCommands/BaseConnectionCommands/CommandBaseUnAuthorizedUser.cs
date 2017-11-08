@@ -6,11 +6,7 @@ namespace Net.Fex.Api
 {
     public abstract class CommandBaseUnAuthorizedUser : CommandBase
     {
-        public CommandBaseUnAuthorizedUser()
-        {
-        }
-
-        public CommandBaseUnAuthorizedUser(IDictionary<string, string> parameters) : base(parameters)
+        protected internal CommandBaseUnAuthorizedUser(IDictionary<string, string> parameters) : base(parameters)
         {
         }
 

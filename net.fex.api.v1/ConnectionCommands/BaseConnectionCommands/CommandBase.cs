@@ -5,11 +5,36 @@ using System.Runtime.InteropServices;
 using System.Text;
 
 using Newtonsoft.Json.Linq;
+using System.Runtime.Serialization;
 
 namespace Net.Fex.Api
 {
     public abstract class CommandBase : IConnectionCommand
     {
+
+        [DataContract]
+        public class ResponseResultFail
+        {
+            [DataMember(Name = "err")]
+            public ResponseError Error { get; set; }
+
+            [DataMember]
+            public int Result { get; set; }
+
+            [DataMember]
+            public int Captcha { get; set; }
+        }
+
+        [DataContract]
+        public class ResponseError
+        {
+            [DataMember(Name = "msg")]
+            public string Message { get; set; }
+
+            [DataMember]
+            public int Id { get; set; }
+        }
+
         public virtual void Dispose()
         {
         }
@@ -61,6 +86,16 @@ namespace Net.Fex.Api
                         string responseJson = response.Content.ReadAsStringAsync().Result;
                         System.Diagnostics.Debug.WriteLine(responseJson);
                         this.ResultJObject = Newtonsoft.Json.Linq.JObject.Parse(responseJson);
+
+                        if (this.ResultJObject.Value<int>("captcha") == 1)
+                        {
+                            throw new CaptchaRequiredException();
+                        }
+
+                        if (this.ResultJObject.Value<int>("result") != 1)
+                        {
+                            throw new ApiErrorException(this.ResultJObject.ToObject<ResponseResultFail>());
+                        }
                     }
                 }
                 else

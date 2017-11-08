@@ -88,7 +88,7 @@ namespace Desktop.Wpf
                                 {
                                     var user = this.Connect.SignIn("slutai", "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_", false);
                                 }
-                                catch (SignInException ex)
+                                catch (ApiErrorException ex)
                                 {
                                     ex.Process();
                                 }
@@ -125,7 +125,7 @@ namespace Desktop.Wpf
                         {
                             this.Connect.SignOut();
                         }
-                        catch (SignInException ex)
+                        catch (ApiErrorException ex)
                         {
                             ex.Process();
                         }

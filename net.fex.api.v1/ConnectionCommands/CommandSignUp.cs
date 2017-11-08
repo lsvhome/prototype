@@ -26,64 +26,68 @@ step   2:   При   отправке   логина,   регистрирует
          1016:   ""singup_login_with_letter"":   ""Логин   может   начинаться   только   с   буквы"""                           
                                        
 */
-        public CommandSignUp(IDictionary<string, string> parameters) : base(parameters)
+        
+        public CommandSignUp(string phone) : base(
+            new Dictionary<string, string>
+            {
+                { "phone", phone }
+            })
+        {
+        }
+
+        public CommandSignUp(string code, string password, string login, string phone, string mail) : base(
+            new Dictionary<string, string>
+            {
+                { "code", code },
+                { "password", password },
+                { "login", login },
+                { "phone", phone },
+                { "mail", mail }
+            })
         {
         }
 
         protected override string Suffix => "j_signup";
 
-        public User Result
-        {
-            get
-            {
-                if (this.ResultJObject.Value<int>("result") == 1)
-                {
-                    JObject jsonUser = this.ResultJObject.Value<JObject>("user");
-                    var ret = new User(jsonUser.Value<string>("login"), jsonUser.Value<int>("priv"));
-                    return ret;
-                }
-                else
-                {
-                    JObject jsonError = this.ResultJObject.Value<JObject>("err");
-                    string message = jsonError.Value<string>("msg");
-                    int id = jsonError.Value<int>("id");
-                    string captcha = this.ResultJObject.Value<string>("captcha");
-                    var ex = new SignInException(message, id) { ErrorCode = 5003 };
-                    throw ex;
-                }
-            }
-        }
+        //public CommandSignIn.User Result
+        //{
+        //    get
+        //    {
+        //        var ret = this.ResultJObject.ToObject<CommandSignIn.User>();
+        //        //JObject jsonUser = this.ResultJObject.Value<JObject>("user");
+        //        //var ret = new CommandSignIn.User(jsonUser.Value<string>("login"), jsonUser.Value<int>("priv"));
+        //        return ret;
+        //    }
+        //}
 
-        public override void Execute(IConnection connection)
-        {
-            base.Execute(connection);
+        //public override void Execute(IConnection connection)
+        //{
+        //    base.Execute(connection);
 
-            if (this.ResultJObject.Value<int>("result") == 1)
-            {
-                if (this.ResultJObject.Value<int>("captcha") == 1)
-                {
-                    throw new CaptchaRequiredException();
-                }
-                //// Expected: {"captcha":0,"result":1}
-                return;
-            }
-            else
-            {
-                //// Expected: 
-                //// { captcha: 1, err: { msg: ""Проверочное слово указано неверно."", id: 1008}, result: 0}
-                //// { "result":0,"err":{ "msg":"Номер телефона указан неверно.","id":1007},"captcha":0}
-                //// { "captcha":0,"result":0,"err":{"id":1010,"msg":"Слишком много запросов для этого номера телефона."}}
+        //    if (this.ResultJObject.Value<int>("result") == 1)
+        //    {
+        //        if (this.ResultJObject.Value<int>("captcha") == 1)
+        //        {
+        //            throw new CaptchaRequiredException();
+        //        }
+        //        //// Expected: {"captcha":0,"result":1}
+        //        return;
+        //    }
+        //    else
+        //    {
+        //        //// Expected: 
+        //        //// { captcha: 1, err: { msg: ""Проверочное слово указано неверно."", id: 1008}, result: 0}
+        //        //// { "result":0,"err":{ "msg":"Номер телефона указан неверно.","id":1007},"captcha":0}
+        //        //// { "captcha":0,"result":0,"err":{"id":1010,"msg":"Слишком много запросов для этого номера телефона."}}
 
-                if (this.ResultJObject.Value<int>("captcha") == 1)
-                {
-                    throw new CaptchaRequiredException();
-                }
+        //        if (this.ResultJObject.Value<int>("captcha") == 1)
+        //        {
+        //            throw new CaptchaRequiredException();
+        //        }
 
-                JObject jsonError = this.ResultJObject.Value<JObject>("err");
-                string message = jsonError.Value<string>("msg");
-                int id = jsonError.Value<int>("id");
-                throw new SignInException(message, id) { ErrorCode = 5004 };
-            }
-        }
+        //        var result = this.ResultJObject.ToObject<CommandBase.ResponseResultFail>();
+        //        throw new ApiErrorException(result);
+        //    }
+        //}
     }
 }

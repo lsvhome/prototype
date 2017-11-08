@@ -47,7 +47,7 @@ namespace Net.Fex.Api
             }
         }
 
-        public User UserSignedIn { get; protected set; }
+        public CommandSignIn.User UserSignedIn { get; protected set; }
 
         public Connection(Uri endpoint)
         {
@@ -64,24 +64,17 @@ namespace Net.Fex.Api
 
         #region IConnection
 
-        public async Task<User> SignInAsync(string login, string password, bool stay_signed)
+        public async Task<CommandSignIn.User> SignInAsync(string login, string password, bool stay_signed)
         {
-            return await Task.Run<User>(() => { return this.SignIn(login, password, stay_signed); });
+            return await Task.Run<CommandSignIn.User>(() => { return this.SignIn(login, password, stay_signed); });
         }
 
-        public User SignIn(string login, string password, bool stay_signed)
+        public CommandSignIn.User SignIn(string login, string password, bool stay_signed)
         {
-            Dictionary<string, string> parameters = new Dictionary<string, string>
-            {
-                { "login", login },
-                { "password", password },
-                { "stay_signed", stay_signed ? "1" : "0" }
-            };
-
-            using (var cmd = new CommandSignIn(parameters))
+            using (var cmd = new CommandSignIn(login, password, stay_signed))
             {
                 cmd.Execute(this);
-                this.UserSignedIn = cmd.Result;
+                this.UserSignedIn = cmd.Result.User;
                 return this.UserSignedIn;
             }
         }
@@ -107,11 +100,7 @@ namespace Net.Fex.Api
 
         public bool LoginCheck(string login)
         {
-            Dictionary<string, string> parameters = new Dictionary<string, string>
-            {
-                { "login", login }
-            };
-            using (var cmd = new CommandLoginCheck(parameters))
+            using (var cmd = new CommandLoginCheck(login))
             {
                 cmd.Execute(this);
                 return cmd.Result;
@@ -125,34 +114,36 @@ namespace Net.Fex.Api
 
         public void SignUpStep01(string phone)
         {
-            Dictionary<string, string> parameters = new Dictionary<string, string>
-            {
-                { "phone", phone }
-            };
-
-            using (var cmd = new CommandSignUp(parameters))
+            using (var cmd = new CommandSignUp(phone))
             {
                 cmd.Execute(this);
             }
         }
 
-        public async Task SignUpStep02Async(string phone, string captcha_token, string captcha_value)
+        public async Task SignUpStep02Async(string code, string password, string login, string phone, string mail)
         {
-            await Task.Run(() => { this.SignUpStep02(phone, captcha_token, captcha_value); });
+            await Task.Run(() => { this.SignUpStep02(code, password, login, phone, mail); });
         }
 
-        public void SignUpStep02(string phone, string captcha_token, string captcha_value)
+        public void SignUpStep02(string code, string password, string login, string phone, string mail)
         {
-            Dictionary<string, string> parameters = new Dictionary<string, string>
-            {
-                { "phone", phone },
-                { "captcha_token", captcha_token },
-                { "captcha_value", captcha_value }
-            };
-
-            using (var cmd = new CommandSignUp(parameters))
+            using (var cmd = new CommandSignUp(code, password, login, phone, mail))
             {
                 cmd.Execute(this);
+            }
+        }
+
+        public async Task<CommandArchive.CommandArchiveResponse> ArchiveAsync(int offset, int limit)
+        {
+            return await Task.Run<CommandArchive.CommandArchiveResponse>(() => { return this.Archive(offset, limit); });
+        }
+
+        public CommandArchive.CommandArchiveResponse Archive(int offset, int limit)
+        {
+            using (var cmd = new CommandArchive(offset, limit))
+            {
+                cmd.Execute(this);
+                return cmd.Result;
             }
         }
 

@@ -18,17 +18,28 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Remove="User.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="StyleCop.Cache" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Compile Include="ConnectionCommands\BaseConnectionCommands\CommandBase.cs" />
     <Compile Include="ConnectionCommands\BaseConnectionCommands\CommandBaseAuthorizedUser.cs" />
     <Compile Include="ConnectionCommands\BaseConnectionCommands\CommandBaseUnAuthorizedUser.cs" />
     <Compile Include="ConnectionCommands\BaseConnectionCommands\IConnectionCommand.cs" />
+    <Compile Include="ConnectionCommands\CommandArchive.cs" />
     <Compile Include="ConnectionCommands\CommandSignOut.cs" />
     <Compile Include="ConnectionCommands\CommandLoginCheck.cs" />
     <Compile Include="ConnectionCommands\CommandSignIn.cs" />
+    <Compile Include="ConnectionCommands\CommandCaptcha.cs" />
     <Compile Include="ConnectionCommands\CommandSignUp.cs" />
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="CoreCompat.System.Drawing" Version="1.0.0-beta006" />
     <PackageReference Include="Newtonsoft.Json" Version="10.0.3" />
     <PackageReference Include="RestSharp.NetCore" Version="105.2.3" />
     <PackageReference Include="StyleCop.MSBuild" Version="5.0.0" />

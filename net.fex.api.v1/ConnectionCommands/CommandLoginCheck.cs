@@ -16,25 +16,36 @@ namespace Net.Fex.Api
 Если логин занят: {""result"":0,""err"":{""msg"":""Логин уже зарегистрирован."",""id"":1019}} "
 
              */
-        public CommandLoginCheck(IDictionary<string, string> parameters) : base(parameters)
+        public CommandLoginCheck(string login) : base(
+            new Dictionary<string, string>
+            {
+                { "login", login }
+            })
         {
         }
 
         protected override string Suffix => "j_login_check";
 
-        public bool Result
+        public override void Execute(IConnection connection)
         {
-            get
+            try
             {
-                if (this.ResultJObject.Value<int>("result") == 1)
+                base.Execute(connection);
+                this.Result = true;
+            }
+            catch (ApiErrorException ex)
+            {
+                if (ex.ResponseResult.Error.Id == 1019)
                 {
-                    return true;
+                    this.Result = false;
                 }
                 else
                 {
-                    return false;
+                    throw;
                 }
             }
         }
+
+        public bool Result { get; private set; }
     }
 }

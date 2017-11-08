@@ -13,11 +13,11 @@ namespace Net.Fex.Api
 
         bool IsSignedIn { get; }
 
-        User UserSignedIn { get; }
+        CommandSignIn.User UserSignedIn { get; }
 
-        User SignIn(string login, string password, bool stay_signed);
+        CommandSignIn.User SignIn(string login, string password, bool stay_signed);
 
-        Task<User> SignInAsync(string login, string password, bool stay_signed);
+        Task<CommandSignIn.User> SignInAsync(string login, string password, bool stay_signed);
 
         void SignOut();
 
