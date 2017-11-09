@@ -5,16 +5,26 @@ using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using FEX.Backup.ClickOnce;
 
-namespace FEX.Backup
+using Autofac;
+using System.Threading;
+
+namespace Desktop.Wpf
 {
     /// <summary>
     /// Interaction logic for AuthWindow.xaml
     /// </summary>
     public partial class AuthWindow : Window
     {
-        private readonly IProgram _program;
+        private Net.Fex.Api.IConnection Connect
+        {
+            get
+            {
+                return ((App)App.Current).Container.Resolve<Net.Fex.Api.IConnection>();
+            }
+        }
+
+        IProgram _program;
 
         private readonly Color DefaultBorderColor = Color.FromRgb(255, 255, 255);
         private readonly Color FocusedBorderColor = Color.FromRgb(66, 164, 245);
@@ -22,7 +32,10 @@ namespace FEX.Backup
 
         private const string LoginPlaceholder = "Логин или телефон";
         private const string CaptchaPlaceholder = "Символы с картинки";
-        private readonly string captchaUrl = ConfigurationManager.AppSettings["FEX.NET.ApiHost"] + "captcha?captcha_token=";
+        private readonly string captchaUrl = 
+            //ConfigurationManager.AppSettings["FEX.NET.ApiHost"] 
+            "https://fex.net/"
+            + "captcha?captcha_token=";
         private readonly RequestCachePolicy requestCachePolicy = new RequestCachePolicy(RequestCacheLevel.NoCacheNoStore);
 
         private string _captchaToken;
@@ -33,13 +46,14 @@ namespace FEX.Backup
 
             LnkRegister.RequestNavigate += Link_RequestNavigate;
             LnkRecoverPassword.RequestNavigate += Link_RequestNavigate;
-            _program = IoC.Container.GetInstance<IProgram>();
+            //_program = ((App)App.Current).Container.Resolve<IProgram>();
 
             Initialize();
         }
 
         public async void Initialize()
         {
+            /*
             string login;
             try
             {
@@ -82,6 +96,7 @@ namespace FEX.Backup
                     ((App)Application.Current).ShowSettingsWindow();
                 }
             }
+            */
         }
 
         private void ShowCaptcha()
@@ -135,7 +150,13 @@ namespace FEX.Backup
                 return;
             }
 
-            var signin = await _program.Signin(login, PwdPassword.Password);
+            Connect.OnCaptchaUserInputRequired += Connect_OnCaptchaUserInputRequired;
+            //var signin = await Connect.SignInAsync(login, PwdPassword.Password, false);
+#warning !!!!!!!!!!
+            var signin = await Connect.SignInAsync("slutai", "100%Milk", false);
+            Connect.OnCaptchaUserInputRequired -= Connect_OnCaptchaUserInputRequired;
+            /*
+            //var signin = await _program.Signin(login, PwdPassword.Password);
             if (signin.Captcha)
                 ShowCaptcha();
             else if (!signin.Result)
@@ -144,6 +165,30 @@ namespace FEX.Backup
                 Initialize();
             else
                 ShowError("Приложение доступно только для пользователей с пакетом FEX Plus.");
+            */
+        }
+
+        AutoResetEvent l = new AutoResetEvent(false);
+        private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs e)
+        {
+            //ShowCaptcha();
+
+            ImgCaptcha.Dispatcher.Invoke(() => {
+                _captchaToken = e.Captcha.Token;
+                ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.Captcha.Token), requestCachePolicy);
+                TxtCaptcha.Text = string.Empty;
+
+                GrdLogin.Visibility = Visibility.Hidden;
+                GrdCaptcha.Visibility = Visibility.Visible;
+            });
+
+            l.Reset();
+            l.WaitOne();
+
+
+            TxtCaptcha.Dispatcher.Invoke(() => {
+                e.CaptchaText = TxtCaptcha.Text;
+            });
         }
 
         private void Link_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
@@ -294,7 +339,11 @@ namespace FEX.Backup
 
             var login = TxtLogin.Text.Trim().TrimStart('+');
 
-            var signin = await _program.Signin(login, PwdPassword.Password, _captchaToken, TxtCaptcha.Text);
+
+            l.Set();
+            /*
+            var signin = await Connect.SignInAsync(login, PwdPassword.Password, false, _captchaToken, TxtCaptcha.Text);
+            //var signin = await _program.Signin(login, PwdPassword.Password, _captchaToken, TxtCaptcha.Text);
             if (!signin.Result && signin.Error?.Id == (int)API.ErrorType.WrongCaptcha)
             {
                 GetCaptchaImage();
@@ -314,6 +363,7 @@ namespace FEX.Backup
                 else
                     ShowError("Приложение доступно только для пользователей с пакетом FEX Plus.");
             }
+            */
         }
     }
 }

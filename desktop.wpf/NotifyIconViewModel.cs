@@ -79,7 +79,7 @@ namespace Desktop.Wpf
                     CanExecuteFunc = () => !this.IsConnected,
                     CommandAction = () =>
                     {
-                        var signInOrSignUpWindow = new SignIn();
+                        var signInOrSignUpWindow = new AuthWindow();
                         try
                         {
                             if (signInOrSignUpWindow.ShowDialog() == true)

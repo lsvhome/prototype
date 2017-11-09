@@ -1,10 +1,10 @@
-﻿<Window x:Class="FEX.Backup.AuthWindow"
+﻿<Window x:Class="Desktop.Wpf.AuthWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:FEX.Backup"
-        mc:Ignorable="d" ResizeMode="CanMinimize" Title="FEX Backup" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="#FF222222">
+        xmlns:local="clr-namespace:Desktop.Wpf"
+        mc:Ignorable="d" ResizeMode="CanMinimize" Title="FEX Sync" WindowStartupLocation="CenterScreen" SizeToContent="WidthAndHeight" Background="#FF222222">
     <Window.Resources>
         <SolidColorBrush x:Key="TextBox.Static.Border" Color="#FFFFFFFF" Opacity="0.2"/>
         <SolidColorBrush x:Key="TextBox.Focus.Border" Color="#FF42A4F5" Opacity="0.7"/>

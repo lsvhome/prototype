@@ -4,7 +4,7 @@ VisualStudioVersion = 15.0.27004.2006
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "desktop.mac", "desktop.mac\desktop.mac.csproj", "{6816E1F2-3329-4331-9AD6-5619C2EFCD61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Desktop.WPF", "desktop.wpf\Desktop.WPF.csproj", "{79491DA1-9CDF-4D2E-B50C-D55EC72B814A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Desktop.Wpf", "desktop.wpf\Desktop.Wpf.csproj", "{79491DA1-9CDF-4D2E-B50C-D55EC72B814A}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Desktop.Common", "desktop.common\Desktop.Common.csproj", "{44897F34-DD07-4333-B0C8-475129B71555}"
 EndProject
