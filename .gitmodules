@@ -1,0 +1,3 @@
+[submodule "submodules/fex-api"]
+	path = submodules/fex-api
+	url = https://git.f1box.org/fex-desktop/fex-api.git
