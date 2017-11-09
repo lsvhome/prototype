@@ -82,12 +82,12 @@
     <InterfaceDefinition Include="Main.storyboard" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\desktop.common\desktop.common.csproj">
+    <ProjectReference Include="..\desktop.common\Desktop.Common.csproj">
       <Project>{44897f34-dd07-4333-b0c8-475129b71555}</Project>
-      <Name>desktop.common</Name>
+      <Name>Desktop.Common</Name>
     </ProjectReference>
-    <ProjectReference Include="..\net.fex.api.v1\net.fex.api.v1.csproj">
-      <Project>{943e71a6-b25b-4f7d-9641-799b926e1e8b}</Project>
+    <ProjectReference Include="..\submodules\fex-api\net.fex.api.v1\net.fex.api.v1.csproj">
+      <Project>{e2baeb61-e7f8-4717-8328-b97c5da29126}</Project>
       <Name>net.fex.api.v1</Name>
     </ProjectReference>
   </ItemGroup>
