@@ -25,15 +25,15 @@ namespace desktop.mac
             Container.Init(mappings);
         }
 
-        public void SignInSignOuTestOk()
+        public async void SignInSignOuTestOk()
         {
             const string loginValid = "slutai";
             const string passwordValid = "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_";
             using (var conn = new net.fex.api.v1.Connection(new Uri("https://fex.net")))
             {
-                var user = conn.SignIn(loginValid, passwordValid, false);
+                var user = await conn.SignInAsync(loginValid, passwordValid, false);
                 System.Threading.Thread.Sleep(10000);
-                conn.SignOut();
+                await conn.SignOutAsync();
             }
         }
 
