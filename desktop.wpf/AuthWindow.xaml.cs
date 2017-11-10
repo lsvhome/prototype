@@ -223,9 +223,11 @@ namespace Desktop.Wpf
         {
             //ShowCaptcha();
 
+
             ImgCaptcha.Dispatcher.Invoke(() => {
-                _captchaToken = e.Captcha.Token;
-                ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.Captcha.Token), requestCachePolicy);
+                _captchaToken = e.CaptchaToken.Token;
+                ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.CaptchaToken.Token), requestCachePolicy);
+
                 TxtCaptcha.Text = string.Empty;
 
                 GrdLogin.Visibility = Visibility.Hidden;
