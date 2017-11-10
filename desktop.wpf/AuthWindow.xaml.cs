@@ -24,6 +24,8 @@ namespace Desktop.Wpf
             }
         }
 
+        AutoResetEvent waitForCaptchaEvent = new AutoResetEvent(false);
+
         IProgram _program;
 
         private readonly Color DefaultBorderColor = Color.FromRgb(255, 255, 255);
@@ -33,8 +35,8 @@ namespace Desktop.Wpf
         private const string LoginPlaceholder = "Логин или телефон";
         private const string CaptchaPlaceholder = "Символы с картинки";
         private readonly string captchaUrl = 
-            //ConfigurationManager.AppSettings["FEX.NET.ApiHost"] 
-            "https://fex.net/"
+            ConfigurationManager.AppSettings["FEX.NET.ApiHost"] 
+            //"https://fex.net/"
             + "captcha?captcha_token=";
         private readonly RequestCachePolicy requestCachePolicy = new RequestCachePolicy(RequestCacheLevel.NoCacheNoStore);
 
@@ -51,7 +53,7 @@ namespace Desktop.Wpf
             Initialize();
         }
 
-        public async void Initialize()
+        public void Initialize()
         {
             /*
             string login;
@@ -127,7 +129,7 @@ namespace Desktop.Wpf
             TxtCaptcha.Text = string.Empty;
         }
 
-        private async void BtnLogin_Click(object sender, RoutedEventArgs e)
+        private void BtnLogin_Click(object sender, RoutedEventArgs e)
         {
             HideError();
 
@@ -153,22 +155,70 @@ namespace Desktop.Wpf
             Connect.OnCaptchaUserInputRequired += Connect_OnCaptchaUserInputRequired;
             //var signin = await Connect.SignInAsync(login, PwdPassword.Password, false);
 #warning !!!!!!!!!!
-            var signin = await Connect.SignInAsync("slutai", "100%Milk", false);
-            Connect.OnCaptchaUserInputRequired -= Connect_OnCaptchaUserInputRequired;
+            try
+            {
+                var signin = Connect.SignIn(login, PwdPassword.Password, false);
+
+                //var signin = await _program.Signin(login, PwdPassword.Password);
+                //if (signin.Captcha)
+                //    ShowCaptcha();
+                //else if (!signin.Result)
+
+                //else 
+                if (signin.Info?.MaxUploadSize > 0)
+                {
+                    //Initialize();
+                    CredentialsManager.Save(login, PwdPassword.Password);
+                    Connect.SignOut();
+                    this.Close();
+                }
+                else
+                    ShowError("Приложение доступно только для пользователей с пакетом FEX Plus.");
+            }
+            catch (Net.Fex.Api.ApiErrorException ex)
+            {
+                ShowError(ex.Message);
+            }
+            catch (Net.Fex.Api.CaptchaRequiredException)
+            {
+                //ShowCaptcha();
+                //ShowCaptchaError(signin.Error?.Message);
+            }
+            finally
+            {
+                Connect.OnCaptchaUserInputRequired -= Connect_OnCaptchaUserInputRequired;
+            }   
+
+
+
+
+
             /*
-            //var signin = await _program.Signin(login, PwdPassword.Password);
-            if (signin.Captcha)
-                ShowCaptcha();
-            else if (!signin.Result)
-                ShowError(signin.Error?.Message);
-            else if (signin.User?.Info?.MaxUploadSize > 0)
-                Initialize();
+            var signin = await Connect.SignInAsync(login, PwdPassword.Password, false, _captchaToken, TxtCaptcha.Text);
+            //var signin = await _program.Signin(login, PwdPassword.Password, _captchaToken, TxtCaptcha.Text);
+            if (!signin.Result && signin.Error?.Id == (int)API.ErrorType.WrongCaptcha)
+            {
+                GetCaptchaImage();
+                ShowCaptchaError(signin.Error?.Message);
+            }
             else
-                ShowError("Приложение доступно только для пользователей с пакетом FEX Plus.");
+            {
+                if (signin.Captcha)
+                    GetCaptchaImage();
+
+                HideCaptcha();
+
+                if (!signin.Result)
+                    ShowError(signin.Error?.Message);
+                else if (signin.User?.Info?.MaxUploadSize > 0)
+                    Initialize();
+                else
+                    ShowError("Приложение доступно только для пользователей с пакетом FEX Plus.");
+            }
             */
+
         }
 
-        AutoResetEvent l = new AutoResetEvent(false);
         private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs e)
         {
             //ShowCaptcha();
@@ -182,12 +232,13 @@ namespace Desktop.Wpf
                 GrdCaptcha.Visibility = Visibility.Visible;
             });
 
-            l.Reset();
-            l.WaitOne();
-
+            waitForCaptchaEvent.Reset();
+            waitForCaptchaEvent.WaitOne();
 
             TxtCaptcha.Dispatcher.Invoke(() => {
                 e.CaptchaText = TxtCaptcha.Text;
+                GrdLogin.Visibility = Visibility.Visible;
+                GrdCaptcha.Visibility = Visibility.Hidden;
             });
         }
 
@@ -330,7 +381,7 @@ namespace Desktop.Wpf
             GrdLogin.Visibility = Visibility.Visible;
         }
 
-        private async void BtnCaptcha_Click(object sender, RoutedEventArgs e)
+        private void BtnCaptcha_Click(object sender, RoutedEventArgs e)
         {
             HideCaptchaError();
 
@@ -339,31 +390,7 @@ namespace Desktop.Wpf
 
             var login = TxtLogin.Text.Trim().TrimStart('+');
 
-
-            l.Set();
-            /*
-            var signin = await Connect.SignInAsync(login, PwdPassword.Password, false, _captchaToken, TxtCaptcha.Text);
-            //var signin = await _program.Signin(login, PwdPassword.Password, _captchaToken, TxtCaptcha.Text);
-            if (!signin.Result && signin.Error?.Id == (int)API.ErrorType.WrongCaptcha)
-            {
-                GetCaptchaImage();
-                ShowCaptchaError(signin.Error?.Message);
-            }
-            else
-            {
-                if (signin.Captcha)
-                    GetCaptchaImage();
-
-                HideCaptcha();
-
-                if (!signin.Result)
-                    ShowError(signin.Error?.Message);
-                else if (signin.User?.Info?.MaxUploadSize > 0)
-                    Initialize();
-                else
-                    ShowError("Приложение доступно только для пользователей с пакетом FEX Plus.");
-            }
-            */
+            waitForCaptchaEvent.Set();
         }
     }
 }
