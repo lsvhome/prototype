@@ -26,18 +26,13 @@ namespace Desktop.Wpf
 
         AutoResetEvent waitForCaptchaEvent = new AutoResetEvent(false);
 
-        IProgram _program;
-
         private readonly Color DefaultBorderColor = Color.FromRgb(255, 255, 255);
         private readonly Color FocusedBorderColor = Color.FromRgb(66, 164, 245);
         private readonly Color ErrorBorderColor = Color.FromRgb(255, 82, 82);
 
         private const string LoginPlaceholder = "Логин или телефон";
         private const string CaptchaPlaceholder = "Символы с картинки";
-        private readonly string captchaUrl = 
-            ConfigurationManager.AppSettings["FEX.NET.ApiHost"] 
-            //"https://fex.net/"
-            + "captcha?captcha_token=";
+        private readonly string captchaUrl = ConfigurationManager.AppSettings["FEX.NET.ApiHost"] + "captcha?captcha_token=";
         private readonly RequestCachePolicy requestCachePolicy = new RequestCachePolicy(RequestCacheLevel.NoCacheNoStore);
 
         private string _captchaToken;
@@ -48,7 +43,6 @@ namespace Desktop.Wpf
 
             LnkRegister.RequestNavigate += Link_RequestNavigate;
             LnkRecoverPassword.RequestNavigate += Link_RequestNavigate;
-            //_program = ((App)App.Current).Container.Resolve<IProgram>();
 
             Initialize();
         }
@@ -153,27 +147,13 @@ namespace Desktop.Wpf
             }
 
             Connect.OnCaptchaUserInputRequired += Connect_OnCaptchaUserInputRequired;
-            //var signin = await Connect.SignInAsync(login, PwdPassword.Password, false);
-#warning !!!!!!!!!!
             try
             {
                 var signin = Connect.SignIn(login, PwdPassword.Password, false);
 
-                //var signin = await _program.Signin(login, PwdPassword.Password);
-                //if (signin.Captcha)
-                //    ShowCaptcha();
-                //else if (!signin.Result)
-
-                //else 
-                if (signin.Info?.MaxUploadSize > 0)
-                {
-                    //Initialize();
-                    CredentialsManager.Save(login, PwdPassword.Password);
-                    Connect.SignOut();
-                    this.Close();
-                }
-                else
-                    ShowError("Приложение доступно только для пользователей с пакетом FEX Plus.");
+                CredentialsManager.Save(login, PwdPassword.Password);
+                Connect.SignOut();
+                this.Close();
             }
             catch (Net.Fex.Api.ApiErrorException ex)
             {
@@ -181,49 +161,15 @@ namespace Desktop.Wpf
             }
             catch (Net.Fex.Api.CaptchaRequiredException)
             {
-                //ShowCaptcha();
-                //ShowCaptchaError(signin.Error?.Message);
             }
             finally
             {
                 Connect.OnCaptchaUserInputRequired -= Connect_OnCaptchaUserInputRequired;
             }   
-
-
-
-
-
-            /*
-            var signin = await Connect.SignInAsync(login, PwdPassword.Password, false, _captchaToken, TxtCaptcha.Text);
-            //var signin = await _program.Signin(login, PwdPassword.Password, _captchaToken, TxtCaptcha.Text);
-            if (!signin.Result && signin.Error?.Id == (int)API.ErrorType.WrongCaptcha)
-            {
-                GetCaptchaImage();
-                ShowCaptchaError(signin.Error?.Message);
-            }
-            else
-            {
-                if (signin.Captcha)
-                    GetCaptchaImage();
-
-                HideCaptcha();
-
-                if (!signin.Result)
-                    ShowError(signin.Error?.Message);
-                else if (signin.User?.Info?.MaxUploadSize > 0)
-                    Initialize();
-                else
-                    ShowError("Приложение доступно только для пользователей с пакетом FEX Plus.");
-            }
-            */
-
         }
 
         private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs e)
         {
-            //ShowCaptcha();
-
-
             ImgCaptcha.Dispatcher.Invoke(() => {
                 _captchaToken = e.CaptchaToken.Token;
                 ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.CaptchaToken.Token), requestCachePolicy);
