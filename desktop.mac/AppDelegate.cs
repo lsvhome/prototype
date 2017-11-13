@@ -25,7 +25,7 @@ namespace desktop.mac
 
             var builder = new ContainerBuilder();
             builder.RegisterInstance<Desktop.Common.IPlatformServices>(new PlatformServicesMac());
-            builder.RegisterInstance<Net.Fex.Api.IConnection>(new Net.Fex.Api.Connection(new Uri("https://fex.net")));
+            builder.RegisterInstance<Net.Fex.Api.IConnection>(new Net.Fex.Api.Connection(new Net.Fex.Api.HttpClientWrapper(), new Uri("https://fex.net"), string.Format("FEX Sync ({0})", Net.Fex.Api.Connection.GetOSName())));
             //// builder.RegisterInstance<net.fex.api.v1.IConnection>(new net.fex.api.v1.BaseConnection());
 
             this.Container = builder.Build();
@@ -35,7 +35,7 @@ namespace desktop.mac
         {
             const string loginValid = "slutai";
             const string passwordValid = "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_";
-            using (var conn = new Net.Fex.Api.Connection(new Uri("https://fex.net")))
+            using (var conn = new Net.Fex.Api.Connection(new Net.Fex.Api.HttpClientWrapper(), new Uri("https://fex.net"), string.Format("FEX Sync ({0})", Net.Fex.Api.Connection.GetOSName())))
             {
                 var user = conn.SignIn(loginValid, passwordValid, false);
                 System.Threading.Thread.Sleep(10000);

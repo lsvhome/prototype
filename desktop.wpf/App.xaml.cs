@@ -24,7 +24,7 @@ namespace Desktop.Wpf
             {
                 var builder = new ContainerBuilder();
                 builder.RegisterInstance<Desktop.Common.IPlatformServices>(new PlatformServicesWPF());
-                builder.RegisterInstance<Net.Fex.Api.IConnection>(new Net.Fex.Api.Connection(new Uri("https://fex.net")));
+                builder.RegisterInstance<Net.Fex.Api.IConnection>(new Net.Fex.Api.Connection(new Net.Fex.Api.HttpClientWrapper(), new Uri("https://fex.net"), string.Format("FEX Sync ({0})", Net.Fex.Api.Connection.GetOSName())));
                 //// builder.RegisterInstance<net.fex.api.v1.IConnection>(new net.fex.api.v1.BaseConnection());
 
                 this.Container = builder.Build();
