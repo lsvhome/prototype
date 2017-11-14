@@ -2,12 +2,12 @@
 using System.Configuration;
 using System.Net.Cache;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 using Autofac;
-using System.Threading;
 
 namespace Desktop.Wpf
 {
@@ -16,14 +16,15 @@ namespace Desktop.Wpf
     /// </summary>
     public partial class AuthWindow : Window
     {
+        /*
         private Net.Fex.Api.IConnection Connect
         {
             get
             {
-                return ((App)App.Current).Container.Resolve<Net.Fex.Api.IConnection>();
+                return ((App)App.Current).Container.Resolve<IConnectionFactory>().CreateConnection();
             }
         }
-
+        */
         AutoResetEvent waitForCaptchaEvent = new AutoResetEvent(false);
 
         private readonly Color DefaultBorderColor = Color.FromRgb(255, 255, 255);
@@ -146,26 +147,30 @@ namespace Desktop.Wpf
                 return;
             }
 
-            Connect.OnCaptchaUserInputRequired += Connect_OnCaptchaUserInputRequired;
-            try
+            using (var conn = ((App)App.Current).Container.Resolve<IConnectionFactory>().CreateConnection())
             {
-                var signin = Connect.SignIn(login, PwdPassword.Password, false);
+                conn.OnCaptchaUserInputRequired += Connect_OnCaptchaUserInputRequired;
+                try
+                {
+                    var signin = conn.SignIn(login, PwdPassword.Password, false);
+                    conn.SignOut();
 
-                CredentialsManager.Save(login, PwdPassword.Password);
-                Connect.SignOut();
-                this.Close();
+                    CredentialsManager.Save(login, PwdPassword.Password);
+
+                    this.Close();
+                }
+                catch (Net.Fex.Api.ApiErrorException ex)
+                {
+                    ShowError(ex.Message);
+                }
+                catch (Net.Fex.Api.CaptchaRequiredException)
+                {
+                }
+                finally
+                {
+                    conn.OnCaptchaUserInputRequired -= Connect_OnCaptchaUserInputRequired;
+                }
             }
-            catch (Net.Fex.Api.ApiErrorException ex)
-            {
-                ShowError(ex.Message);
-            }
-            catch (Net.Fex.Api.CaptchaRequiredException)
-            {
-            }
-            finally
-            {
-                Connect.OnCaptchaUserInputRequired -= Connect_OnCaptchaUserInputRequired;
-            }   
         }
 
         private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs e)

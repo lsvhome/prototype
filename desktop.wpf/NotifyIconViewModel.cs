@@ -15,15 +15,16 @@ namespace Desktop.Wpf
     /// </summary>
     public class NotifyIconViewModel
     {
-        private IConnection Connect
+
+        private SyncWorkflow SyncWorkflow
         {
             get
             {
-                return ((App)App.Current).Container.Resolve<IConnection>();
+                return ((App)App.Current).SyncWorkflow;
             }
         }
 
-        public bool IsConnected => this.Connect.IsSignedIn;
+        public bool IsConnected => this.SyncWorkflow.Status == SyncWorkflow.SyncWorkflowStatus.Started;
 
         /// <summary>
         /// Shows a window, if none is already open.
@@ -79,32 +80,20 @@ namespace Desktop.Wpf
                     CanExecuteFunc = () => !this.IsConnected,
                     CommandAction = () =>
                     {
-                        var signInOrSignUpWindow = new AuthWindow();
+                        string login;
+                        string password;
                         try
                         {
-                            if (signInOrSignUpWindow.ShowDialog() == true)
-                            {
-                                try
-                                {
-                                    var user = this.Connect.SignIn("slutai", "100~`!@#$%^&*()[]{}:;\"',<.>/?+=-_", false);
-                                }
-                                catch (ApiErrorException ex)
-                                {
-                                    ex.Process();
-                                }
-                                catch (ConnectionException ex)
-                                {
-                                    ex.Process();
-                                }
-                                catch (Exception ex)
-                                {
-                                    ex.Process();
-                                }
-                            }
+                            CredentialsManager.Load(out login, out password);
+                            ((App)App.Current).SyncWorkflow.Start();
                         }
-                        finally
+                        catch (Exception)
                         {
-                            signInOrSignUpWindow.Close();
+                            var authWindow = new AuthWindow();
+                            if (authWindow.ShowDialog() == true)
+                            {
+                                ((App)App.Current).SyncWorkflow.Start();
+                            }
                         }
                     }
                 };
@@ -123,7 +112,12 @@ namespace Desktop.Wpf
                     {
                         try
                         {
-                            this.Connect.SignOut();
+                            if (this.SyncWorkflow.Status != SyncWorkflow.SyncWorkflowStatus.Started)
+                            {
+                                throw new ApplicationException();
+                            }
+
+                            this.SyncWorkflow.Stop();
                         }
                         catch (ApiErrorException ex)
                         {

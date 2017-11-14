@@ -17,6 +17,7 @@ namespace Desktop.Wpf
     public partial class App : Application
     {
         public readonly Autofac.IContainer Container;
+        public readonly SyncWorkflow SyncWorkflow = new SyncWorkflow();
 
         public App()
         {
@@ -24,7 +25,7 @@ namespace Desktop.Wpf
             {
                 var builder = new ContainerBuilder();
                 builder.RegisterInstance<Desktop.Common.IPlatformServices>(new PlatformServicesWPF());
-                builder.RegisterInstance<Net.Fex.Api.IConnection>(new Net.Fex.Api.Connection(new Net.Fex.Api.HttpClientWrapper(), new Uri("https://fex.net"), string.Format("FEX Sync ({0})", Net.Fex.Api.Connection.GetOSName())));
+                builder.RegisterInstance<IConnectionFactory>(new ConnectionFactory());
 
                 this.Container = builder.Build();
             }
