@@ -135,5 +135,7 @@ namespace Desktop.Wpf
                 };
             }
         }
+
+        public string ToolTipText { get{ return "Double-click for Settings, right-click for menu"; } }
     }
 }

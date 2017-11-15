@@ -14,6 +14,7 @@ namespace Desktop.Wpf
         public void AddTrayIcon()
         {
             this.NotifyIcon = (TaskbarIcon)App.Current.FindResource("NotifyIcon");
+            this.NotifyIcon.DataContext = new NotifyIconViewModel();
         }
 
         public void SetTrayIconStatusConnected()

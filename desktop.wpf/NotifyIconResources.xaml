@@ -12,10 +12,10 @@
         <!--
         
         -->
-        <MenuItem Header="Connect" Command="{Binding ConnectCommand}" />
-        <MenuItem Header="Disconnect" Command="{Binding DisconnectCommand}" />
-        <MenuItem Header="Show Window" Command="{Binding ShowWindowCommand}" />
-        <MenuItem Header="Hide Window" Command="{Binding HideWindowCommand}" />
+        <MenuItem Header="Sign In" Command="{Binding ConnectCommand}" />
+        <MenuItem Header="Sign Out" Command="{Binding DisconnectCommand}" />
+        <MenuItem Header="Show Settings" Command="{Binding ShowWindowCommand}" />
+        <MenuItem Header="Hide Settings" Command="{Binding HideWindowCommand}" />
         <Separator />
         <MenuItem Header="Exit" Command="{Binding ExitApplicationCommand}" />
     </ContextMenu>
@@ -24,14 +24,15 @@
     <!-- the application's NotifyIcon - started from App.xaml.cs. Declares its own view model. -->
     <tb:TaskbarIcon x:Key="NotifyIcon"
                     IconSource="/Resources/TrayIcon.ico"
-                    ToolTipText="Double-click for window, right-click for menu"
+                    ToolTipText="{Binding ToolTipText}"
                     DoubleClickCommand="{Binding ShowWindowCommand}"
                     ContextMenu="{StaticResource SysTrayMenu}">
 
-        <!-- self-assign a data context (could also be done programmatically) -->
+        <!-- self-assign a data context (could also be done programmatically)
         <tb:TaskbarIcon.DataContext>
             <local:NotifyIconViewModel />
         </tb:TaskbarIcon.DataContext>
+         -->
     </tb:TaskbarIcon>
 
 </ResourceDictionary>
