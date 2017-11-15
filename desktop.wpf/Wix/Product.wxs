@@ -5,7 +5,6 @@
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
     <Feature Id="ProductFeature" Title="Desktop.Wpf.Wix" Level="1">
-      <ComponentGroupRef Id="Desktop.Wpf.Binaries" />
       <ComponentRef Id="comp_3AFBE598_D72D_4808_9EDB_2A7C6003F0B7" />
       <ComponentRef Id="comp_80F1FF02_5350_4732_BF5A_B0D5B1368A25" />
       <ComponentRef Id="comp_82973359_8D94_46C9_B01A_4D69A18723FB" />
@@ -56,8 +55,8 @@
     </UI>
     <CustomAction Id="ERRCA_UIANDADVERTISED" Error="[VSDUIANDADVERTISED]" />
     <UI Id="BasicDialogs">
-      <Binary Id="NewFldrBtn" SourceFile="Resources\WiXNewFolderBtn.ico" />
-      <Binary Id="UpFldrBtn" SourceFile="Resources\WiXUpFolderBtn.ico" />
+      <Binary Id="NewFldrBtn" SourceFile="Wix\Resources\WiXNewFolderBtn.ico" />
+      <Binary Id="UpFldrBtn" SourceFile="Wix\Resources\WiXUpFolderBtn.ico" />
       <Property Id="ErrorDialog" Value="ErrorDialog" />
       <Property Id="SFF_UpFldrBtn" Value="UpFldrBtn" />
       <Property Id="SFF_NewFldrBtn" Value="NewFldrBtn" />
@@ -166,7 +165,7 @@
     </UI>
     <UI Id="UserInterface">
       <Binary Id="_7083B46E_DACE_46DF_8471_30B2403ABAC2" SourceFile="Resources\InstallerSplashLogo.jpg" />
-      <Binary Id="DefBannerBitmap" SourceFile="Resources\WiXDefBannerBitmap.bmp" />
+      <Binary Id="DefBannerBitmap" SourceFile="Wix\Resources\WiXDefBannerBitmap.bmp" />
       <Property Id="DefaultUIFont" Value="VsdDefaultUIFont.524F4245_5254_5341_4C45_534153783400" />
       <TextStyle Id="VsdDefaultUIFont.524F4245_5254_5341_4C45_534153783400" FaceName="MS Sans Serif" Size="9" Red="0" Green="0" Blue="0" />
       <UIText Id="MenuLocal"><![CDATA[Will be installed on local hard drive]]></UIText>
@@ -360,7 +359,6 @@
       </Component>
       <Directory Id="ProgramFilesFolder">
       </Directory>
-      <Directory Id="Desktop.Wpf.Binaries" />
     </Directory>
   </Fragment>
 </Wix>

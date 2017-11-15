@@ -2,8 +2,8 @@
 *~
 
 # build
-[Oo]bj/
-[Bb]in/
+[Oo][Bb][Jj]/
+[Bb][Ii][Nn]/
 packages/
 TestResults/
 
@@ -40,3 +40,4 @@ Thumbs.db
 *.dotCover
 
 .vs
+*.wixobj
