@@ -156,11 +156,27 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
+<UsingTask TaskName="Sleep" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+  <ParameterGroup>
+    <!-- Delay in milliseconds -->
+    <Delay ParameterType="System.Int32" Required="true" />
+  </ParameterGroup>
+  <Task>
+    <Code Type="Fragment" Language="cs">
+      <![CDATA[
+System.Threading.Thread.Sleep(this.Delay);
+]]>
+    </Code>
+  </Task>
+</UsingTask>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <UsingTask TaskName="HeatDirectory" AssemblyFile="$(WixTasksPath)" />
   <UsingTask TaskName="Candle" AssemblyFile="$(WixTasksPath)" />
   <UsingTask TaskName="Light" AssemblyFile="$(WixTasksPath)" />
   <Target Name="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <Candle SourceFiles="Wix\*.wxs" OutputFile="obj\wix\" ToolPath="$(WixInstallPath)" />
+    <Sleep Delay="10000" />
+    <HeatDirectory Directory="bin\$(Configuration)" OutputFile="Wix\ProductDir-$(Configuration).wxs" ToolPath="$(WixInstallPath)" />
+    <Candle SourceFiles="Wix\Product.wxs;Wix\StandardUI.wxs" OutputFile="obj\wix\" ToolPath="$(WixInstallPath)" />
     <Light ObjectFiles="obj\wix\Product.wixobj;obj\wix\StandardUI.wixobj;" OutputFile="bin\fexsync-setup.msi" ToolPath="$(WixInstallPath)" />
   </Target>
 
