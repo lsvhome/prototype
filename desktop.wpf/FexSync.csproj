@@ -7,7 +7,7 @@
     <ProjectGuid>{79491DA1-9CDF-4D2E-B50C-D55EC72B814A}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>Desktop.Wpf</RootNamespace>
-    <AssemblyName>FexSync</AssemblyName>
+    <AssemblyName>fex</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
@@ -157,19 +157,11 @@
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!--
+  <UsingTask TaskName="Candle" AssemblyFile="$(WixTasksPath)" />
+  <UsingTask TaskName="Light" AssemblyFile="$(WixTasksPath)" />
   <Target Name="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-  <Import Project="$(NuGetPackageFolders)wix\3.11.0\build\wix.props" />
--->
-  <Import Project="C:\Users\Sergii Lutai\.nuget\packages\wix\3.11.0\tools\wix.targets" />
-  <Target Name="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <Exec Command="echo BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB &quot;$(NuGetPackageFolders)&quot;  $(WixTargetsPath)  $(WixTasksPath) $(WixQQQ)" />
-    <!--
-<Candle In="Wix\*.wxs" Out="obj\wix\" />  
-
-    <Exec Command="echo AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA &quot;$(NuGetPackageFolders)&quot;" />
-    <Exec Command="&quot;$(WixInstallPath)\candle.exe&quot; -nologo Wix\*.wxs -out .\obj\wix\" />
-    <Exec Command="&quot;$(WixInstallPath)\light.exe&quot; .\obj\wix\*.wixobj -out .\bin\fexsync-setup.msi" />
--->
+    <Candle SourceFiles="Wix\*.wxs" OutputFile="obj\wix\" ToolPath="$(WixInstallPath)" />
+    <Light ObjectFiles="obj\wix\Product.wixobj;obj\wix\StandardUI.wixobj;" OutputFile="bin\fexsync-setup.msi" ToolPath="$(WixInstallPath)" />
   </Target>
+
 </Project>

@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-  <Product Id="*" Name="Fex.Net.Sync" Language="1033" Version="1.0.0.0" Manufacturer="FEX.NET" UpgradeCode="7a4ff014-c2f2-4b20-9c56-bf7113e6bc6b">
+  <Product Id="*" Name="FexSync" Language="1033" Version="1.0.0.0" Manufacturer="FEX.NET" UpgradeCode="7a4ff014-c2f2-4b20-9c56-bf7113e6bc6b">
     <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
-    <Feature Id="ProductFeature" Title="Desktop.Wpf.Wix" Level="1">
+    <Feature Id="ProductFeature" Title="FexSync" Level="1">
       <ComponentRef Id="comp_3AFBE598_D72D_4808_9EDB_2A7C6003F0B7" />
       <ComponentRef Id="comp_80F1FF02_5350_4732_BF5A_B0D5B1368A25" />
       <ComponentRef Id="comp_82973359_8D94_46C9_B01A_4D69A18723FB" />
@@ -331,6 +331,16 @@
         <File Id="_D3562A04_59B7_4DAB_9661_6ACFB265CE65" DiskId="1" Hidden="no" ReadOnly="no" TrueType="no" System="no" Vital="yes" Name="Desktop.Common.dll" Source="..\desktop.common\bin\Debug\netstandard2.0\Desktop.Common.dll" KeyPath="yes" />
       </Component>
       <Component Id="comp_82973359_8D94_46C9_B01A_4D69A18723FB" Guid="5E72E798-A48A-4423-81AF-70D8B919B862" Permanent="no" SharedDllRefCount="no" Transitive="no">
+<!--
+        <File Id="_3A0DAE79_295D_4343_A389_21E571F4F396" DiskId="1" Hidden="no" ReadOnly="no" TrueType="no" System="no" Vital="yes" Name="Hardcodet.Wpf.TaskbarNotification.dll" Source="..\..\..\..\..\Users\Sergii Lutai\.nuget\packages\hardcodet.notifyicon.wpf\1.0.8\lib\net451\Hardcodet.Wpf.TaskbarNotification.dll" KeyPath="yes" />
+Source="$(var.SolutionPath)hardcodet.notifyicon.wpf\1.0.8\lib\net451\Hardcodet.Wpf.TaskbarNotification.dll"
+$(NuGetPackageFolders)
+
+        <File Id="_3A0DAE79_295D_4343_A389_21E571F4F396" DiskId="1" Hidden="no" ReadOnly="no" TrueType="no" System="no" Vital="yes" Name="Hardcodet.Wpf.TaskbarNotification.dll" 
+Source="$(var.SolutionPath)hardcodet.notifyicon.wpf\1.0.8\lib\net451\Hardcodet.Wpf.TaskbarNotification.dll"
+KeyPath="yes" />
+
+-->
         <File Id="_3A0DAE79_295D_4343_A389_21E571F4F396" DiskId="1" Hidden="no" ReadOnly="no" TrueType="no" System="no" Vital="yes" Name="Hardcodet.Wpf.TaskbarNotification.dll" Source="..\..\..\..\..\Users\Sergii Lutai\.nuget\packages\hardcodet.notifyicon.wpf\1.0.8\lib\net451\Hardcodet.Wpf.TaskbarNotification.dll" KeyPath="yes" />
       </Component>
       <Component Id="comp_03483397_7CC2_4AC3_8EEB_926A82C54F19" Guid="52E47DD6-64D4-436B-82D6-444255EC2D25" Permanent="no" SharedDllRefCount="no" Transitive="no">
