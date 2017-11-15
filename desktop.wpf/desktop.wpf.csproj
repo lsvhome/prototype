@@ -146,5 +146,10 @@
     <Resource Include="Resources\Pause.ico" />
     <Resource Include="Resources\Sync.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\InstallerSplashLogo.jpg">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

@@ -1,0 +1,161 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <Fragment Id="WelcomeDlg">
+    <Property Id="WelcomeForm_NextArgs" Value="CustomTextA" />
+    <Property Id="WelcomeForm_PrevArgs" Value="SplashForm" />
+    <UI Id="WelcomeDlg">
+      <Dialog Id="WelcomeForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
+        <Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
+          <Publish Event="EndDialog" Value="Return"><![CDATA[WelcomeForm_NextArgs=""]]></Publish>
+          <Publish Event="NewDialog" Value="[WelcomeForm_NextArgs]"><![CDATA[WelcomeForm_NextArgs<>""]]></Publish>
+        </Control>
+        <Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+          <Publish Event="SpawnDialog" Value="Cancel" />
+        </Control>
+        <Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no">
+          <Condition Action="disable"><![CDATA[WelcomeForm_PrevArgs=""]]></Condition>
+          <Condition Action="enable"><![CDATA[WelcomeForm_PrevArgs<>""]]></Condition>
+          <Publish Event="NewDialog" Value="[WelcomeForm_PrevArgs]"><![CDATA[WelcomeForm_PrevArgs<>""]]></Publish>
+        </Control>
+        <Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
+        <Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+        <Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+        <Control Id="CopyrightWarningText" Type="Text" X="9" Y="186" Width="354" Height="66" Text="{\VSI_MS_Sans_Serif13.0_0_0}WARNING: This computer program is protected by copyright law and international treaties. Unauthorized duplication or distribution of this program, or any portion of it, may result in severe civil or criminal penalties, and will be prosecuted to the maximum extent possible under the law." TabSkip="yes" NoPrefix="yes" />
+        <Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Welcome to the [ProductName] Setup Wizard" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+        <Control Id="WelcomeText" Type="Text" X="9" Y="63" Width="354" Height="114" Text="{\VSI_MS_Sans_Serif13.0_0_0}The installer will guide you through the steps required to install [ProductName] on your computer.&#xD;&#xA;&#xD;&#xA;Click &quot;Next&quot; to continue." TabSkip="yes" NoPrefix="yes" />
+      </Dialog>
+    </UI>
+    <InstallUISequence>
+    </InstallUISequence>
+  </Fragment>
+  <Fragment Id="ProgressDlg">
+    <UI Id="ProgressDlg">
+      <Dialog Id="ProgressForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]" Modeless="yes">
+        <Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Disabled="yes" />
+        <Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+          <Publish Event="SpawnDialog" Value="Cancel" />
+        </Control>
+        <Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no" Disabled="yes" />
+        <Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
+        <Control Id="Line1" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+        <Control Id="ProgressBar" Type="ProgressBar" X="18" Y="108" Width="336" Height="15" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiProgressBar" TabSkip="yes" Disabled="yes">
+          <Subscribe Event="InstallFiles" Attribute="Progress" />
+          <Subscribe Event="WriteRegistryValues" Attribute="Progress" />
+          <Subscribe Event="WriteIniValues" Attribute="Progress" />
+          <Subscribe Event="UnmoveFiles" Attribute="Progress" />
+          <Subscribe Event="StopServices" Attribute="Progress" />
+          <Subscribe Event="StartServices" Attribute="Progress" />
+          <Subscribe Event="RemoveRegistryValues" Attribute="Progress" />
+          <Subscribe Event="RemoveFiles" Attribute="Progress" />
+          <Subscribe Event="MoveFiles" Attribute="Progress" />
+          <Subscribe Event="InstallAdminPackage" Attribute="Progress" />
+          <Subscribe Event="DeleteServices" Attribute="Progress" />
+          <Subscribe Event="SetProgress" Attribute="Progress" />
+        </Control>
+        <Control Id="Line2" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+        <Control Id="ProgressLabel" Type="Text" X="18" Y="96" Width="336" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Please wait..." TabSkip="yes" />
+        <Control Id="InstalledBody" Type="Text" X="9" Y="63" Width="354" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] is being installed." TabSkip="yes" NoPrefix="yes">
+          <Condition Action="show"><![CDATA[REMOVE=""]]></Condition>
+          <Condition Action="hide"><![CDATA[REMOVE<>""]]></Condition>
+        </Control>
+        <Control Id="RemovedBody" Type="Text" X="18" Y="63" Width="336" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}[ProductName] is being removed." TabSkip="yes" NoPrefix="yes">
+          <Condition Action="show"><![CDATA[REMOVE<>""]]></Condition>
+          <Condition Action="hide"><![CDATA[REMOVE=""]]></Condition>
+        </Control>
+        <Control Id="RemoveBannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Removing [ProductName]" TabSkip="yes" Transparent="yes" NoPrefix="yes">
+          <Condition Action="show"><![CDATA[REMOVE<>""]]></Condition>
+          <Condition Action="hide"><![CDATA[REMOVE=""]]></Condition>
+        </Control>
+        <Control Id="InstalledBannerText" Type="Text" X="9" Y="9" Width="255" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}Installing [ProductName]" TabSkip="yes" Transparent="yes" NoPrefix="yes">
+          <Condition Action="show"><![CDATA[REMOVE=""]]></Condition>
+          <Condition Action="hide"><![CDATA[REMOVE<>""]]></Condition>
+        </Control>
+      </Dialog>
+    </UI>
+    <InstallUISequence>
+      <Show Dialog="ProgressForm" Sequence="1299" />
+    </InstallUISequence>
+  </Fragment>
+  <Fragment Id="CustomerInfoDlg">
+  </Fragment>
+  <Fragment Id="CustomText1Dlg">
+    <CustomAction Id="CustomTextA_SetProperty_EDIT1" Property="EDITA1" Value="" Execute="firstSequence" />
+    <CustomAction Id="CustomTextA_SetProperty_EDIT2" Property="EDITA2" Value="" Execute="firstSequence" />
+    <CustomAction Id="CustomTextA_SetProperty_EDIT3" Property="EDITA3" Value="" Execute="firstSequence" />
+    <CustomAction Id="CustomTextA_SetProperty_EDIT4" Property="EDITA4" Value="" Execute="firstSequence" />
+    <Property Id="CustomTextA_PrevArgs" Value="WelcomeForm" />
+    <UI Id="CustomText1Dlg">
+      <Property Id="EDITA4" Value="1" />
+      <Property Id="EDITA3" Value="1" />
+      <Property Id="EDITA2" Value="1" />
+      <Property Id="EDITA1" Value="1" />
+      <Dialog Id="CustomTextA" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
+        <Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
+          <Publish Event="EndDialog" Value="Return"><![CDATA[CustomTextA_NextArgs=""]]></Publish>
+          <Publish Event="NewDialog" Value="[CustomTextA_NextArgs]"><![CDATA[CustomTextA_NextArgs<>""]]></Publish>
+        </Control>
+        <Control Id="Label1" Type="Text" X="18" Y="108" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}FEX.NET Data Folder:" TabSkip="no" />
+        <Control Id="Edit1" Type="Edit" X="18" Y="120" Width="348" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}" TabSkip="no" Property="EDITA1" Sunken="yes" />
+        <Control Id="Label2" Type="Text" X="18" Y="144" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Edit2:" TabSkip="no" Hidden="yes" />
+        <Control Id="Edit2" Type="Edit" X="18" Y="156" Width="348" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}" TabSkip="no" Property="EDITA2" Sunken="yes" Hidden="yes" />
+        <Control Id="Label3" Type="Text" X="18" Y="180" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Edit3:" TabSkip="no" Hidden="yes" />
+        <Control Id="Edit3" Type="Edit" X="18" Y="192" Width="348" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}" TabSkip="no" Property="EDITA3" Sunken="yes" Hidden="yes" />
+        <Control Id="Label4" Type="Text" X="18" Y="216" Width="348" Height="12" Text="{\VSI_MS_Sans_Serif13.0_0_0}Edit4:" TabSkip="no" Hidden="yes" />
+        <Control Id="Edit4" Type="Edit" X="18" Y="228" Width="348" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}" TabSkip="no" Property="EDITA4" Sunken="yes" Hidden="yes" />
+        <Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+          <Publish Event="SpawnDialog" Value="Cancel" />
+        </Control>
+        <Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no">
+          <Condition Action="disable"><![CDATA[CustomTextA_PrevArgs=""]]></Condition>
+          <Condition Action="enable"><![CDATA[CustomTextA_PrevArgs<>""]]></Condition>
+          <Publish Event="NewDialog" Value="[CustomTextA_PrevArgs]"><![CDATA[CustomTextA_PrevArgs<>""]]></Publish>
+        </Control>
+        <Control Id="BannerBmp" Type="Bitmap" X="0" Y="0" Width="375" Height="52" Text="DefBannerBitmap" TabSkip="no" Disabled="yes" />
+        <Control Id="BodyText" Type="Text" X="9" Y="63" Width="354" Height="42" Text="{\VSI_MS_Sans_Serif13.0_0_0}Data Folder" TabSkip="yes" NoPrefix="yes" />
+        <Control Id="BannerText" Type="Text" X="9" Y="9" Width="306" Height="33" Text="{\VSI_MS_Sans_Serif16.0_1_0}FEX.NET" TabSkip="yes" Transparent="yes" NoPrefix="yes" />
+        <Control Id="Control273" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+        <Control Id="Control278" Type="Line" X="0" Y="52" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif16.0_1_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+      </Dialog>
+    </UI>
+    <InstallUISequence>
+      <Custom Action="CustomTextA_SetProperty_EDIT1" Sequence="701" />
+      <Custom Action="CustomTextA_SetProperty_EDIT2" Sequence="702" />
+      <Custom Action="CustomTextA_SetProperty_EDIT3" Sequence="703" />
+      <Custom Action="CustomTextA_SetProperty_EDIT4" Sequence="704" />
+    </InstallUISequence>
+    <InstallExecuteSequence>
+      <Custom Action="CustomTextA_SetProperty_EDIT1" Sequence="701" />
+      <Custom Action="CustomTextA_SetProperty_EDIT2" Sequence="702" />
+      <Custom Action="CustomTextA_SetProperty_EDIT3" Sequence="703" />
+      <Custom Action="CustomTextA_SetProperty_EDIT4" Sequence="704" />
+    </InstallExecuteSequence>
+  </Fragment>
+  <Fragment Id="CustomText2Dlg">
+  </Fragment>
+  <Fragment Id="CustomText3Dlg">
+  </Fragment>
+  <Fragment Id="SplashDlg">
+    <Property Id="SplashForm_NextArgs" Value="WelcomeForm" />
+    <UI Id="SplashDlg">
+      <Dialog Id="SplashForm" X="50" Y="50" Width="373" Height="287" Title="[ProductName]">
+        <Control Id="NextButton" Type="PushButton" X="300" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&amp;Next &gt;" TabSkip="no" Default="yes">
+          <Publish Event="EndDialog" Value="Return"><![CDATA[SplashForm_NextArgs=""]]></Publish>
+          <Publish Event="NewDialog" Value="[SplashForm_NextArgs]"><![CDATA[SplashForm_NextArgs<>""]]></Publish>
+        </Control>
+        <Control Id="CancelButton" Type="PushButton" X="156" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}Cancel" TabSkip="no" Cancel="yes">
+          <Publish Event="SpawnDialog" Value="Cancel" />
+        </Control>
+        <Control Id="PreviousButton" Type="PushButton" X="228" Y="261" Width="66" Height="18" Text="{\VSI_MS_Sans_Serif13.0_0_0}&lt; &amp;Back" TabSkip="no">
+          <Condition Action="disable"><![CDATA[SplashForm_PrevArgs=""]]></Condition>
+          <Condition Action="enable"><![CDATA[SplashForm_PrevArgs<>""]]></Condition>
+          <Publish Event="NewDialog" Value="[SplashForm_PrevArgs]"><![CDATA[SplashForm_PrevArgs<>""]]></Publish>
+        </Control>
+        <Control Id="Line1" Type="Line" X="0" Y="252" Width="375" Height="6" Text="{\VSI_MS_Sans_Serif13.0_0_0}MsiHorizontalLine" TabSkip="yes" Disabled="yes" />
+        <Control Id="SplashBmp" Type="Bitmap" X="6" Y="6" Width="360" Height="240" TabSkip="yes" Sunken="yes" Disabled="yes" Text="_7083B46E_DACE_46DF_8471_30B2403ABAC2" />
+      </Dialog>
+    </UI>
+    <InstallUISequence>
+      <Show Dialog="SplashForm" Sequence="1001"><![CDATA[Installed="" AND NOT RESUME]]></Show>
+    </InstallUISequence>
+  </Fragment>
+</Wix>
