@@ -64,6 +64,10 @@ namespace FexSync
                 {
                     this.SyncWorkflow.Start();
                 }
+                else
+                {
+                    new QuickStartWindow().Show();
+                }
             }
             catch (Exception ex)
             {
