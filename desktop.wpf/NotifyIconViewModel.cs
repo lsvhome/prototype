@@ -6,7 +6,7 @@ using Autofac;
 using Desktop.Common;
 using Net.Fex.Api;
 
-namespace Desktop.Wpf
+namespace FexSync
 {
     /// <summary>
     /// Provides bindable properties and commands for the NotifyIcon. In this sample, the
@@ -15,7 +15,6 @@ namespace Desktop.Wpf
     /// </summary>
     public class NotifyIconViewModel
     {
-
         private SyncWorkflow SyncWorkflow
         {
             get
@@ -29,7 +28,7 @@ namespace Desktop.Wpf
         /// <summary>
         /// Shows a window, if none is already open.
         /// </summary>
-        public ICommand ShowWindowCommand
+        public ICommand ShowSettingsCommand
         {
             get
             {
@@ -38,24 +37,32 @@ namespace Desktop.Wpf
                     CanExecuteFunc = () => Application.Current.MainWindow == null,
                     CommandAction = () =>
                     {
-                        Application.Current.MainWindow = new MainWindow();
+                        if (Application.Current.MainWindow == null)
+                        {
+                            Application.Current.MainWindow = new MainWindow();
+                        }
+
                         Application.Current.MainWindow.Show();
                     }
                 };
             }
         }
-
+        
         /// <summary>
-        /// Hides the main window. This command is only enabled if a window is open.
+        /// Shows a window, if none is already open.
         /// </summary>
-        public ICommand HideWindowCommand
+        public ICommand QuickStartCommand
         {
             get
             {
                 return new DelegateCommand
                 {
-                    CommandAction = () => Application.Current.MainWindow.Close(),
-                    CanExecuteFunc = () => Application.Current.MainWindow != null
+                    CanExecuteFunc = () => true,
+                    CommandAction = () =>
+                    {
+                        QuickStartWindow quickStartWindow = new QuickStartWindow();
+                        quickStartWindow.Show();
+                    }
                 };
             }
         }
@@ -136,6 +143,50 @@ namespace Desktop.Wpf
             }
         }
 
-        public string ToolTipText { get{ return "Double-click for Settings, right-click for menu"; } }
+        public ICommand SignOutCommand
+        {
+            get
+            {
+                return new DelegateCommand
+                {
+                    CanExecuteFunc = () => true,
+
+                    CommandAction = () =>
+                    {
+                        try
+                        {
+                            if (this.SyncWorkflow.Status != SyncWorkflow.SyncWorkflowStatus.Started)
+                            {
+                                throw new ApplicationException();
+                            }
+
+                            this.SyncWorkflow.Stop();
+
+                            CredentialsManager.Clear();
+                        }
+                        catch (ApiErrorException ex)
+                        {
+                            ex.Process();
+                        }
+                        catch (ConnectionException ex)
+                        {
+                            ex.Process();
+                        }
+                        catch (Exception ex)
+                        {
+                            ex.Process();
+                        }
+                    }
+                };
+            }
+        }
+
+        public string ToolTipText
+        {
+            get
+            {
+                return "Double-click for Settings, right-click for menu";
+            }
+        }
     }
 }

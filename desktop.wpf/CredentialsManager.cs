@@ -5,24 +5,21 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Desktop.Wpf
+namespace FexSync
 {
-    [Serializable]
-    public class CredentialsSettings
-    {
-        public byte[] Login { get; set; }
-
-        public byte[] Password { get; set; }
-    }
-
     public class CredentialsManager
     {
         private static string appFolder = "FEX.NET";
 
         private static string configFileName = "sync.config";
 
-
-        private static string configFullPath { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appFolder, configFileName); } }
+        private static string ConfigFullPath
+        {
+            get
+            {
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appFolder, configFileName);
+            }
+        }
 
         private static System.Xml.Serialization.XmlSerializer CreateSerializer()
         {
@@ -31,12 +28,11 @@ namespace Desktop.Wpf
 
         public static void Save(string login, string password)
         {
-
             var loginEncrypted = System.Security.Cryptography.ProtectedData.Protect(Encoding.Default.GetBytes(login), new byte[0], System.Security.Cryptography.DataProtectionScope.CurrentUser);
 
             var passwordEncrypted = System.Security.Cryptography.ProtectedData.Protect(Encoding.Default.GetBytes(password), new byte[0], System.Security.Cryptography.DataProtectionScope.CurrentUser);
 
-            using (var stream = File.OpenWrite(configFullPath))
+            using (var stream = File.OpenWrite(ConfigFullPath))
             {
                 CreateSerializer().Serialize(stream, new CredentialsSettings { Login = loginEncrypted, Password = passwordEncrypted });
             }
@@ -44,11 +40,24 @@ namespace Desktop.Wpf
 
         public static void Load(out string login, out string password)
         {
-            using (var stream = File.OpenRead(configFullPath))
+            using (var stream = File.OpenRead(ConfigFullPath))
             {
                 var loadedSettings = (CredentialsSettings)CreateSerializer().Deserialize(stream);
                 login = Encoding.Default.GetString(System.Security.Cryptography.ProtectedData.Unprotect(loadedSettings.Login, new byte[0], System.Security.Cryptography.DataProtectionScope.CurrentUser));
                 password = Encoding.Default.GetString(System.Security.Cryptography.ProtectedData.Unprotect(loadedSettings.Password, new byte[0], System.Security.Cryptography.DataProtectionScope.CurrentUser));
+            }
+        }
+
+        public static bool Exists()
+        {
+            return File.Exists(ConfigFullPath);
+        }
+
+        public static void Clear()
+        {
+            if (File.Exists(ConfigFullPath))
+            {
+                File.Delete(ConfigFullPath);
             }
         }
     }

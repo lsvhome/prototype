@@ -9,7 +9,7 @@ using System.Windows.Media.Imaging;
 
 using Autofac;
 
-namespace Desktop.Wpf
+namespace FexSync
 {
     /// <summary>
     /// Interaction logic for AuthWindow.xaml
@@ -25,27 +25,28 @@ namespace Desktop.Wpf
             }
         }
         */
-        AutoResetEvent waitForCaptchaEvent = new AutoResetEvent(false);
-
-        private readonly Color DefaultBorderColor = Color.FromRgb(255, 255, 255);
-        private readonly Color FocusedBorderColor = Color.FromRgb(66, 164, 245);
-        private readonly Color ErrorBorderColor = Color.FromRgb(255, 82, 82);
-
         private const string LoginPlaceholder = "Логин или телефон";
         private const string CaptchaPlaceholder = "Символы с картинки";
+
+        private readonly AutoResetEvent waitForCaptchaEvent = new AutoResetEvent(false);
+
+        private readonly Color defaultBorderColor = Color.FromRgb(255, 255, 255);
+        private readonly Color focusedBorderColor = Color.FromRgb(66, 164, 245);
+        private readonly Color errorBorderColor = Color.FromRgb(255, 82, 82);
+
         private readonly string captchaUrl = ConfigurationManager.AppSettings["FEX.NET.ApiHost"] + "captcha?captcha_token=";
         private readonly RequestCachePolicy requestCachePolicy = new RequestCachePolicy(RequestCacheLevel.NoCacheNoStore);
 
-        private string _captchaToken;
+        private string captchaToken;
 
         public AuthWindow()
         {
-            InitializeComponent();
+            this.InitializeComponent();
 
-            LnkRegister.RequestNavigate += Link_RequestNavigate;
-            LnkRecoverPassword.RequestNavigate += Link_RequestNavigate;
+            this.LnkRegister.RequestNavigate += this.Link_RequestNavigate;
+            this.LnkRecoverPassword.RequestNavigate += this.Link_RequestNavigate;
 
-            Initialize();
+            this.Initialize();
         }
 
         public void Initialize()
@@ -98,58 +99,58 @@ namespace Desktop.Wpf
 
         private void ShowCaptcha()
         {
-            GetCaptchaImage();
+            this.GetCaptchaImage();
 
-            GrdLogin.Visibility = Visibility.Hidden;
-            GrdCaptcha.Visibility = Visibility.Visible;
+            this.GrdLogin.Visibility = Visibility.Hidden;
+            this.GrdCaptcha.Visibility = Visibility.Visible;
         }
 
         private void HideCaptcha()
         {
-            GrdCaptcha.Visibility = Visibility.Hidden;
-            GrdLogin.Visibility = Visibility.Visible;
+            this.GrdCaptcha.Visibility = Visibility.Hidden;
+            this.GrdLogin.Visibility = Visibility.Visible;
         }
 
         private void ClearCaptcha()
         {
-            TxtCaptcha.Text = string.Empty;
-            ImgCaptcha.Source = null;
+            this.TxtCaptcha.Text = string.Empty;
+            this.ImgCaptcha.Source = null;
         }
 
         private void GetCaptchaImage()
         {
-            _captchaToken = Guid.NewGuid().ToString("N");
-            ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + _captchaToken), requestCachePolicy);
+            this.captchaToken = Guid.NewGuid().ToString("N");
+            this.ImgCaptcha.Source = new BitmapImage(new Uri(this.captchaUrl + this.captchaToken), this.requestCachePolicy);
 
-            TxtCaptcha.Text = string.Empty;
+            this.TxtCaptcha.Text = string.Empty;
         }
 
         private void BtnLogin_Click(object sender, RoutedEventArgs e)
         {
-            HideError();
+            this.HideError();
 
             var login = TxtLogin.Text.Trim().TrimStart('+');
             if (login.Length == 0 || login == LoginPlaceholder)
             {
-                ShowError("Введите логин или телефон.");
+                this.ShowError("Введите логин или телефон.");
                 return;
             }
 
             if (PwdPassword.Password.Length < 8 || Regex.IsMatch(PwdPassword.Password, "[а-яёєїі]"))
             {
-                ShowError("Неверный логин или пароль.");
+                this.ShowError("Неверный логин или пароль.");
                 return;
             }
 
-            if (!string.IsNullOrEmpty(_captchaToken))
+            if (!string.IsNullOrEmpty(this.captchaToken))
             {
-                ShowCaptcha();
+                this.ShowCaptcha();
                 return;
             }
 
             using (var conn = ((App)App.Current).Container.Resolve<IConnectionFactory>().CreateConnection())
             {
-                conn.OnCaptchaUserInputRequired += Connect_OnCaptchaUserInputRequired;
+                conn.OnCaptchaUserInputRequired += this.Connect_OnCaptchaUserInputRequired;
                 try
                 {
                     var signin = conn.SignIn(login, PwdPassword.Password, false);
@@ -161,37 +162,39 @@ namespace Desktop.Wpf
                 }
                 catch (Net.Fex.Api.ApiErrorException ex)
                 {
-                    ShowError(ex.Message);
+                    this.ShowError(ex.Message);
                 }
                 catch (Net.Fex.Api.CaptchaRequiredException)
                 {
                 }
                 finally
                 {
-                    conn.OnCaptchaUserInputRequired -= Connect_OnCaptchaUserInputRequired;
+                    conn.OnCaptchaUserInputRequired -= this.Connect_OnCaptchaUserInputRequired;
                 }
             }
         }
 
         private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs e)
         {
-            ImgCaptcha.Dispatcher.Invoke(() => {
-                _captchaToken = e.CaptchaToken.Token;
-                ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.CaptchaToken.Token), requestCachePolicy);
+            this.ImgCaptcha.Dispatcher.Invoke(() =>
+            {
+                captchaToken = e.CaptchaToken.Token;
+                this.ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.CaptchaToken.Token), requestCachePolicy);
 
-                TxtCaptcha.Text = string.Empty;
+                this.TxtCaptcha.Text = string.Empty;
 
-                GrdLogin.Visibility = Visibility.Hidden;
-                GrdCaptcha.Visibility = Visibility.Visible;
+                this.GrdLogin.Visibility = Visibility.Hidden;
+                this.GrdCaptcha.Visibility = Visibility.Visible;
             });
 
-            waitForCaptchaEvent.Reset();
-            waitForCaptchaEvent.WaitOne();
+            this.waitForCaptchaEvent.Reset();
+            this.waitForCaptchaEvent.WaitOne();
 
-            TxtCaptcha.Dispatcher.Invoke(() => {
-                e.CaptchaText = TxtCaptcha.Text;
-                GrdLogin.Visibility = Visibility.Visible;
-                GrdCaptcha.Visibility = Visibility.Hidden;
+            this.TxtCaptcha.Dispatcher.Invoke(() =>
+            {
+                e.CaptchaText = this.TxtCaptcha.Text;
+                this.GrdLogin.Visibility = Visibility.Visible;
+                this.GrdCaptcha.Visibility = Visibility.Hidden;
             });
         }
 
@@ -202,148 +205,150 @@ namespace Desktop.Wpf
 
         private void HideError()
         {
-            TxbError.Visibility = Visibility.Hidden;
-            TxbError.Text = string.Empty;
+            this.TxbError.Visibility = Visibility.Hidden;
+            this.TxbError.Text = string.Empty;
         }
 
         private void ShowError(string message)
         {
-            TxbError.Text = message;
-            TxbError.Visibility = Visibility.Visible;
-            ShowErrorHint();
+            this.TxbError.Text = message;
+            this.TxbError.Visibility = Visibility.Visible;
+            this.ShowErrorHint();
         }
 
         private void ShowErrorHint()
         {
             var borderBrush = Resources["TextBox.Error.Border"] as Brush;
-            TxtLogin.BorderBrush = borderBrush;
-            TxtPassword.BorderBrush = borderBrush;
-            PwdPassword.BorderBrush = borderBrush;
+            this.TxtLogin.BorderBrush = borderBrush;
+            this.TxtPassword.BorderBrush = borderBrush;
+            this.PwdPassword.BorderBrush = borderBrush;
         }
 
         private void HideErrorHint()
         {
             var borderBrush = Resources["TextBox.Static.Border"] as Brush;
-            TxtLogin.BorderBrush = borderBrush;
-            TxtPassword.BorderBrush = borderBrush;
-            PwdPassword.BorderBrush = borderBrush;
+            this.TxtLogin.BorderBrush = borderBrush;
+            this.TxtPassword.BorderBrush = borderBrush;
+            this.PwdPassword.BorderBrush = borderBrush;
         }
 
         private void ShowCaptchaError(string message)
         {
-            TxbCaptchaError.Text = message;
-            TxbCaptchaError.Visibility = Visibility.Visible;
-            ShowCaptchaErrorHint();
+            this.TxbCaptchaError.Text = message;
+            this.TxbCaptchaError.Visibility = Visibility.Visible;
+            this.ShowCaptchaErrorHint();
         }
 
         private void HideCaptchaError()
         {
-            TxbCaptchaError.Visibility = Visibility.Hidden;
-            TxbCaptchaError.Text = string.Empty;
+            this.TxbCaptchaError.Visibility = Visibility.Hidden;
+            this.TxbCaptchaError.Text = string.Empty;
         }
 
         private void ShowCaptchaErrorHint()
         {
-            TxtCaptcha.BorderBrush = Resources["TextBox.Error.Border"] as Brush;
+            this.TxtCaptcha.BorderBrush = Resources["TextBox.Error.Border"] as Brush;
         }
 
         private void HideCaptchaErrorHint()
         {
-            TxtCaptcha.BorderBrush = Resources["TextBox.Static.Border"] as Brush;
+            this.TxtCaptcha.BorderBrush = Resources["TextBox.Static.Border"] as Brush;
         }
 
         private void TxtLogin_GotFocus(object sender, RoutedEventArgs e)
         {
-            HideErrorHint();
-            TxtLogin_GotFocus();
+            this.HideErrorHint();
+            this.TxtLogin_GotFocus();
         }
 
         private void TxtLogin_GotFocus()
         {
-            if (TxtLogin.Text == LoginPlaceholder)
+            if (this.TxtLogin.Text == LoginPlaceholder)
             {
-                TxtLogin.Text = string.Empty;
-                TxtLogin.Foreground = Resources["TextBox.Focus.Foreground"] as Brush;
+                this.TxtLogin.Text = string.Empty;
+                this.TxtLogin.Foreground = Resources["TextBox.Focus.Foreground"] as Brush;
             }
         }
 
         private void TxtLogin_LostFocus(object sender, RoutedEventArgs e)
         {
-            TxtLogin_LostFocus();
+            this.TxtLogin_LostFocus();
         }
 
         private void TxtLogin_LostFocus()
         {
-            if (TxtLogin.Text == string.Empty)
+            if (this.TxtLogin.Text == string.Empty)
             {
-                TxtLogin.Text = LoginPlaceholder;
-                TxtLogin.Foreground = Resources["TextBox.Static.Foreground"] as Brush;
+                this.TxtLogin.Text = LoginPlaceholder;
+                this.TxtLogin.Foreground = Resources["TextBox.Static.Foreground"] as Brush;
             }
         }
 
         private void TxtCaptcha_GotFocus(object sender, RoutedEventArgs e)
         {
-            HideCaptchaErrorHint();
+            this.HideCaptchaErrorHint();
 
-            if (TxtCaptcha.Text == CaptchaPlaceholder)
+            if (this.TxtCaptcha.Text == CaptchaPlaceholder)
             {
-                TxtCaptcha.Text = string.Empty;
-                TxtCaptcha.Foreground = Resources["TextBox.Focus.Foreground"] as Brush;
+                this.TxtCaptcha.Text = string.Empty;
+                this.TxtCaptcha.Foreground = Resources["TextBox.Focus.Foreground"] as Brush;
             }
         }
 
         private void TxtCaptcha_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (TxtCaptcha.Text == string.Empty)
+            if (this.TxtCaptcha.Text == string.Empty)
             {
-                TxtCaptcha.Text = CaptchaPlaceholder;
-                TxtCaptcha.Foreground = Resources["TextBox.Static.Foreground"] as Brush;
+                this.TxtCaptcha.Text = CaptchaPlaceholder;
+                this.TxtCaptcha.Foreground = Resources["TextBox.Static.Foreground"] as Brush;
             }
         }
 
         private void TxtPassword_GotFocus(object sender, RoutedEventArgs e)
         {
-            HideErrorHint();
-            TxtPassword_GotFocus();
+            this.HideErrorHint();
+            this.TxtPassword_GotFocus();
         }
 
         private void TxtPassword_GotFocus()
         {
-            TxtPassword.Visibility = Visibility.Hidden;
-            PwdPassword.Visibility = Visibility.Visible;
-            PwdPassword.Focus();
+            this.TxtPassword.Visibility = Visibility.Hidden;
+            this.PwdPassword.Visibility = Visibility.Visible;
+            this.PwdPassword.Focus();
         }
 
         private void PwdPassword_LostFocus(object sender, RoutedEventArgs e)
         {
-            PwdPassword_LostFocus();
+            this.PwdPassword_LostFocus();
         }
 
         private void PwdPassword_LostFocus()
         {
             if (string.IsNullOrEmpty(PwdPassword.Password))
             {
-                PwdPassword.Visibility = Visibility.Hidden;
-                TxtPassword.Visibility = Visibility.Visible;
+                this.PwdPassword.Visibility = Visibility.Hidden;
+                this.TxtPassword.Visibility = Visibility.Visible;
             }
         }
 
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
-            GrdCaptcha.Visibility = Visibility.Hidden;
-            GrdLogin.Visibility = Visibility.Visible;
+            this.GrdCaptcha.Visibility = Visibility.Hidden;
+            this.GrdLogin.Visibility = Visibility.Visible;
         }
 
         private void BtnCaptcha_Click(object sender, RoutedEventArgs e)
         {
-            HideCaptchaError();
+            this.HideCaptchaError();
 
-            if (string.IsNullOrWhiteSpace(TxtCaptcha.Text) || TxtCaptcha.Text == CaptchaPlaceholder)
-                ShowCaptchaError("Введите текст с картинки.");
+            if (string.IsNullOrWhiteSpace(this.TxtCaptcha.Text) || this.TxtCaptcha.Text == CaptchaPlaceholder)
+            {
+                this.ShowCaptchaError("Введите текст с картинки.");
+            }
 
-            var login = TxtLogin.Text.Trim().TrimStart('+');
+            var login = this.TxtLogin.Text.Trim().TrimStart('+');
 
-            waitForCaptchaEvent.Set();
+            this.waitForCaptchaEvent.Set();
         }
     }
 }

@@ -8,7 +8,8 @@ namespace Desktop.Common
     {
         public static void Process(this Exception exception)
         {
-            System.Diagnostics.Debugger.Break();
+            System.Diagnostics.Trace.WriteLine(exception.ToString());
+            System.Diagnostics.Trace.Fail(exception.ToString());
         }
     }
 }

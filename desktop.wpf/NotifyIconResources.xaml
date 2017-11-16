@@ -1,7 +1,7 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:tb="http://www.hardcodet.net/taskbar"
-                    xmlns:local="clr-namespace:Desktop.Wpf">
+                    xmlns:local="clr-namespace:FexSync">
 
     <!-- The taskbar context menu - the first row is a dummy to show off simple data binding -->
     <!--
@@ -12,10 +12,11 @@
         <!--
         
         -->
-        <MenuItem Header="Sign In" Command="{Binding ConnectCommand}" />
-        <MenuItem Header="Sign Out" Command="{Binding DisconnectCommand}" />
-        <MenuItem Header="Show Settings" Command="{Binding ShowWindowCommand}" />
-        <MenuItem Header="Hide Settings" Command="{Binding HideWindowCommand}" />
+        <MenuItem Header="Connect" Command="{Binding ConnectCommand}" />
+        <MenuItem Header="Disconnect" Command="{Binding DisconnectCommand}" />
+        <MenuItem Header="Sign Out" Command="{Binding SignOutCommand}" />
+        <MenuItem Header="Settings" Command="{Binding ShowSettingsCommand}" />
+        <MenuItem Header="Quick Start" Command="{Binding QuickStartCommand}" />
         <Separator />
         <MenuItem Header="Exit" Command="{Binding ExitApplicationCommand}" />
     </ContextMenu>

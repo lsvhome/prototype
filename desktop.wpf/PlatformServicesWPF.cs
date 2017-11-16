@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Hardcodet.Wpf.TaskbarNotification;
 
-namespace Desktop.Wpf
+namespace FexSync
 {
     public class PlatformServicesWPF : Desktop.Common.IPlatformServices
     {

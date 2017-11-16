@@ -3,13 +3,16 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Navigation;
+
 using Autofac;
 using Desktop.Common;
 using Hardcodet.Wpf.TaskbarNotification;
 
-namespace Desktop.Wpf
+namespace FexSync
 {
     /// <summary>
     /// Interaction logic for App.xaml
@@ -23,6 +26,19 @@ namespace Desktop.Wpf
         {
             try
             {
+                AppDomain.CurrentDomain.UnhandledException += (source, exceptionObjectParam) =>
+                {
+                    Exception exception = exceptionObjectParam.ExceptionObject as Exception;
+                    if (exception != null)
+                    {
+                        System.Diagnostics.Trace.Fail(exception.ToString());
+                    }
+                    else
+                    {
+                        System.Diagnostics.Trace.Fail("Exception is empty");
+                    }
+                };
+
                 var builder = new ContainerBuilder();
                 builder.RegisterInstance<Desktop.Common.IPlatformServices>(new PlatformServicesWPF());
                 builder.RegisterInstance<IConnectionFactory>(new ConnectionFactory());
@@ -43,6 +59,11 @@ namespace Desktop.Wpf
                 base.OnStartup(e);
                 //// create the notifyicon (it's a resource declared in NotifyIconResources.xaml
                 this.Container.Resolve<IPlatformServices>().AddTrayIcon();
+
+                if (CredentialsManager.Exists())
+                {
+                    this.SyncWorkflow.Start();
+                }
             }
             catch (Exception ex)
             {
@@ -53,6 +74,11 @@ namespace Desktop.Wpf
 
         protected override void OnExit(ExitEventArgs e)
         {
+            if (this.SyncWorkflow.Status == FexSync.SyncWorkflow.SyncWorkflowStatus.Started)
+            {
+                this.SyncWorkflow.Stop();
+            }
+
             this.Container.Dispose();
             base.OnExit(e);
         }

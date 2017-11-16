@@ -1,13 +1,14 @@
-﻿using Autofac;
-using Net.Fex.Api;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Desktop.Wpf
+using Autofac;
+using Net.Fex.Api;
+
+namespace FexSync
 {
     public class SyncWorkflow : IDisposable
     {
@@ -17,9 +18,9 @@ namespace Desktop.Wpf
             Stopped
         }
 
-        System.ComponentModel.BackgroundWorker worker = new System.ComponentModel.BackgroundWorker();
-
         private static object lockObj = new object();
+
+        private readonly System.ComponentModel.BackgroundWorker worker = new System.ComponentModel.BackgroundWorker();
 
         public SyncWorkflow()
         {
@@ -46,8 +47,18 @@ namespace Desktop.Wpf
                 if (this.worker.IsBusy)
                 {
                     this.worker.CancelAsync();
-                    
                 }
+            }
+        }
+
+        public void WaitStoppped(TimeSpan timeout)
+        {
+            if (this.worker.CancellationPending)
+            {
+                System.Threading.AutoResetEvent waiter = new System.Threading.AutoResetEvent(false);
+                waiter.Reset();
+                this.worker.RunWorkerCompleted += (object sender, System.ComponentModel.RunWorkerCompletedEventArgs e) => { waiter.Set(); };
+                waiter.WaitOne();
             }
         }
 
@@ -60,7 +71,7 @@ namespace Desktop.Wpf
             this.Stop();
         }
 
-        public SyncWorkflowStatus status = SyncWorkflowStatus.Stopped;
+        private SyncWorkflowStatus status = SyncWorkflowStatus.Stopped;
         
         public SyncWorkflowStatus Status
         {
@@ -89,17 +100,20 @@ namespace Desktop.Wpf
 
                 using (var conn = ((App)App.Current).Container.Resolve<IConnectionFactory>().CreateConnection())
                 {
-                    conn.OnCaptchaUserInputRequired += Connect_OnCaptchaUserInputRequired;
+                    conn.OnCaptchaUserInputRequired += this.Connect_OnCaptchaUserInputRequired;
                     var signin = conn.SignIn(login, password, false);
                     try
                     {
-                        this.BuildSyncList(conn);
-                        //System.Threading.Thread.Sleep(10000);
+                        while (!this.worker.CancellationPending)
+                        {
+                            //// this.BuildSyncList(conn);
+                            System.Threading.Thread.Sleep(10000);
+                        }
                     }
                     finally
                     {
                         conn.SignOut();
-                        conn.OnCaptchaUserInputRequired -= Connect_OnCaptchaUserInputRequired;
+                        conn.OnCaptchaUserInputRequired -= this.Connect_OnCaptchaUserInputRequired;
                     }
                 }
             }
@@ -116,26 +130,17 @@ namespace Desktop.Wpf
 
         private static string appFolderName = "FEX.NET";
 
-        private static string appFolderFullPath { get { return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appFolderName); } }
+        private static string AppFolderFullPath
+        {
+            get
+            {
+                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appFolderName);
+            }
+        }
 
         private void BuildSyncList(IConnection conn)
         {
-            int offset = 0;
-            const int limit = 1000;
-            CommandArchive.CommandArchiveResponse list;
-            do
-            {
-                list = conn.Archive(offset, limit);
-                //foreach (var each in list.ObjectList)
-                //{
-                //    each.
-                //    if (File.Exists())
-                //    each.ModifyTime
-                //        //syncList
-                //}
-
-            }
-            while (list.Count == limit);
+            CommandBuildRemoteTree.CommandBuildRemoteTreeResponse tree = conn.BuildRemoteTree();
         }
     }
 }

@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Input;
 
-namespace Desktop.Wpf
+namespace FexSync
 {
     /// <summary>
     /// Simplistic delegate command for the demo.
