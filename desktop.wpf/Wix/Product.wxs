@@ -5,17 +5,7 @@
     <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
     <MediaTemplate EmbedCab="yes" />
     <Feature Id="ProductFeature" Title="FexSync" Level="1">
-      <ComponentRef Id="comp_3AFBE598_D72D_4808_9EDB_2A7C6003F0B7" />
-      <ComponentRef Id="comp_80F1FF02_5350_4732_BF5A_B0D5B1368A25" />
-      <ComponentRef Id="comp_82973359_8D94_46C9_B01A_4D69A18723FB" />
-      <ComponentRef Id="comp_03483397_7CC2_4AC3_8EEB_926A82C54F19" />
-      <ComponentRef Id="comp_90584B6D_BA84_49C6_B1FF_169BF9C64CB5" />
-      <ComponentRef Id="comp_C1B6FF27_E050_4222_A99A_F17BC38E01A3" />
-      <ComponentRef Id="comp_4688CEA3_F837_4634_99DD_08E46C42F599" />
-      <ComponentRef Id="comp_A35FDC90_D77A_4D18_BC26_DB7DA6339B20" />
-      <ComponentRef Id="comp_F38237C9_4C15_4032_8E67_0AAA08CFACB1" />
-      <ComponentRef Id="comp_1C332FB5_E4AE_4689_9ADE_CE5C03AA6517" />
-      <ComponentRef Id="comp_057A037E_23E5_41C3_8ECE_FF765A9803CB" />
+      <ComponentGroupRef Id="ComponentGroupFexSync" />
     </Feature>
     <InstallUISequence>
       <Custom Action="ERRCA_UIANDADVERTISED" Sequence="5"><![CDATA[ProductState=1]]></Custom>
@@ -324,6 +314,7 @@
   </Product>
   <Fragment>
     <Directory Id="TARGETDIR" Name="SourceDir">
+<!--
       <Component Id="comp_3AFBE598_D72D_4808_9EDB_2A7C6003F0B7" Guid="F25CFC2C-3023-4943-9DC3-774FDF3014B6" Permanent="no" SharedDllRefCount="no" Transitive="no">
         <File Id="_00BFFC3F_0DE5_4567_9DD3_7E85EE07C1EB" DiskId="1" Hidden="no" ReadOnly="no" TrueType="no" System="no" Vital="yes" Name="Autofac.dll" Source="..\..\..\..\..\Users\Sergii Lutai\.nuget\packages\autofac\4.6.2\lib\net45\Autofac.dll" KeyPath="yes" />
       </Component>
@@ -331,16 +322,6 @@
         <File Id="_D3562A04_59B7_4DAB_9661_6ACFB265CE65" DiskId="1" Hidden="no" ReadOnly="no" TrueType="no" System="no" Vital="yes" Name="Desktop.Common.dll" Source="..\desktop.common\bin\Debug\netstandard2.0\Desktop.Common.dll" KeyPath="yes" />
       </Component>
       <Component Id="comp_82973359_8D94_46C9_B01A_4D69A18723FB" Guid="5E72E798-A48A-4423-81AF-70D8B919B862" Permanent="no" SharedDllRefCount="no" Transitive="no">
-<!--
-        <File Id="_3A0DAE79_295D_4343_A389_21E571F4F396" DiskId="1" Hidden="no" ReadOnly="no" TrueType="no" System="no" Vital="yes" Name="Hardcodet.Wpf.TaskbarNotification.dll" Source="..\..\..\..\..\Users\Sergii Lutai\.nuget\packages\hardcodet.notifyicon.wpf\1.0.8\lib\net451\Hardcodet.Wpf.TaskbarNotification.dll" KeyPath="yes" />
-Source="$(var.SolutionPath)hardcodet.notifyicon.wpf\1.0.8\lib\net451\Hardcodet.Wpf.TaskbarNotification.dll"
-$(NuGetPackageFolders)
-
-        <File Id="_3A0DAE79_295D_4343_A389_21E571F4F396" DiskId="1" Hidden="no" ReadOnly="no" TrueType="no" System="no" Vital="yes" Name="Hardcodet.Wpf.TaskbarNotification.dll" 
-Source="$(var.SolutionPath)hardcodet.notifyicon.wpf\1.0.8\lib\net451\Hardcodet.Wpf.TaskbarNotification.dll"
-KeyPath="yes" />
-
--->
         <File Id="_3A0DAE79_295D_4343_A389_21E571F4F396" DiskId="1" Hidden="no" ReadOnly="no" TrueType="no" System="no" Vital="yes" Name="Hardcodet.Wpf.TaskbarNotification.dll" Source="..\..\..\..\..\Users\Sergii Lutai\.nuget\packages\hardcodet.notifyicon.wpf\1.0.8\lib\net451\Hardcodet.Wpf.TaskbarNotification.dll" KeyPath="yes" />
       </Component>
       <Component Id="comp_03483397_7CC2_4AC3_8EEB_926A82C54F19" Guid="52E47DD6-64D4-436B-82D6-444255EC2D25" Permanent="no" SharedDllRefCount="no" Transitive="no">
@@ -367,6 +348,7 @@ KeyPath="yes" />
       <Component Id="comp_057A037E_23E5_41C3_8ECE_FF765A9803CB" Guid="E59AA01A-AE6A-476F-8B43-C7D0CD586D58" Permanent="no" SharedDllRefCount="no" Transitive="no">
         <File Id="_C1E7D132_6FA5_4B79_92BE_5016684C8281" DiskId="1" Hidden="no" ReadOnly="no" TrueType="no" System="no" Vital="yes" Name="Microsoft.VisualBasic.dll" Source="..\..\..\..\..\Program Files (x86)\Reference Assemblies\Microsoft\Framework\.NETFramework\v4.6.1\Microsoft.VisualBasic.dll" KeyPath="yes" />
       </Component>
+-->
       <Directory Id="ProgramFilesFolder">
       </Directory>
     </Directory>

@@ -11,7 +11,7 @@ namespace Desktop.Wpf
     {
         public IConnection CreateConnection()
         {
-            return new Net.Fex.Api.Connection(new Net.Fex.Api.HttpClientWrapper(), new Uri("https://fex.net"), string.Format("FEX Sync ({0})", Net.Fex.Api.Connection.GetOSName()));
+            return new Net.Fex.Api.Connection(new Net.Fex.Api.HttpClientWrapper(), new Uri(System.Configuration.ConfigurationManager.AppSettings["FEX.NET.ApiHost"]), string.Format("FEX Sync ({0})", Net.Fex.Api.Connection.GetOSName()));
         }
     }
 }
