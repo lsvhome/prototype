@@ -41,3 +41,4 @@ Thumbs.db
 
 .vs
 *.wixobj
+desktop.wpf/Wix/ProductDir-*.wxs

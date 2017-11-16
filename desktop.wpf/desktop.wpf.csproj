@@ -14,25 +14,27 @@
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <UICulture>en-US</UICulture>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <OutputPath>bin\$(Configuration)\</OutputPath>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
-    <DebugSymbols>true</DebugSymbols>
     <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
     <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <PlatformTarget>AnyCPU</PlatformTarget>
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Deploy|AnyCPU'">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <DefineConstants>TRACE</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
@@ -162,18 +164,16 @@
       <Delay ParameterType="System.Int32" Required="true" />
     </ParameterGroup>
     <Task>
-      <Code Type="Fragment" Language="cs">
-        <![CDATA[
+      <Code Type="Fragment" Language="cs"><![CDATA[
 System.Threading.Thread.Sleep(this.Delay);
-]]>
-      </Code>
+]]></Code>
     </Task>
   </UsingTask>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <UsingTask TaskName="HeatDirectory" AssemblyFile="$(WixTasksPath)" />
   <UsingTask TaskName="Candle" AssemblyFile="$(WixTasksPath)" />
   <UsingTask TaskName="Light" AssemblyFile="$(WixTasksPath)" />
-  <Target Name="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+  <Target Name="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Deploy|AnyCPU' ">
     <Sleep Delay="10000" />
     <Message Importance="high" Text="Reference: @(Reference->'%(RequiredTargetFramework)')" />
     <HeatDirectory Directory="bin\$(Configuration)" OutputFile="Wix\ProductDir-$(Configuration).wxs" ToolPath="$(WixInstallPath)" PreprocessorVariable="wix.BinariesDir" GenerateGuidsNow="yes" SuppressCom="yes" SuppressRootDirectory="yes" SuppressRegistry="yes" SuppressUniqueIds="yes" DirectoryRefId="TARGETDIR" ComponentGroupName="ComponentGroupFexSync" AdditionalOptions=" -svb6 -generate container -pog Binaries -pog Satellites -pog Content " />
