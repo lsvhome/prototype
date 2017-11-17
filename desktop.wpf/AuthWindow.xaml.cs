@@ -3,6 +3,7 @@ using System.Configuration;
 using System.Net.Cache;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -148,27 +149,38 @@ namespace FexSync
                 return;
             }
 
+            Task.Run(() => SingInAsync(login, PwdPassword.Password));
+        }
+
+        private async Task SingInAsync(string login, string password)
+        {
             using (var conn = ((App)App.Current).Container.Resolve<IConnectionFactory>().CreateConnection())
             {
                 conn.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
                 try
                 {
-                    var signin = conn.SignIn(login, PwdPassword.Password, false);
-                    conn.SignOut();
+                    var signin = await conn.SignInAsync(login, password, false);
+                    await conn.SignOutAsync();
 
-                    CredentialsManager.Save(login, PwdPassword.Password);
+                    CredentialsManager.Save(login, password);
 
-                    this.Close();
+                    this.Dispatcher.Invoke(() => {this.Close();});
+
                 }
                 catch (Net.Fex.Api.ApiErrorException ex)
                 {
-                    this.ShowError(ex.Message);
+                    this.Dispatcher.Invoke(() => { this.ShowError(ex.Message); });
                 }
                 catch (Net.Fex.Api.CaptchaRequiredException)
                 {
                 }
+                catch (Exception ex)
+                {
+                    this.Dispatcher.Invoke(() => { this.ShowError(ex.Message); });
+                }
                 finally
                 {
+                    this.captchaToken = null;
                     conn.OnCaptchaUserInputRequired = null;
                 }
             }
@@ -179,34 +191,17 @@ namespace FexSync
             this.Dispatcher.Invoke(() =>
             {
                 captchaToken = e.CaptchaToken.Token;
-                //this.ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.CaptchaToken.Token), requestCachePolicy);
+                this.ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.CaptchaToken.Token), requestCachePolicy);
 
                 this.TxtCaptcha.Text = string.Empty;
 
                 this.GrdLogin.Visibility = Visibility.Hidden;
                 this.GrdCaptcha.Visibility = Visibility.Visible;
-                this.UpdateLayout();
-            }
-            //, System.Windows.Threading.DispatcherPriority.ContextIdle
-            );
-
-            this.GrdLogin.Dispatcher.Invoke(() =>
-            {
-                this.UpdateLayout();
-            });
-
-            this.GrdCaptcha.Dispatcher.Invoke(() =>
-            {
-                this.UpdateLayout();
-            });
-
-            this.Dispatcher.Invoke(() =>
-            {
-                this.UpdateLayout();
             });
 
             this.waitForCaptchaEvent.Reset();
             this.waitForCaptchaEvent.WaitOne();
+
 
             this.Dispatcher.Invoke(() =>
             {
@@ -214,9 +209,7 @@ namespace FexSync
                 this.GrdLogin.Visibility = Visibility.Visible;
                 this.GrdCaptcha.Visibility = Visibility.Hidden;
                 this.UpdateLayout();
-            }
-            //, System.Windows.Threading.DispatcherPriority.ContextIdle
-            );
+            });
         }
 
         private void Link_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
