@@ -71,7 +71,7 @@ namespace FexSync
                     {
                         if (Application.Current.MainWindow == null)
                         {
-                            Application.Current.MainWindow = new MainWindow();
+                            Application.Current.MainWindow = new SettingsWindow();
                         }
 
                         Application.Current.MainWindow.Show();
