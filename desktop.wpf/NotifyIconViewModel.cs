@@ -87,8 +87,8 @@ namespace FexSync
                     CanExecuteFunc = () => !this.IsConnected,
                     CommandAction = () =>
                     {
-                        string login;
-                        string password;
+                        string login = null;
+                        string password = null;
                         try
                         {
                             CredentialsManager.Load(out login, out password);

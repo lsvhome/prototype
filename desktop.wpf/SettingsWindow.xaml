@@ -7,6 +7,13 @@
         mc:Ignorable="d"
         Title="Settings" Height="350" Width="525" WindowStartupLocation="CenterScreen">
     <Grid>
-        
+        <TabControl Margin="0">
+            <TabItem Header="Common Settings">
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+            <TabItem Header="Account Settings">
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+        </TabControl>
     </Grid>
 </Window>
