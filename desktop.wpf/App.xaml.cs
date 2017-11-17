@@ -66,7 +66,18 @@ namespace FexSync
                 }
                 else
                 {
-                    new QuickStartWindow().Show();
+                    var quickStart = new QuickStartWindow();
+                    quickStart.Closed += (object sender, EventArgs args) =>
+                    {
+                        if (Application.Current.MainWindow == null)
+                        {
+                            Application.Current.MainWindow = new MainWindow();
+                        }
+
+                        Application.Current.MainWindow.Show();
+                    };
+                    quickStart.Show();
+
                 }
             }
             catch (Exception ex)
