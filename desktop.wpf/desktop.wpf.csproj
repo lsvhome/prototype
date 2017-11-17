@@ -170,14 +170,16 @@ System.Threading.Thread.Sleep(this.Delay);
     </Task>
   </UsingTask>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <UsingTask TaskName="HeatDirectory" AssemblyFile="$(WixTasksPath)" />
-  <UsingTask TaskName="Candle" AssemblyFile="$(WixTasksPath)" />
-  <UsingTask TaskName="Light" AssemblyFile="$(WixTasksPath)" />
-  <Target Name="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Deploy|AnyCPU' ">
+
+  <UsingTask TaskName="HeatDirectory" AssemblyFile="$(WixTasksPath)" Condition=" '$(WixTasksPath)' != '' " />
+  <UsingTask TaskName="Candle" AssemblyFile="$(WixTasksPath)" Condition=" '$(WixTasksPath)' != '' " />
+  <UsingTask TaskName="Light" AssemblyFile="$(WixTasksPath)"  Condition=" '$(WixTasksPath)' != '' "/>
+  <Target Name="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Deploy|AnyCPU' AND '$(WixTasksPath)' != ''" >
     <Sleep Delay="10000" />
     <Message Importance="high" Text="Reference: @(Reference->'%(RequiredTargetFramework)')" />
     <HeatDirectory Directory="bin\$(Configuration)" OutputFile="Wix\ProductDir-$(Configuration).wxs" ToolPath="$(WixInstallPath)" PreprocessorVariable="wix.BinariesDir" GenerateGuidsNow="yes" SuppressCom="yes" SuppressRootDirectory="yes" SuppressRegistry="yes" SuppressUniqueIds="yes" DirectoryRefId="TARGETDIR" ComponentGroupName="ComponentGroupFexSync" AdditionalOptions=" -svb6 -generate container -pog Binaries -pog Satellites -pog Content " />
     <Candle SourceFiles="Wix\Product.wxs;Wix\StandardUI.wxs;Wix\ProductDir-$(Configuration).wxs" OutputFile="obj\wix\" ToolPath="$(WixInstallPath)" />
     <Light ObjectFiles="obj\wix\Product.wixobj;obj\wix\StandardUI.wixobj;obj\wix\ProductDir-$(Configuration).wixobj" OutputFile="bin\fexsync-setup-$(Configuration).msi" ToolPath="$(WixInstallPath)" WixVariables="BinariesDir=$(TargetDir)" />
   </Target>
+
 </Project>
