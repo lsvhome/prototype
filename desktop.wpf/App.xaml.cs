@@ -28,8 +28,7 @@ namespace FexSync
             {
                 AppDomain.CurrentDomain.UnhandledException += (source, exceptionObjectParam) =>
                 {
-                    Exception exception = exceptionObjectParam.ExceptionObject as Exception;
-                    if (exception != null)
+                    if (exceptionObjectParam.ExceptionObject is Exception exception)
                     {
                         System.Diagnostics.Trace.Fail(exception.ToString());
                     }
@@ -69,12 +68,16 @@ namespace FexSync
                     var quickStart = new QuickStartWindow();
                     quickStart.Closed += (object sender, EventArgs args) =>
                     {
-                        if (Application.Current.MainWindow == null)
+                        var auth = new AuthWindow();
+                        if (auth.ShowDialog() == true)
                         {
-                            Application.Current.MainWindow = new SettingsWindow();
-                        }
+                            if (Application.Current.MainWindow == null)
+                            {
+                                Application.Current.MainWindow = new SettingsWindow();
+                            }
 
-                        Application.Current.MainWindow.Show();
+                            Application.Current.MainWindow.Show();
+                        }
                     };
                     quickStart.Show();
 

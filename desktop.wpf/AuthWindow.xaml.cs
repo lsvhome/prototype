@@ -150,7 +150,7 @@ namespace FexSync
 
             using (var conn = ((App)App.Current).Container.Resolve<IConnectionFactory>().CreateConnection())
             {
-                conn.OnCaptchaUserInputRequired += this.Connect_OnCaptchaUserInputRequired;
+                conn.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
                 try
                 {
                     var signin = conn.SignIn(login, PwdPassword.Password, false);
@@ -169,33 +169,54 @@ namespace FexSync
                 }
                 finally
                 {
-                    conn.OnCaptchaUserInputRequired -= this.Connect_OnCaptchaUserInputRequired;
+                    conn.OnCaptchaUserInputRequired = null;
                 }
             }
         }
 
         private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs e)
         {
-            this.ImgCaptcha.Dispatcher.Invoke(() =>
+            this.Dispatcher.Invoke(() =>
             {
                 captchaToken = e.CaptchaToken.Token;
-                this.ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.CaptchaToken.Token), requestCachePolicy);
+                //this.ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.CaptchaToken.Token), requestCachePolicy);
 
                 this.TxtCaptcha.Text = string.Empty;
 
                 this.GrdLogin.Visibility = Visibility.Hidden;
                 this.GrdCaptcha.Visibility = Visibility.Visible;
+                this.UpdateLayout();
+            }
+            //, System.Windows.Threading.DispatcherPriority.ContextIdle
+            );
+
+            this.GrdLogin.Dispatcher.Invoke(() =>
+            {
+                this.UpdateLayout();
+            });
+
+            this.GrdCaptcha.Dispatcher.Invoke(() =>
+            {
+                this.UpdateLayout();
+            });
+
+            this.Dispatcher.Invoke(() =>
+            {
+                this.UpdateLayout();
             });
 
             this.waitForCaptchaEvent.Reset();
             this.waitForCaptchaEvent.WaitOne();
 
-            this.TxtCaptcha.Dispatcher.Invoke(() =>
+            this.Dispatcher.Invoke(() =>
             {
                 e.CaptchaText = this.TxtCaptcha.Text;
                 this.GrdLogin.Visibility = Visibility.Visible;
                 this.GrdCaptcha.Visibility = Visibility.Hidden;
-            });
+                this.UpdateLayout();
+            }
+            //, System.Windows.Threading.DispatcherPriority.ContextIdle
+            );
         }
 
         private void Link_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)

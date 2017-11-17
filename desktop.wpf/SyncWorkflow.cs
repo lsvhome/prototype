@@ -100,7 +100,7 @@ namespace FexSync
 
                 using (var conn = ((App)App.Current).Container.Resolve<IConnectionFactory>().CreateConnection())
                 {
-                    conn.OnCaptchaUserInputRequired += this.Connect_OnCaptchaUserInputRequired;
+                    conn.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
                     var signin = conn.SignIn(login, password, false);
                     try
                     {
@@ -113,7 +113,7 @@ namespace FexSync
                     finally
                     {
                         conn.SignOut();
-                        conn.OnCaptchaUserInputRequired -= this.Connect_OnCaptchaUserInputRequired;
+                        conn.OnCaptchaUserInputRequired = null;
                     }
                 }
             }
