@@ -19,7 +19,7 @@ namespace FexSync
 
         public QuickStartImageList()
         {
-            var regex = new System.Text.RegularExpressions.Regex(@"^FexSync\.Resources\.QuickStart\.(?<number>\d\d\d)\.png$");
+            var regex = new System.Text.RegularExpressions.Regex(@"^FexSync\.Resources\.QuickStart\.(?<number>\d\d\d)\.[a-zA-Z]{3}$");
             var assembly = System.Reflection.Assembly.GetExecutingAssembly();
             this.imageNames = assembly.GetManifestResourceNames().Where(x => regex.IsMatch(x)).OrderBy(x => regex.Match(x).Groups["number"].Value).ToArray();
             System.Diagnostics.Debug.Assert(this.imageNames.Length > 0, "QuickStart images");
@@ -29,18 +29,21 @@ namespace FexSync
         {
             using (Image image = this.GetCurrentImage())
             {
-                using (var ms = new MemoryStream())
+                using (Bitmap bmp = new Bitmap(image))
                 {
-                    image.Save(ms, ImageFormat.Bmp);
-                    ms.Seek(0, SeekOrigin.Begin);
+                    using (var ms = new MemoryStream())
+                    {
+                        bmp.Save(ms, ImageFormat.Bmp);
+                        ms.Seek(0, SeekOrigin.Begin);
 
-                    var bitmapImage = new BitmapImage();
-                    bitmapImage.BeginInit();
-                    bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmapImage.StreamSource = ms;
-                    bitmapImage.EndInit();
+                        var bitmapImage = new BitmapImage();
+                        bitmapImage.BeginInit();
+                        bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                        bitmapImage.StreamSource = ms;
+                        bitmapImage.EndInit();
 
-                    return bitmapImage;
+                        return bitmapImage;
+                    }
                 }
             }
         }
