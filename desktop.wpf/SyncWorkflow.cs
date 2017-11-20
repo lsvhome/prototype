@@ -51,6 +51,8 @@ namespace FexSync
             }
         }
 
+        public event EventHandler<Connection.ExceptionEventArgs>  OnException;
+
         public void WaitStoppped(TimeSpan timeout)
         {
             if (this.worker.CancellationPending)
@@ -116,6 +118,15 @@ namespace FexSync
                         conn.OnCaptchaUserInputRequired = null;
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                if (this.OnException != null)
+                {
+                    this.OnException(this, new Connection.ExceptionEventArgs(ex));
+                }
+
+                System.Diagnostics.Debug.Fail(ex.ToString());
             }
             finally
             {

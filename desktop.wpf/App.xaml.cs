@@ -11,6 +11,7 @@ using System.Windows.Navigation;
 using Autofac;
 using Desktop.Common;
 using Hardcodet.Wpf.TaskbarNotification;
+using Net.Fex.Api;
 
 namespace FexSync
 {
@@ -20,6 +21,7 @@ namespace FexSync
     public partial class App : Application
     {
         public readonly Autofac.IContainer Container;
+
         public readonly SyncWorkflow SyncWorkflow = new SyncWorkflow();
 
         public App()
@@ -51,13 +53,17 @@ namespace FexSync
             }
         }
 
+        public TaskbarIcon NotifyIcon { get; set; }
+
         protected override void OnStartup(StartupEventArgs e)
         {
             try
             {
                 base.OnStartup(e);
                 //// create the notifyicon (it's a resource declared in NotifyIconResources.xaml
-                this.Container.Resolve<IPlatformServices>().AddTrayIcon();
+                this.NotifyIcon = (TaskbarIcon)App.Current.FindResource("NotifyIcon");
+                this.NotifyIcon.DataContext = new NotifyIconViewModel();
+
 
                 if (CredentialsManager.Exists())
                 {
@@ -65,6 +71,7 @@ namespace FexSync
                 }
                 else
                 {
+                    //// First Application Run
                     var quickStart = new QuickStartWindow();
                     quickStart.Closed += (object sender, EventArgs args) =>
                     {
@@ -76,7 +83,11 @@ namespace FexSync
                                 Application.Current.MainWindow = new SettingsWindow();
                             }
 
-                            Application.Current.MainWindow.Show();
+                            this.SyncWorkflow.Start();
+                            //if (Application.Current.MainWindow.ShowDialog() == true)
+                            //{
+                                
+                            //}
                         }
                     };
                     quickStart.Show();
@@ -90,6 +101,49 @@ namespace FexSync
             }
         }
 
+        private void StartWhenCredentialsValid()
+        {
+            //this.syncWorkflowException = null;
+            //this.SyncWorkflow.OnException += SyncWorkflow_OnExceptionAtStart;
+            //this.SyncWorkflow.Start();
+
+//            Task.Run(() =>
+//            {
+//#if DEBUG
+//                System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
+//#else
+//                System.Threading.Thread.Sleep(TimeSpan.FromSeconds(60));
+//#endif
+//                this.SyncWorkflow.OnException -= SyncWorkflow_OnExceptionAtStart;
+//                if (this.syncWorkflowException != null)
+//                {
+//                    Application.Current.Dispatcher.Invoke(() =>
+//                    {
+//                        var ok = new AuthWindow().ShowDialog();
+//                        if ( ok == true)
+//                        {
+//                            this.StartWhenCredentialsValid();
+//                        }
+//                    });
+//                }
+//            });
+        }
+
+        //private Exception syncWorkflowException = null;
+
+        //private void SyncWorkflow_OnExceptionAtStart(object sender, Net.Fex.Api.Connection.ExceptionEventArgs e)
+        //{
+        //    if (e.Exception is CaptchaRequiredException)
+        //    {
+        //        syncWorkflowException = e.Exception;
+        //    }
+
+        //    if (e.Exception is ConnectionException)
+        //    {
+        //        syncWorkflowException = e.Exception;
+        //    }
+        //}
+
         protected override void OnExit(ExitEventArgs e)
         {
             if (this.SyncWorkflow.Status == FexSync.SyncWorkflow.SyncWorkflowStatus.Started)
@@ -98,6 +152,7 @@ namespace FexSync
             }
 
             this.Container.Dispose();
+            this.NotifyIcon.Dispose();
             base.OnExit(e);
         }
     }

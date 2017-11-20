@@ -24,5 +24,11 @@ namespace FexSync
         {
             this.InitializeComponent();
         }
+
+        protected override void OnClosed(EventArgs e)
+        {
+            this.DialogResult = true;
+            base.OnClosed(e);
+        }
     }
 }

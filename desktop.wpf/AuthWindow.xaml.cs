@@ -9,6 +9,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 using Autofac;
+using Net.Fex.Api;
 
 namespace FexSync
 {
@@ -40,8 +41,12 @@ namespace FexSync
 
         private string captchaToken;
 
-        public AuthWindow()
+        IConnection connection = null;
+
+        public AuthWindow(IConnection conn = null)
         {
+            this.connection = conn;
+
             this.InitializeComponent();
 
             this.LnkRegister.RequestNavigate += this.Link_RequestNavigate;
@@ -149,40 +154,73 @@ namespace FexSync
                 return;
             }
 
-            Task.Run(() => SingInAsync(login, PwdPassword.Password));
+            if (this.connection != null)
+            {
+                Task.Run(() => SignInAsync(login, PwdPassword.Password, this.connection));
+            }
+            else
+            {
+                Task.Run(() => SignInAsync(login, PwdPassword.Password));
+            }
         }
 
-        private async Task SingInAsync(string login, string password)
+        private async Task<bool> IsCredentialsValidAsync(IConnection conn, string login, string password)
+        {
+            try
+            {
+                await conn.SignInAsync(login, password, false);
+                if (this.connection != conn)
+                {
+                    await conn.SignOutAsync();
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private async Task SignInAsync(string login, string password, IConnection conn)
+        {
+            conn.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
+            try
+            {
+                if (await this.IsCredentialsValidAsync(conn, login, password))
+                {
+                    CredentialsManager.Save(login, password);
+
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        this.DialogResult = true;
+                        this.Close();
+                    });
+                }
+            }
+            catch (Net.Fex.Api.ApiErrorException ex)
+            {
+                this.Dispatcher.Invoke(() => { this.ShowError(ex.Message); });
+            }
+            catch (Net.Fex.Api.CaptchaRequiredException)
+            {
+            }
+            catch (Exception ex)
+            {
+                this.Dispatcher.Invoke(() => { this.ShowError(ex.Message); });
+            }
+            finally
+            {
+                this.captchaToken = null;
+                conn.OnCaptchaUserInputRequired = null;
+            }
+        }
+
+        private async Task SignInAsync(string login, string password)
         {
             using (var conn = ((App)App.Current).Container.Resolve<IConnectionFactory>().CreateConnection())
             {
-                conn.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
-                try
-                {
-                    var signin = await conn.SignInAsync(login, password, false);
-                    await conn.SignOutAsync();
-
-                    CredentialsManager.Save(login, password);
-
-                    this.Dispatcher.Invoke(() => {this.Close();});
-
-                }
-                catch (Net.Fex.Api.ApiErrorException ex)
-                {
-                    this.Dispatcher.Invoke(() => { this.ShowError(ex.Message); });
-                }
-                catch (Net.Fex.Api.CaptchaRequiredException)
-                {
-                }
-                catch (Exception ex)
-                {
-                    this.Dispatcher.Invoke(() => { this.ShowError(ex.Message); });
-                }
-                finally
-                {
-                    this.captchaToken = null;
-                    conn.OnCaptchaUserInputRequired = null;
-                }
+                await this.SignInAsync(login, password, conn);
             }
         }
 

@@ -15,6 +15,7 @@
         <MenuItem Header="Connect" Command="{Binding ConnectCommand}" />
         <MenuItem Header="Disconnect" Command="{Binding DisconnectCommand}" />
         <MenuItem Header="Sign Out" Command="{Binding SignOutCommand}" />
+        <MenuItem Header="Pause/Continue" />
         <MenuItem Header="Settings" Command="{Binding ShowSettingsCommand}" />
         <MenuItem Header="Quick Start" Command="{Binding QuickStartCommand}" />
         <Separator />

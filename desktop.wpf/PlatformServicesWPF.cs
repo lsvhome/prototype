@@ -9,12 +9,12 @@ namespace FexSync
 {
     public class PlatformServicesWPF : Desktop.Common.IPlatformServices
     {
-        public TaskbarIcon NotifyIcon { get; set; }
+        //public TaskbarIcon NotifyIcon { get; set; }
 
         public void AddTrayIcon()
         {
-            this.NotifyIcon = (TaskbarIcon)App.Current.FindResource("NotifyIcon");
-            this.NotifyIcon.DataContext = new NotifyIconViewModel();
+            //this.NotifyIcon = (TaskbarIcon)App.Current.FindResource("NotifyIcon");
+            //this.NotifyIcon.DataContext = new NotifyIconViewModel();
         }
 
         public void SetTrayIconStatusConnected()
@@ -27,7 +27,7 @@ namespace FexSync
 
         public void Dispose()
         {
-            this.NotifyIcon.Dispose(); //// the icon would clean up automatically, but this is cleaner
+            //this.NotifyIcon.Dispose(); //// the icon would clean up automatically, but this is cleaner
         }
     }
 }
