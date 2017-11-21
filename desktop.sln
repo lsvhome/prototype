@@ -14,6 +14,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Net.Fex.Api.v1.Tests", "net
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Desktop.Shared", "desktop.shared\Desktop.Shared.shproj", "{3D8A89C0-E4F0-45AE-9531-4E8B30A50E66}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsolePrivateTest", "ConsolePrivateTest\ConsolePrivateTest.csproj", "{EE700EDB-DA1A-4905-9B27-E67E573420F4}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		desktop.shared\desktop.shared.projitems*{3d8a89c0-e4f0-45ae-9531-4e8b30a50e66}*SharedItemsImports = 13
@@ -63,6 +65,14 @@ Global
 		{C2C207B7-2492-4E7A-85EB-27B474EAD025}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C2C207B7-2492-4E7A-85EB-27B474EAD025}.Release|x86.ActiveCfg = Release|Any CPU
 		{C2C207B7-2492-4E7A-85EB-27B474EAD025}.Release|x86.Build.0 = Release|Any CPU
+		{EE700EDB-DA1A-4905-9B27-E67E573420F4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE700EDB-DA1A-4905-9B27-E67E573420F4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE700EDB-DA1A-4905-9B27-E67E573420F4}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE700EDB-DA1A-4905-9B27-E67E573420F4}.Debug|x86.Build.0 = Debug|Any CPU
+		{EE700EDB-DA1A-4905-9B27-E67E573420F4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE700EDB-DA1A-4905-9B27-E67E573420F4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE700EDB-DA1A-4905-9B27-E67E573420F4}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE700EDB-DA1A-4905-9B27-E67E573420F4}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
