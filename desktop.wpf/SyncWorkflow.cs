@@ -172,13 +172,13 @@ namespace FexSync
         private void Download(IConnection conn)
         {
             ISyncDataDbContext syncDb = ((App)App.Current).Container.Resolve<ISyncDataDbContext>();
-            while (syncDb.Download.Any())
+            var maxTriesCount = syncDb.Download.Max(x=> (int?)x.TriesCount) ?? 1;
+            while (syncDb.Download.Any(x => x.TriesCount < maxTriesCount))
             {
-                var di = syncDb.Download.OrderBy(x => x.ItemCreated).Last();
+                var di = syncDb.Download.Where(x=>x.TriesCount < maxTriesCount).OrderBy(x => x.TriesCount).ThenByDescending(x => x.ItemCreated).First();
                 try
                 {
-                    
-                    //conn.ObjectView()
+                    conn.Get(di.Token, di.UploadId);
                 }
                 catch (Exception)
                 {
@@ -234,20 +234,6 @@ namespace FexSync
             {
                 if (!syncDb.Download.Any(x => x.Token == item.Token && x.UploadId == item.UploadId))
                 {
-                    /*
-                          https://fex.net/get/004694149924/111049876
-                    https://fs14.fex.net/load/004694149924/111049876/274dfa45/001.jpg
-                    string url = "https://fs14.fex.net/load/"
-                        + remoteFile.Token
-                        + "/"
-                        +remoteFile.UploadId
-                        +"/274dfa45"
-                        +"/"
-                        + remoteFile.Name //001.jpg
-
-                    item.Object.
-                    */
-
                     var downloadItem = new DownloadItem
                     {
                         //// DownloadItemId - ???
