@@ -108,7 +108,7 @@ namespace FexSync
                     {
                         while (!this.worker.CancellationPending)
                         {
-                            //// this.BuildSyncList(conn);
+                            var x = this.BuildSyncList(conn);
                             System.Threading.Thread.Sleep(10000);
                         }
                     }

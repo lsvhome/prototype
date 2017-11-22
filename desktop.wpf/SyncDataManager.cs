@@ -7,14 +7,13 @@ using System.Threading.Tasks;
 
 namespace FexSync
 {
-    public class CredentialsManager
+    public class SyncDataManager
     {
         private static string ConfigFullPath
         {
             get
             {
-                return System.Configuration.ConfigurationManager.AppSettings["AccountConfig"];
-                //// return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appFolder, configFileName);
+                return Path.Combine(System.Configuration.ConfigurationManager.AppSettings["DataFolder"], "sync.cache");
             }
         }
 
