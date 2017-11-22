@@ -12,6 +12,7 @@ using Autofac;
 using Desktop.Common;
 using Hardcodet.Wpf.TaskbarNotification;
 using Net.Fex.Api;
+using FexSync.Data;
 
 namespace FexSync
 {
@@ -26,6 +27,11 @@ namespace FexSync
 
         public App()
         {
+//#if DEBUG
+//            Tests.Run();
+//            App.Current.Shutdown();
+//            return;
+//#endif
             try
             {
                 AppDomain.CurrentDomain.UnhandledException += (source, exceptionObjectParam) =>
@@ -43,6 +49,7 @@ namespace FexSync
                 var builder = new ContainerBuilder();
                 builder.RegisterInstance<Desktop.Common.IPlatformServices>(new PlatformServicesWPF());
                 builder.RegisterInstance<IConnectionFactory>(new ConnectionFactory());
+                builder.RegisterInstance<FexSync.Data.ISyncDataDbContext>(new FexSync.Data.SyncDataDbContext());
 
                 this.Container = builder.Build();
             }
@@ -61,9 +68,10 @@ namespace FexSync
             {
                 base.OnStartup(e);
                 //// create the notifyicon (it's a resource declared in NotifyIconResources.xaml
-                this.NotifyIcon = (TaskbarIcon)App.Current.FindResource("NotifyIcon");
+                this.NotifyIcon = (TaskbarIcon)((App)App.Current).FindResource("NotifyIcon");
                 this.NotifyIcon.DataContext = new NotifyIconViewModel();
 
+                ((App)App.Current).Container.Resolve<ISyncDataDbContext>().EnsureCreated();
 
                 if (CredentialsManager.Exists())
                 {

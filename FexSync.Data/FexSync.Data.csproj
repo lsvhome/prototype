@@ -1,7 +1,34 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netcoreapp2.0;netstandard2.0</TargetFrameworks>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <OutputType Condition="'$(TargetFramework)' == 'netcoreapp2.0'">Exe</OutputType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Support\**" />
+    <Compile Remove="Sync\**" />
+    <EmbeddedResource Remove="Sync\**" />
+    <None Remove="Sync\**" />
+    <Compile Remove="Support" />
+    <Compile Include="Support\Program.cs" Condition="'$(TargetFramework)' == 'netcoreapp2.0'" Visible="false"></Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.1" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Design" Version="1.1.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\submodules\fex-api\net.fex.api.v1\net.fex.api.v1.csproj" />
+  </ItemGroup>
 
 </Project>

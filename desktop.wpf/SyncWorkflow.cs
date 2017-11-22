@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 using Autofac;
 using Net.Fex.Api;
+using FexSync.Data;
 
 namespace FexSync
 {
@@ -108,7 +109,12 @@ namespace FexSync
                     {
                         while (!this.worker.CancellationPending)
                         {
-                            var x = this.BuildSyncList(conn);
+                            this.BuildDownloadList(conn);
+
+                            this.BuildUploadList();
+
+
+
                             System.Threading.Thread.Sleep(10000);
                         }
                     }
@@ -137,21 +143,209 @@ namespace FexSync
             }
         }
 
-        private readonly List<string> syncList = new List<string>();
+        //private readonly List<string> syncList = new List<string>();
 
-        private static string appFolderName = "FEX.NET";
+        //private static string appFolderName = "FEX.NET";
 
-        private static string AppFolderFullPath
+        //private static string AppFolderFullPath
+        //{
+        //    get
+        //    {
+        //        11
+        //        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appFolderName);
+        //    }
+        //}
+
+        private void BuildDownloadList(IConnection conn)
         {
-            get
+            CommandBuildRemoteTree.CommandBuildRemoteTreeResponse tree = conn.BuildRemoteTree();
+            ISyncDataDbContext syncDb = ((App)App.Current).Container.Resolve<ISyncDataDbContext>();
+
+            System.Diagnostics.Debug.Assert(tree.List.All(x => x is CommandBuildRemoteTree.CommandBuildRemoteTreeItemArchive));
+
+            foreach (var each in tree.List.SelectMany(x => x.Childern))
             {
-                return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), appFolderName);
+                ProcessRemoteItemForDownload(each, syncDb);
             }
         }
 
-        private void BuildSyncList(IConnection conn)
+        private void Download(IConnection conn)
         {
-            CommandBuildRemoteTree.CommandBuildRemoteTreeResponse tree = conn.BuildRemoteTree();
+            ISyncDataDbContext syncDb = ((App)App.Current).Container.Resolve<ISyncDataDbContext>();
+            while (syncDb.Download.Any())
+            {
+                var di = syncDb.Download.OrderBy(x => x.ItemCreated).Last();
+                try
+                {
+                    
+                    //conn.ObjectView()
+                }
+                catch (Exception)
+                {
+                    //syncDb.DownloadFailed.Add(di);
+                    //syncDb.Download.Remove(di);
+                }
+                finally
+                {
+                }
+            }
+
+        }
+
+
+        private void BuildUploadList()
+        {
+            ISyncDataDbContext syncDb = ((App)App.Current).Container.Resolve<ISyncDataDbContext>();
+
+            var localFiles = this.GetLocalFiles();
+
+
+            foreach (var each in localFiles.Keys)
+            {
+                ProcessLocalFileForUpload(each, localFiles[each], syncDb);
+            }
+        }
+
+        private void ProcessLocalFileForUpload(string path, FileInfo item, ISyncDataDbContext syncDb)
+        {
+
+            var localFile = syncDb.Local.SingleOrDefault(x => string.Equals(x.Path, item.FullName, StringComparison.InvariantCultureIgnoreCase));
+
+            if (localFile == null || !IsItemsEqual(item, localFile))
+            {
+                if (!syncDb.Upload.Any(x => x.Path == item.FullName))
+                {
+                    var uploadItem = new UploadItem
+                    {
+                        //// UploadItemId - ???
+                        Path = item.FullName
+                    };
+
+                    syncDb.Upload.Add(uploadItem);
+                }
+            }
+        }
+
+        private void ProcessRemoteItemForDownload(CommandBuildRemoteTree.CommandBuildRemoteTreeItemObject item, ISyncDataDbContext syncDb)
+        {
+            var remoteFile = syncDb.RemoteFiles.SingleOrDefault(x => x.Token == item.Token && x.UploadId == item.UploadId);
+
+            if (remoteFile == null || !IsItemsEqual(item, remoteFile))
+            {
+                if (!syncDb.Download.Any(x => x.Token == item.Token && x.UploadId == item.UploadId))
+                {
+                    /*
+                          https://fex.net/get/004694149924/111049876
+                    https://fs14.fex.net/load/004694149924/111049876/274dfa45/001.jpg
+                    string url = "https://fs14.fex.net/load/"
+                        + remoteFile.Token
+                        + "/"
+                        +remoteFile.UploadId
+                        +"/274dfa45"
+                        +"/"
+                        + remoteFile.Name //001.jpg
+
+                    item.Object.
+                    */
+
+                    var downloadItem = new DownloadItem
+                    {
+                        //// DownloadItemId - ???
+                        Token = item.Token,
+                        UploadId = item.UploadId,
+                        ItemCreated = DateTime.Now
+                    };
+                    syncDb.Download.Add(downloadItem);
+
+                }
+            }
+
+            foreach (var each in item.Childern)
+            {
+                ProcessRemoteItemForDownload(each, syncDb);
+            }
+        }
+
+        private bool IsItemsEqual(FileInfo item, LocalFile localFile)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+
+            if (localFile == null)
+            {
+                return false;
+            }
+
+            if (item.FullName != localFile.Path)
+            {
+                return false;
+            }
+
+            if (item.Length != localFile.Length)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+
+        private bool IsItemsEqual(CommandBuildRemoteTree.CommandBuildRemoteTreeItemObject item, RemoteFile remoteFile)
+        {
+            if (item == null)
+            {
+                return false;
+            }
+
+            if (remoteFile == null)
+            {
+                return false;
+            }
+
+            if (item.Object.Name != remoteFile.Name)
+            {
+                return false;
+            }
+
+            if (item.Token != remoteFile.Token)
+            {
+                return false;
+            }
+
+            if (item.UploadId != remoteFile.UploadId)
+            {
+                return false;
+            }
+
+            if (item.Object.Size != remoteFile.Size)
+            {
+                return false;
+            }
+
+            if (item.Object.Sha1 != remoteFile.Sha1)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public Dictionary<string, FileInfo> GetLocalFiles()
+        {
+            var t = System.IO.Directory.GetFiles(System.Configuration.ConfigurationManager.AppSettings["DataFolder"], "*", SearchOption.AllDirectories);
+
+            Dictionary<string, FileInfo> d = new Dictionary<string, FileInfo>();
+
+            foreach (var each in t)
+            {
+                FileInfo fi = new FileInfo(each);
+                d.Add(each, fi);
+            }
+
+            return d;
         }
     }
+
 }
