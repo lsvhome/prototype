@@ -1,0 +1,38 @@
+﻿<Window x:Class="FexSync.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:FexSync"
+        mc:Ignorable="d"
+        Title="Settings" WindowStartupLocation="CenterScreen" Width="500" Height="350" ShowInTaskbar="False">
+    <DockPanel>
+
+        <Grid Background="#FFE5E5E5"  Margin="0,0,0,0" Height="38" DockPanel.Dock="Bottom" VerticalAlignment="Bottom" >
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+
+            <Button x:Name="BtnOk" Content="Ok" HorizontalAlignment="Right" Margin="0,8,90.333,10" Width="75" RenderTransformOrigin="1.671,0.233" IsDefault="True" Click="BtnOk_Click" Height="20" />
+            <Button x:Name="BtnCancel" Content="Cancel" HorizontalAlignment="Right" Margin="0,8,10.333,10" Width="75" IsCancel="True" Click="BtnCancel_Click"  Height="20"/>
+        </Grid>
+
+        <TabControl Margin="0,0,0.333,0"  Background="#FFE5E5E5">
+            <TabItem Header="Data Folders">
+                <Grid Background="#FFE5E5E5">
+                    <TextBox x:Name="TxtCurrentDataFolder" Height="21" Margin="129,15,34.667,0" VerticalAlignment="Top" IsReadOnly="True" IsReadOnlyCaretVisible="True" TextWrapping="NoWrap">
+                    </TextBox>
+                    <Button x:Name="BtnCurrentDataFolderSelect" Content="..." HorizontalAlignment="Right" Margin="0,16,9.667,0" VerticalAlignment="Top" Width="20" RenderTransformOrigin="-1.517,0" Click="BtnCurrentDataFolderSelect_Click"/>
+                    <Label x:Name="LabelCurrentDataFolder" Content="Current Data Folder" HorizontalAlignment="Left" Margin="10,11,0,0" VerticalAlignment="Top"/>
+                </Grid>
+            </TabItem>
+            <TabItem Header="Account Settings">
+                <Grid Background="#FFE5E5E5"/>
+            </TabItem>
+        </TabControl>
+
+    </DockPanel>
+</Window>
