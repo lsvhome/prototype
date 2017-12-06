@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<WixLocalization Culture="en-US" Codepage="1252" xmlns="http://schemas.microsoft.com/wix/2006/localization">
+    <String Id="DataDirDlg_Title" Overridable="yes"><!-- _locID_text="DataDirDlg_Title" _locComment="DataDirDlg_Title" -->[ProductName] Setup</String>
+    <String Id="DataDirDlgTitle" Overridable="yes"><!-- _locID_text="DataDirDlgTitle" _locComment="DataDirDlgTitle" -->{\WixUI_Font_Title}Data Folder</String>
+    <String Id="DataDirDlgDescription" Overridable="yes"><!-- _locID_text="DataDirDlgDescription" _locComment="DataDirDlgDescription" -->Click Next to use the default folder or click Change to choose another.</String>
+    <String Id="DataDirDlgAutoStartLabelText" Overridable="yes"><!-- _locID_text="DataDirDlgAutoStartLabelText" _locComment="DataDirDlgAutoStartLabelText" -->Launch [ProductName] when system starts</String>
+    <String Id="DataDirDlgFolderLabel" Overridable="yes"><!-- _locID_text="DataDirDlgFolderLabel" _locComment="DataDirDlgFolderLabel" -->Use ths folder for [ProductName] user data:</String>
+</WixLocalization>

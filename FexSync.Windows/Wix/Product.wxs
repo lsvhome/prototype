@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"
+     >
+  <Product Id="*" Name="FexSync" Language="1033" Version="1.0.0.0" Manufacturer="FEX.NET" UpgradeCode="7a4ff014-c2f2-4b20-9c56-bf7113e6bc6b">
+    <Package InstallerVersion="200" Compressed="yes" InstallScope="perMachine" />
+    <MajorUpgrade DowngradeErrorMessage="A newer version of [ProductName] is already installed." />
+    <MediaTemplate EmbedCab="yes" />
+    <Feature Id="ProductFeature" Title="FexSync" Level="1">
+      <ComponentGroupRef Id="ComponentGroupFexSync" />
+      <ComponentRef Id="FexSyncShortcutDesktopComponent"/>
+      <ComponentRef Id="ApplicationStartMenuShortcutComponent"/>
+      <ComponentRef Id="AutoStartComponent"/>
+      <ComponentRef Id="ChangeConfigComponent"/>
+    </Feature>
+    <UIRef Id="WixUI_Custom" />
+
+    <Property Id="AUTOSTART" Value="1" />
+
+    <SetProperty Id="FEXDATAFOLDER"
+      After="LaunchConditions"
+      Sequence="first"
+      Value="[%LOCALAPPDATA]\FEX.NET\FexSync\Default">
+      <![CDATA[NOT Installed AND FEXDATAFOLDER=""]]>
+    </SetProperty>
+
+    <Icon Id="icon.ico" SourceFile="..\..\Resources\Default.ico"/>
+    <Property Id="ARPPRODUCTICON" Value="icon.ico" />
+
+  </Product>
+  <Fragment>
+    <Directory Id="TARGETDIR" Name="SourceDir">
+      <Directory Id="ProgramFilesFolder">
+        <Directory Id="FexNetFolder" Name="Fex.Net">
+          <Directory Id="INSTALLDIR" Name="FexSync">
+          </Directory>
+        </Directory>
+      </Directory>
+
+
+      <Directory Id="DesktopFolder" Name="Desktop" />
+      <Directory Id="ApplicationProgramsFolder" />
+    </Directory>
+
+    <Component Id="FexSyncShortcutDesktopComponent" Guid="{03E6DF1B-76C5-485F-B0BD-1EE234C2B4CE}" Directory="DesktopFolder">
+      <Shortcut Id="ApplicationDesktopShortcut"
+        Name="FexSync"
+        Description="Fex.Net file synchronization"
+        Target="[#FexSync.exe]"
+        WorkingDirectory="INSTALLDIR"/>
+      <RemoveFolder Id="DesktopFolder" On="uninstall"/>
+      <RegistryValue Id="rd"
+        Root="HKCU"
+        Key="Software\Fex.Net\FexSyncDesktopShortcut"
+        Name="installed"
+        Type="integer"
+        Value="1"
+        KeyPath="yes"/>
+    </Component>
+
+    <Component Id="ApplicationStartMenuShortcutComponent" Guid="{69C63CC5-D830-45C0-960F-86CAAA7C3D64}" Directory="ApplicationProgramsFolder">
+      <Shortcut Id="ApplicationStartMenuShortcut"
+        Name="FexSync"
+        Description="Fex.Net file synchronization"
+        Target="[#FexSync.exe]"
+        WorkingDirectory="INSTALLDIR"/>
+      <RemoveFolder Id="CleanUpShortCut" Directory="ApplicationProgramsFolder" On="uninstall"/>
+      <RegistryValue Id="rs"
+        Root="HKLM"
+        Key="Software\Fex.Net\FexSyncStartMenuShortcut"
+        Name="installed"
+        Type="integer"
+        Value="1"
+        KeyPath="yes"/>
+    </Component>
+
+    <Component Id="AutoStartComponent" Guid="{79C63CC5-D830-45C0-960F-86CAAA7C3D64}" Directory="INSTALLDIR">
+      <Condition>AUTOSTART = 1</Condition>
+      <RegistryValue Id="RegistryKeyAutoStart"
+        Root="HKLM"
+        Key="SOFTWARE\Microsoft\Windows\CurrentVersion\Run"
+        Name="FexSync"
+        Type="string"
+        Value="[#FexSync.exe]"
+        KeyPath="yes"/>
+      <RemoveRegistryKey
+        Id='AutoStartCleanupOnUninstall'
+        Action='removeOnUninstall'
+        Root='HKLM'
+        Key='SOFTWARE\Microsoft\Windows\CurrentVersion\Run\FexSync' />
+    </Component>
+
+  </Fragment>
+
+  <Fragment>
+
+    <Component Id="ChangeConfigComponent" Guid="{7D6601E8-0D84-4B96-A9A6-5EF32DAEAE3F}" KeyPath="yes" Directory="INSTALLDIR">
+      <util:XmlFile
+        Id="AppConfigSetConnStr"
+        Action="setValue"
+        Permanent="yes"
+        File="[#FexSync.exe.config]"
+        ElementPath="/configuration/appSettings/add[\[]@key='DefaultFexUserRootFolder'[\]]"
+        Name="value"
+        Sequence="1"
+        SelectionLanguage="XPath"
+        Value="[FEXDATAFOLDER]" />
+
+    </Component>
+
+  </Fragment>
+
+  <?include UI\WixUI_Custom.wxs ?>
+  <?include UI\WelcomeCustomDlg.wxs ?>
+  <?include UI\DataFolderDlg.wxs ?>
+</Wix>

@@ -1,0 +1,35 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <ProjectGuid>{311DB44D-69F0-40B4-9DFE-C71DF9B366F9}</ProjectGuid>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+
+    <RootNamespace>FexSync.Data.Tests</RootNamespace>
+
+    <AssemblyName>FexSync.Data.Tests</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="StyleCop.Cache" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1.tests\ConnectionTestFixtureSettings.cs" Link="ConnectionTestFixtureSettings.cs" />
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1.tests\Extenders.cs" Link="Extenders.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170628-02" />
+    <PackageReference Include="MSTest.TestAdapter" Version="1.1.18" />
+    <PackageReference Include="MSTest.TestFramework" Version="1.1.18" />
+    <PackageReference Include="StyleCop.MSBuild" Version="5.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\FexSync.Data\FexSync.Data.csproj" />
+    <ProjectReference Include="..\submodules\fex-api\net.fex.api.v1\net.fex.api.v1.csproj" />
+  </ItemGroup>
+
+</Project>
