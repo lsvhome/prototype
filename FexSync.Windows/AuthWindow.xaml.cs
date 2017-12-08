@@ -136,8 +136,12 @@ namespace FexSync
         {
             this.HideError();
 
+            Regex loginregex1 = new Regex(@"\d{12}");
+            Regex loginregex2 = new Regex(@"[\da-zA-Z]+");
+
             var login = TxtLogin.Text.Trim().TrimStart('+');
-            if (login.Length == 0 || login == LoginPlaceholder)
+            var loginValid = loginregex1.IsMatch(login) || loginregex2.IsMatch(login);
+            if (login.Length == 0 || login == LoginPlaceholder || !loginValid)
             {
                 this.ShowError("Введите логин или телефон.");
                 return;
@@ -162,8 +166,8 @@ namespace FexSync
         {
             try
             {
-                await conn.SignInAsync(login, password, false);
-                return true;
+                var user = await conn.SignInAsync(login, password, false);
+                return user?.Info?.MaxUploadSize > 0;
             }
             catch
             {
@@ -176,8 +180,15 @@ namespace FexSync
             conn.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
             try
             {
-                if (await this.IsCredentialsValidAsync(conn, login, password))
+                var user = await conn.SignInAsync(login, password, false);
+
+                if (user != null)
                 {
+                    if (!(user?.Info?.MaxUploadSize > 0))
+                    {
+                        throw new FreeUserAccessDeniedException();
+                    }
+
                     if (this.OnSignedIn != null)
                     {
                         this.OnSignedIn(this, new CommandSignIn.SignInEventArgs(conn, login, password));
@@ -189,6 +200,17 @@ namespace FexSync
                         this.Close();
                     });
                 }
+                else
+                {
+                    this.Dispatcher.Invoke(() =>
+                    {
+                        this.ShowError("Неверный логин или пароль.");
+                    });
+                }
+            }
+            catch (FreeUserAccessDeniedException)
+            {
+                this.Dispatcher.Invoke(() => { this.ShowError("Приложение доступно только для пользователей с пакетом FEX Plus."); });
             }
             catch (Net.Fex.Api.ApiErrorException ex)
             {

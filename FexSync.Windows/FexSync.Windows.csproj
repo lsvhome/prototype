@@ -82,6 +82,7 @@
       <DependentUpon>AuthWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Extenders.cs" />
+    <Compile Include="FreeUserAccessDeniedException.cs" />
     <Compile Include="Settings\AccountSettings.cs" />
     <Compile Include="DelegateCommand.cs" />
     <Compile Include="QuickStartImageList.cs" />

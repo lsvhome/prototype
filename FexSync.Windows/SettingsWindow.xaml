@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:FexSync"
         mc:Ignorable="d"
-        Title="Settings" WindowStartupLocation="CenterScreen" Width="500" Height="350" ShowInTaskbar="False">
+        Title="Settings" WindowStartupLocation="CenterScreen" Width="500" Height="350" ShowInTaskbar="True" ResizeMode="NoResize">
     <DockPanel>
 
         <Grid Background="#FFE5E5E5"  Margin="0,0,0,0" Height="38" DockPanel.Dock="Bottom" VerticalAlignment="Bottom" >
