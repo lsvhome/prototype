@@ -78,6 +78,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AlertsWindow.xaml.cs">
+      <DependentUpon>AlertsWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="AuthWindow.xaml.cs">
       <DependentUpon>AuthWindow.xaml</DependentUpon>
     </Compile>
@@ -90,6 +93,10 @@
       <DependentUpon>QuickStartWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings\ApplicationSettingsManager.cs" />
+    <Page Include="AlertsWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="AuthWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

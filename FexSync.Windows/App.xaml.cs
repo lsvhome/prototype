@@ -113,20 +113,7 @@ namespace FexSync
 #endif
 
                 //// create the notifyicon (it's a resource declared in NotifyIconResources.xaml
-                //// sometimes doesn't work:  this.NotifyIcon = (TaskbarIcon)((App)App.Current).FindResource("NotifyIcon");
-                //// <workaround>
-                var assemblyName = Assembly.GetExecutingAssembly().GetName().Name;
-                ResourceDictionary notifyIconResourcesDictionary = Application.LoadComponent(new Uri($"/{assemblyName};component/NotifyIconResources.xaml", UriKind.RelativeOrAbsolute)) as ResourceDictionary;
-                System.Diagnostics.Debug.WriteLine(notifyIconResourcesDictionary.Keys.Cast<string>().Count().ToString());
-
-                if (!notifyIconResourcesDictionary.Keys.Cast<string>().Any(key => key == NotifyIconKey))
-                {
-                    System.Diagnostics.Trace.Fail($"Resource with key '{NotifyIconKey}' not found.");
-                }
-
-                object notifyIconObject = notifyIconResourcesDictionary[NotifyIconKey];
-                this.NotifyIcon = (TaskbarIcon)notifyIconObject;
-                //// </workaround>
+                this.NotifyIcon = (TaskbarIcon)((App)App.Current).FindResource("NotifyIcon");
 
                 this.NotifyIcon.DataContext = new NotifyIconViewModel();
 

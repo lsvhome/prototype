@@ -40,68 +40,37 @@ namespace FexSync
         private readonly string captchaUrl = ConfigurationManager.AppSettings["FEX.NET.ApiHost"] + "captcha?captcha_token=";
         private readonly RequestCachePolicy requestCachePolicy = new RequestCachePolicy(RequestCacheLevel.NoCacheNoStore);
 
-        private string captchaToken;
+        public string CaptchaToken { get; set; }
+
+        private bool captchaAnswerRequestMode = false;
 
         private IConnection connection = null;
 
-        public AuthWindow(IConnection conn)
+        public AuthWindow(IConnection conn, string captchaToken = null)
         {
+            this.InitializeComponent();
             this.connection = conn;
+            this.CaptchaToken = captchaToken;
 
             this.InitializeComponent();
 
             this.LnkRegister.RequestNavigate += this.Link_RequestNavigate;
             this.LnkRecoverPassword.RequestNavigate += this.Link_RequestNavigate;
-
-            this.Initialize();
         }
 
-        public void Initialize()
+        protected override void OnInitialized(EventArgs e)
         {
-            /*
-            string login;
-            try
-            {
-                login = await _program.Initialize();
-            }
-            catch
-            {
-                if (Settings.IsActive) ((App)Application.Current).StartStopUpload(false);
+            base.OnInitialized(e);
 
-                ((App)Application.Current).ShowRestoreMenuItem();
-                ((App)Application.Current).ShowBalloonTip("FEX Backup", "Нет связи с сервером.", System.Windows.Forms.ToolTipIcon.Error);
-                Hide();
-                return;
-            }
-
-            Settings.Login = login;
-
-            if (string.IsNullOrEmpty(login))
+            if (string.IsNullOrWhiteSpace(this.CaptchaToken))
             {
-                AppShortcut.AutoStart(false);
-                Show();
+                this.HideCaptcha();
             }
             else
             {
-                TxtLogin.Text = string.Empty;
-                TxtLogin_LostFocus();
-
-                PwdPassword.Password = string.Empty;
-                PwdPassword_LostFocus();
-
-                ((App)Application.Current).ShowAllMenuItems();
-
-                if (IsVisible)
-                {
-                    if (ClickOnceHelper.IsApplicationNetworkDeployed && Settings.IsAutoStartEnabled && !AppShortcut.IsAutoStartEnabled)
-                        AppShortcut.AutoStart(true);
-
-                    Hide();
-
-                    ((App)Application.Current).ShowSettingsWindow();
-                }
+                this.captchaAnswerRequestMode = true;
+                this.ShowCaptcha();
             }
-            */
         }
 
         private void ShowCaptcha()
@@ -126,8 +95,14 @@ namespace FexSync
 
         private void GetCaptchaImage()
         {
-            this.captchaToken = Guid.NewGuid().ToString("N");
-            this.ImgCaptcha.Source = new BitmapImage(new Uri(this.captchaUrl + this.captchaToken), this.requestCachePolicy);
+            if (string.IsNullOrWhiteSpace(this.CaptchaToken))
+            {
+                this.CaptchaToken = Guid.NewGuid().ToString("N");
+            }
+
+            var uri = new Uri(this.captchaUrl + this.CaptchaToken);
+            System.Diagnostics.Debug.WriteLine(uri.ToString());
+            this.ImgCaptcha.Source = new BitmapImage(uri, this.requestCachePolicy);
 
             this.TxtCaptcha.Text = string.Empty;
         }
@@ -153,7 +128,7 @@ namespace FexSync
                 return;
             }
 
-            if (!string.IsNullOrEmpty(this.captchaToken))
+            if (!string.IsNullOrEmpty(this.CaptchaToken))
             {
                 this.ShowCaptcha();
                 return;
@@ -225,7 +200,7 @@ namespace FexSync
             }
             finally
             {
-                this.captchaToken = null;
+                this.CaptchaToken = null;
                 conn.OnCaptchaUserInputRequired = null;
             }
         }
@@ -238,11 +213,15 @@ namespace FexSync
             }
         }
 
+        private void ProcessSignedIn()
+        {
+        }
+
         private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs e)
         {
             this.Dispatcher.Invoke(() =>
             {
-                captchaToken = e.CaptchaToken.Token;
+                CaptchaToken = e.CaptchaToken.Token;
                 this.ImgCaptcha.Source = new BitmapImage(new Uri(captchaUrl + e.CaptchaToken.Token), requestCachePolicy);
 
                 this.TxtCaptcha.Text = string.Empty;
@@ -413,7 +392,15 @@ namespace FexSync
 
             var login = this.TxtLogin.Text.Trim().TrimStart('+');
 
-            this.waitForCaptchaEvent.Set();
+            if (this.captchaAnswerRequestMode)
+            {
+                this.DialogResult = true;
+                this.Close();
+            }
+            else
+            {
+                this.waitForCaptchaEvent.Set();
+            }
         }
 
         public event EventHandler<CommandSignIn.SignInEventArgs> OnSignedIn;

@@ -269,6 +269,48 @@ namespace FexSync
             }
         }
 
+        /// <summary>
+        /// Shows a window, if none is already open.
+        /// </summary>
+        public ICommand AlertsShowCommand
+        {
+            get
+            {
+                return new DelegateCommand
+                {
+                    CanExecuteFunc = () => ApplicationSettingsManager.AccountSettings.Exists() && SyncWorkflow.Singleton.Instance.Alerts.Any(),
+                    CommandAction = () =>
+                    {
+                        var alert = SyncWorkflow.Singleton.Instance.Alerts.Where(a => a.Priority == Alert.AlertPriority.critical).FirstOrDefault();
+
+                        if (alert != null)
+                        {
+                            //// Will use special windows for each alert type with critical priority
+                            if (alert is CaptchaRequiredAlert captchaRequiredAlert)
+                            {
+                                AuthWindow w = new AuthWindow(captchaRequiredAlert.CaptchaRequestedEventArgs.Connection, captchaRequiredAlert.CaptchaRequestedEventArgs.CaptchaToken.Token);
+                                if (w.ShowDialog() == true)
+                                {
+                                    captchaRequiredAlert.CaptchaRequestedEventArgs.CaptchaText = w.TxtCaptcha.Text;
+                                    captchaRequiredAlert.MarkProcessed();
+                                }
+                            }
+                            else
+                            {
+                                MessageBox.Show(alert.Text);
+                                alert.MarkProcessed();
+                            }
+
+                            return;
+                        }
+
+                        AlertsWindow alertsWindow = new AlertsWindow(SyncWorkflow.Singleton.Instance.Alerts.OrderBy(item => item.Scope).ThenBy(item => item.Priority));
+                        alertsWindow.ShowDialog();
+                    }
+                };
+            }
+        }
+
         public ICommand ShowMainWindowCommand
         {
             get
@@ -281,12 +323,44 @@ namespace FexSync
                         {
                             this.SignInCommand.Execute(null);
                         }
+                        else if (SyncWorkflow.Singleton.Instance.Alerts.Any())
+                        {
+                            this.AlertsShowCommand.Execute(null);
+                        }
                         else
                         {
                             this.ShowSettingsCommand.Execute(null);
                         }
                     }
                 };
+            }
+        }
+
+        public string SyncStatus
+        {
+            get
+            {
+                if (!ApplicationSettingsManager.AccountSettings.Exists())
+                {
+                    return "Configuration required";
+                }
+
+                if (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.WaitingForAlert)
+                {
+                    return "Alert";
+                }
+
+                if (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Started)
+                {
+                    return "Sync";
+                }
+
+                if (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped)
+                {
+                    return "Pause";
+                }
+
+                return SyncWorkflow.Singleton.Instance.Status.ToString();
             }
         }
 

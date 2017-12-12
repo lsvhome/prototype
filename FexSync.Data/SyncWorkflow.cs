@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Autofac;
@@ -16,8 +17,13 @@ namespace FexSync
         public enum SyncWorkflowStatus
         {
             Stopped,
+
             Starting,
+
             Started,
+
+            WaitingForAlert,
+
             Stopping
         }
 
@@ -136,6 +142,12 @@ namespace FexSync
             {
                 lock (lockObj)
                 {
+                    if (this.alerts.Any())
+                    {
+                        System.Diagnostics.Debug.WriteLine("Status = WaitingForAlert");
+                        return SyncWorkflowStatus.WaitingForAlert;
+                    }
+
                     if (this.worker == null)
                     {
                         System.Diagnostics.Debug.WriteLine("Status = Stopped");
@@ -210,11 +222,22 @@ namespace FexSync
 
         public Action<object, CommandCaptchaRequestPossible.CaptchaRequestedEventArgs> OnCaptchaUserInputRequired { get; set; }
 
-        private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs e)
+        private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs args)
         {
+            using (var waiter = new AutoResetEvent(false))
+            {
+                var alert = new CaptchaRequiredAlert(args, waiter) { Id = 1 };
+
+                this.alerts.Add(alert);
+
+                waiter.WaitOne();
+
+                this.alerts.Remove(alert);
+            }
+
             if (this.OnCaptchaUserInputRequired != null)
             {
-                this.OnCaptchaUserInputRequired(sender, e);
+                this.OnCaptchaUserInputRequired(sender, args);
             }
         }
 
@@ -231,7 +254,17 @@ namespace FexSync
                 using (var conn = this.config.Container.Resolve<IConnectionFactory>().CreateConnection(endPoint))
                 {
                     conn.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
-                    var signin = conn.SignIn(this.config.AccountSettings.Login, this.config.AccountSettings.Password, false);
+                    while (!conn.IsSignedIn)
+                    {
+                        try
+                        {
+                            conn.SignIn(this.config.AccountSettings.Login, this.config.AccountSettings.Password, false);
+                        }
+                        catch (CaptchaRequiredException ex)
+                        {
+                            ex.Process();
+                        }
+                    }
 
                     this.Init(conn);
 
@@ -332,6 +365,17 @@ namespace FexSync
             using (CommandDownloadQueue cmd = new CommandDownloadQueue(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder)))
             {
                 cmd.Execute(conn);
+            }
+        }
+
+        private readonly ThreadSafeListWithLock<Alert> alerts = new ThreadSafeListWithLock<Alert>();
+
+        public IEnumerable<Alert> Alerts
+        {
+            get
+            {
+                Task.Run(() => { this.alerts.RemoveAll(x => x.Processed); });
+                return this.alerts.Where(item => !item.Processed).ToArray();
             }
         }
     }
