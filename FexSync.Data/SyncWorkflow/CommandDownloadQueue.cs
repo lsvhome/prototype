@@ -32,6 +32,8 @@ namespace FexSync.Data
             DownloadItem di = null;
             while ((di = this.SyncDb.Downloads.Where(item => item.TriesCount <= maxTriesCount).OrderBy(item => item.TriesCount).ThenByDescending(x => x.ItemCreated).FirstOrDefault()) != null)
             {
+                conn.CancellationToken.ThrowIfCancellationRequested();
+
                 di.TriesCount++;
                 this.SyncDb.SaveChanges();
                 try

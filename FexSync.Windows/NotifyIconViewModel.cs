@@ -60,7 +60,7 @@ namespace FexSync
                                     var app = (App)Application.Current;
                                     if (app.SyncWorkflow != null)
                                     {
-                                        bool doStopRecofigureStart = app.SyncWorkflow.IsBusy;
+                                        bool doStopRecofigureStart = app.SyncWorkflow.Status != SyncWorkflow.SyncWorkflowStatus.Stopped;
 
                                         EventHandler onStoppedSyncWorkflowEventHandler = null;
 
@@ -201,7 +201,7 @@ namespace FexSync
                     {
                         try
                         {
-                            using (var conn = new Connection(new Uri(ApplicationSettingsManager.ApiHost)))
+                            using (var conn = ((App)App.Current).Container.Resolve<Data.IConnectionFactory>().CreateConnection(new Uri(ApplicationSettingsManager.ApiHost)))
                             {
                                 var authWindow = new AuthWindow(conn);
                                 authWindow.OnSignedIn += (object sender1, CommandSignIn.SignInEventArgs signedUserArgs) =>

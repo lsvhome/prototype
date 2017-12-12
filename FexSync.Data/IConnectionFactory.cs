@@ -11,5 +11,7 @@ namespace FexSync.Data
     public interface IConnectionFactory
     {
         IConnection CreateConnection(Uri endPoint);
+
+        IConnection CreateConnection(Uri endPoint, System.Threading.CancellationToken cancellationToken);
     }
 }

@@ -35,6 +35,11 @@ namespace FexSync.Data
             UploadItem ui = null;
             while ((ui = this.SyncDb.Uploads.Where(x => x.TriesCount <= maxTriesCount).OrderBy(x => x.TriesCount).ThenByDescending(x => x.ItemCreated).FirstOrDefault()) != null)
             {
+                if (conn.CancellationToken.IsCancellationRequested)
+                {
+                    return;
+                }
+
                 ui.TriesCount++;
                 this.SyncDb.SaveChanges();
                 try

@@ -84,6 +84,7 @@ namespace Net.Fex.Api
             int offset = 0;
             do
             {
+                connection.CancellationToken.ThrowIfCancellationRequested();
                 archiveResponse = connection.Archive(offset, 100);
                 offset += archiveResponse.Count;
                 rootObjects.AddRange(archiveResponse.ObjectList);
@@ -92,6 +93,7 @@ namespace Net.Fex.Api
 
             foreach (var each in rootObjects.Where(obj => string.IsNullOrWhiteSpace(this.Token) || string.Equals(this.Token, obj.Token)))
             {
+                connection.CancellationToken.ThrowIfCancellationRequested();
                 this.ExecuteObject(connection, each, result);
             }
 
@@ -105,6 +107,8 @@ namespace Net.Fex.Api
             list.Add(item);
             foreach (var each in props.UploadList)
             {
+                connection.CancellationToken.ThrowIfCancellationRequested();
+
                 if (each.IsFolder == 1)
                 {
                     this.ExecuteFolder(connection, objectArchive.Token, each, item);
@@ -123,6 +127,7 @@ namespace Net.Fex.Api
             var props = connection.ObjectFolderView(token, objectView.UploadId);
             foreach (var each in props.UploadList)
             {
+                connection.CancellationToken.ThrowIfCancellationRequested();
                 if (each.IsFolder == 1)
                 {
                     this.ExecuteFolder(connection, token, each, item);

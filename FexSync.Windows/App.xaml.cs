@@ -129,7 +129,7 @@ namespace FexSync
                     var quickStart = new QuickStartWindow();
                     quickStart.Closed += (object sender, EventArgs args) =>
                     {
-                        using (var conn = new Connection(new Uri(ApplicationSettingsManager.ApiHost)))
+                        using (var conn = ((App)App.Current).Container.Resolve<Data.IConnectionFactory>().CreateConnection(new Uri(ApplicationSettingsManager.ApiHost)))
                         {
                             var authWindow = new AuthWindow(conn);
                             authWindow.OnSignedIn += (object sender1, CommandSignIn.SignInEventArgs signedUserArgs) =>
