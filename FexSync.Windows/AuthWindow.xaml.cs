@@ -48,7 +48,6 @@ namespace FexSync
 
         public AuthWindow(IConnection conn, string captchaToken = null)
         {
-            this.InitializeComponent();
             this.connection = conn;
             this.CaptchaToken = captchaToken;
 

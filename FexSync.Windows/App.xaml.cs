@@ -129,6 +129,11 @@ namespace FexSync
                     var quickStart = new QuickStartWindow();
                     quickStart.Closed += (object sender, EventArgs args) =>
                     {
+                        //// build temporary container
+                        var builder = new ContainerBuilder();
+                        builder.RegisterInstance<IConnectionFactory>(new Data.ConnectionFactory());
+                        this.Container = builder.Build();
+
                         using (var conn = ((App)App.Current).Container.Resolve<Data.IConnectionFactory>().CreateConnection(new Uri(ApplicationSettingsManager.ApiHost)))
                         {
                             var authWindow = new AuthWindow(conn);
