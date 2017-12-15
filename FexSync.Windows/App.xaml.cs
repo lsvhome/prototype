@@ -77,6 +77,7 @@ namespace FexSync
             builder.RegisterInstance<IConnectionFactory>(new Data.ConnectionFactory());
             var fn = ApplicationSettingsManager.AccountSettings.AccountCacheDbFile;
             builder.RegisterInstance<FexSync.Data.ISyncDataDbContext>(new FexSync.Data.SyncDataDbContext(fn));
+            builder.RegisterInstance<FexSync.Data.IFileSystemWatcher>(new FexSync.WindowsFileSystemWatcher());
 
             if (this.Container != null)
             {

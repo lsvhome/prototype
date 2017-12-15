@@ -92,6 +92,7 @@ namespace FexSync.Data.Tests
                 builder.RegisterInstance<IConnectionFactory>(new Data.ConnectionFactory());
                 var syncDb = new FexSync.Data.SyncDataDbContext(config.AccountSettings.AccountCacheDbFile);
                 builder.RegisterInstance<FexSync.Data.ISyncDataDbContext>(syncDb);
+                builder.RegisterInstance<FexSync.Data.IFileSystemWatcher>(new FakseFileSystemWatcher());
 
                 using (config.Container = builder.Build())
                 {

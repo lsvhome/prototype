@@ -11,6 +11,7 @@ namespace FexSync
         internal static void Process(this Exception exception)
         {
 #if DEBUG
+            System.Diagnostics.Debug.WriteLine(exception.ToString());
             System.Diagnostics.Debugger.Break();
 #endif
         }
