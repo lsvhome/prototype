@@ -29,7 +29,10 @@ namespace FexSync.Data
 
         public List<T> Clone()
         {
-            ThreadLocal<List<T>> threadClonedList = new ThreadLocal<List<T>>();
+            ThreadLocal<List<T>> threadClonedList = new ThreadLocal<List<T>>(() =>
+            {
+                return new List<T>();
+            });
 
             lock (this.lockList)
             {

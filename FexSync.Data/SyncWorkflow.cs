@@ -14,6 +14,8 @@ namespace FexSync
 {
     public partial class SyncWorkflow : IDisposable, IConfigurable
     {
+        private static object lockDb = new object();
+
         public enum SyncWorkflowStatus
         {
             Stopped,
@@ -232,6 +234,8 @@ namespace FexSync
 
                         this.PrepareTransferQueues(conn);
 
+                        this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>().Start(new[] { new DirectoryInfo(this.config.AccountSettings.AccountDataFolder) });
+
                         while (true)
                         {
                             conn.CancellationToken.ThrowIfCancellationRequested();
@@ -265,6 +269,7 @@ namespace FexSync
                     }
                     finally
                     {
+                        this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>().Stop();
                         conn.SignOut();
                         conn.OnCaptchaUserInputRequired = null;
                     }
@@ -295,48 +300,55 @@ namespace FexSync
             }
 
             ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
-            syncDb.EnsureDatabaseExists();
+            lock (lockDb)
+            {
+                syncDb.EnsureDatabaseExists();
+            }
         }
 
         private void PrepareTransferQueues(IConnection conn)
         {
             ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
-
-            using (CommandSaveLocalTree cmd = new CommandSaveLocalTree(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder)))
+            lock (lockDb)
             {
-                cmd.Execute(conn);
-            }
+                using (CommandSaveLocalTree cmd = new CommandSaveLocalTree(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder)))
+                {
+                    cmd.Execute(conn);
+                }
 
-            int treeId;
-            using (CommandSaveRemoteTree cmd = new CommandSaveRemoteTree(syncDb, this.config.AccountSettings.TokenForSync))
-            {
-                cmd.Execute(conn);
-                treeId = cmd.Result.Value;
-            }
+                int treeId;
+                using (CommandSaveRemoteTree cmd = new CommandSaveRemoteTree(syncDb, this.config.AccountSettings.TokenForSync))
+                {
+                    cmd.Execute(conn);
+                    treeId = cmd.Result.Value;
+                }
 
-            using (CommandPrepareDownload cmd = new CommandPrepareDownload(syncDb, treeId))
-            {
-                cmd.Execute(conn);
-            }
+                using (CommandPrepareDownload cmd = new CommandPrepareDownload(syncDb, treeId))
+                {
+                    cmd.Execute(conn);
+                }
 
-            using (CommandPrepareUpload cmd = new CommandPrepareUpload(syncDb, treeId))
-            {
-                cmd.Execute(conn);
+                using (CommandPrepareUpload cmd = new CommandPrepareUpload(syncDb, treeId))
+                {
+                    cmd.Execute(conn);
+                }
             }
         }
 
         private void Transfer(IConnection conn)
         {
             ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
-
-            using (CommandUploadQueue cmd = new CommandUploadQueue(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder), this.config.AccountSettings.TokenForSync))
+            lock (lockDb)
             {
-                cmd.Execute(conn);
-            }
+                using (CommandUploadQueue cmd = new CommandUploadQueue(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder), this.config.AccountSettings.TokenForSync))
+                {
+                    cmd.Execute(conn);
+                }
 
-            using (CommandDownloadQueue cmd = new CommandDownloadQueue(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder)))
-            {
-                cmd.Execute(conn);
+                using (CommandDownloadQueue cmd = new CommandDownloadQueue(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder)))
+                {
+                    cmd.Execute(conn);
+                }
             }
         }
 

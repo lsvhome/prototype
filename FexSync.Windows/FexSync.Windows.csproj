@@ -93,6 +93,7 @@
       <DependentUpon>QuickStartWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings\ApplicationSettingsManager.cs" />
+    <Compile Include="FileSystemWatcher\WindowsFileSystemWatcher.cs" />
     <Page Include="AlertsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -18,6 +18,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "net.fex.api.v1", "submodule
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "net.fex.api.v1.tests", "submodules\fex-api\net.fex.api.v1.tests\net.fex.api.v1.tests.csproj", "{6D1D0AE2-15FB-4512-885A-562BC345E274}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FexSync.Windows.Tests", "FexSync.Windows.Tests\FexSync.Windows.Tests.csproj", "{EE0540FA-D294-4891-A0E6-A337607C5B2D}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		FexSync.Shared\FexSync.Shared.projitems*{3d8a89c0-e4f0-45ae-9531-4e8b30a50e66}*SharedItemsImports = 13
@@ -100,6 +102,18 @@ Global
 		{6D1D0AE2-15FB-4512-885A-562BC345E274}.Release|Any CPU.Build.0 = Release|Any CPU
 		{6D1D0AE2-15FB-4512-885A-562BC345E274}.Release|x86.ActiveCfg = Release|Any CPU
 		{6D1D0AE2-15FB-4512-885A-562BC345E274}.Release|x86.Build.0 = Release|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Debug|x86.Build.0 = Debug|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Deploy|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Deploy|Any CPU.Build.0 = Debug|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Deploy|x86.ActiveCfg = Debug|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Deploy|x86.Build.0 = Debug|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Release|x86.ActiveCfg = Release|Any CPU
+		{EE0540FA-D294-4891-A0E6-A337607C5B2D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
