@@ -64,6 +64,8 @@ namespace FexSync.Windows.Tests
                 Assert.AreEqual(createdFileInRootFolder, e.FullPath);
             }
 
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
+
             {
                 System.Diagnostics.Debug.WriteLine($"Create Test file is {createdFileInSubFolder}");
                 //// Create
@@ -87,6 +89,7 @@ namespace FexSync.Windows.Tests
                 Assert.AreEqual(createdFileInSubFolder, e.FullPath);
             }
 
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
         }
 
         public void MoveFile(string testDir, WindowsFileSystemWatcherTest w)
@@ -125,6 +128,8 @@ namespace FexSync.Windows.Tests
 
             }
 
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
+
             {
                 System.Diagnostics.Debug.WriteLine($"Create Test file is {movedFileInSubFolder}");
                 //// Create
@@ -148,6 +153,7 @@ namespace FexSync.Windows.Tests
                 Assert.AreEqual(movedFileInSubFolder, e.OldPath);
             }
 
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
         }
 
         public void CRUD(string testDir, WindowsFileSystemWatcherTest w)
@@ -184,6 +190,8 @@ namespace FexSync.Windows.Tests
                 Assert.AreEqual(createdFile, e.FullPath);
             }
 
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
+
             {
                 //// Modify
                 System.Diagnostics.Debug.WriteLine($"Modify Test file is {createdFile}");
@@ -202,6 +210,8 @@ namespace FexSync.Windows.Tests
                 Assert.AreEqual(createdFile, e.FullPath);
             }
 
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
+
             {
                 //// Rename (within)
                 System.Diagnostics.Debug.WriteLine($"Rename Test file is {createdFile} -> {movedFile}");
@@ -215,6 +225,8 @@ namespace FexSync.Windows.Tests
                 Assert.AreEqual(createdFile, e.OldPath);
                 Assert.AreEqual(movedFile, e.NewPath);
             }
+
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
 
             System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
 
@@ -232,7 +244,7 @@ namespace FexSync.Windows.Tests
                 Assert.AreEqual(movedFile2, e.NewPath);
             }
 
-
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
 
 
             {
@@ -242,13 +254,15 @@ namespace FexSync.Windows.Tests
                 w.FiredEvents.Clear();
                 File.Delete(movedFile2);
                 System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
+                System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
 
                 Assert.AreEqual(1, w.FiredEvents.Count);
-                Assert.IsNotNull(w.FiredEvents.Single() is FileOrFolderDeletedEventArgs);
-                var e2 = (FileOrFolderDeletedEventArgs)w.FiredEvents.Single();
+                Assert.IsNotNull(w.FiredEvents.Single() is FileDeletedEventArgs);
+                var e2 = (FileDeletedEventArgs)w.FiredEvents.Single();
                 Assert.AreEqual(movedFile2, e2.FullPath);
             }
 
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
 
             {
                 //// Create
@@ -262,17 +276,22 @@ namespace FexSync.Windows.Tests
                 Assert.AreEqual(createdFile, e.FullPath);
             }
 
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
+
             {
                 //// Move Outside
                 w.FiredEvents.Clear();
                 File.Move(createdFile, movedFileOutside);
                 System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
+                System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
 
                 Assert.AreEqual(1, w.FiredEvents.Count);
-                Assert.IsNotNull(w.FiredEvents.Single() is FileOrFolderDeletedEventArgs);
-                var e2 = (FileOrFolderDeletedEventArgs)w.FiredEvents.Single();
+                Assert.IsNotNull(w.FiredEvents.Single() is FileDeletedEventArgs);
+                var e2 = (FileDeletedEventArgs)w.FiredEvents.Single();
                 Assert.AreEqual(createdFile, e2.FullPath);
             }
+
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
 
             {
                 //// Delete Outside
@@ -283,6 +302,8 @@ namespace FexSync.Windows.Tests
                 Assert.AreEqual(0, w.FiredEvents.Count);
             }
 
+
+            Assert.AreEqual(0, w.EventFilterPublic.Count);
         }
 
         private void TestRunTemplate(Action<string, WindowsFileSystemWatcherTest> testAction)
@@ -296,8 +317,8 @@ namespace FexSync.Windows.Tests
                     w.Start(new[] { new DirectoryInfo(testDir) });
 
                     testAction(testDir, w);
-
                     w.Stop();
+                    Assert.AreEqual(0, w.EventFilterPublic.Count);
                 }
             }
             finally

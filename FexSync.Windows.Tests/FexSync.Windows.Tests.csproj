@@ -48,9 +48,17 @@
     <Reference Include="System.Core" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Extenders.cs" />
     <Compile Include="WindowsFileSystemWatcherTest.cs" />
     <Compile Include="WindowsFileSystemWatcherTestFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="WindowsFileSystemWatcher_CreateFolder_TestFixture.cs" />
+    <Compile Include="WindowsFileSystemWatcher_DeleteFolder_TestFixture.cs" />
+    <Compile Include="WindowsFileSystemWatcher_DeleteFile_TestFixture.cs" />
+    <Compile Include="WindowsFileSystemWatcher_CreateFile_TestFixture.cs" />
+    <Compile Include="WindowsFileSystemWatcher_ModifyFile_TestFixture.cs" />
+    <Compile Include="WindowsFileSystemWatcher_MoveFolder_TestFixture.cs" />
+    <Compile Include="WindowsFileSystemWatcher_MoveFile_TestFixture.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

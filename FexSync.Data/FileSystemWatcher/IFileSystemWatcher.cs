@@ -14,7 +14,7 @@ namespace FexSync.Data
 
         event EventHandler<FexSync.Data.FileCreatedEventArgs> OnFileCreated;
 
-        event EventHandler<FexSync.Data.FileOrFolderDeletedEventArgs> OnFileOrFolderDeleted;
+        event EventHandler<FexSync.Data.FileDeletedEventArgs> OnFileDeleted;
 
         event EventHandler<FexSync.Data.FileModifiedEventArgs> OnFileModified;
 
