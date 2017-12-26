@@ -14,6 +14,8 @@ namespace FexSync.Data
         [Key]
         public int RemoteFileId { get; set; }
 
+        public int? ParentRemoteFileId { get; set; }
+
         public int RemoteTreeId { get; set; }
 
         [NotMapped]
@@ -29,6 +31,12 @@ namespace FexSync.Data
             set
             {
                 this.path = value.Trim(System.IO.Path.DirectorySeparatorChar);
+#if DEBUG
+                if (System.IO.Path.IsPathRooted(this.path))
+                {
+                    throw new ApplicationException();
+                }
+#endif
             }
         }
 

@@ -5,7 +5,7 @@ using System.Text;
 
 namespace FexSync.Data.Tests
 {
-    public class FakseFileSystemWatcher : FexSync.Data.IFileSystemWatcher
+    public class FakeFileSystemWatcher : FexSync.Data.IFileSystemWatcher
     {
         public void Dispose()
         {
@@ -16,6 +16,14 @@ namespace FexSync.Data.Tests
         }
 
         public void Stop()
+        {
+        }
+
+        public void AddFilterPath(string path)
+        {
+        }
+
+        public void RemoveFilterPath(string path)
         {
         }
 
@@ -33,6 +41,8 @@ namespace FexSync.Data.Tests
         public event EventHandler<FolderDeletedEventArgs> OnFolderDeleted;
 
         public event EventHandler<FolderMovedEventArgs> OnFolderMoved;
+
+        public event EventHandler<ErrorEventArgs> OnError;
 #pragma warning restore CS0067
     }
 }

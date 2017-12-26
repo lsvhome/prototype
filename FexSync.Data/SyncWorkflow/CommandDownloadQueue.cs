@@ -26,6 +26,10 @@ namespace FexSync.Data
             this.Download(connection);
         }
 
+        public event EventHandler<FilePathEventArgs> OnBeforeSave;
+
+        public event EventHandler<FilePathEventArgs> OnAfterSave;
+
         private void Download(IConnection conn)
         {
             var maxTriesCount = this.SyncDb.Downloads.Max(x => (int?)x.TriesCount) ?? 0;
@@ -40,21 +44,39 @@ namespace FexSync.Data
                 {
                     var downloadPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                     var localPath = Path.Combine(this.DataFolder.FullName, di.FilePathLocalRelative);
+
                     conn.Get(di.Token, di.UploadId, downloadPath);
                     if (File.Exists(downloadPath))
                     {
                         if (!Directory.Exists(Path.GetDirectoryName(localPath)))
                         {
+                            this.OnBeforeSave?.Invoke(this, new FilePathEventArgs { FullPath = Path.GetDirectoryName(localPath) });
                             Directory.CreateDirectory(Path.GetDirectoryName(localPath));
+                            this.OnAfterSave?.Invoke(this, new FilePathEventArgs { FullPath = Path.GetDirectoryName(localPath) });
                         }
 
+                        System.Diagnostics.Trace.WriteLine($"Downloaded {localPath}");
                         if (File.Exists(localPath))
                         {
-                            System.IO.File.Replace(downloadPath, localPath, localPath + ".bak");
+                            var trashCopy = Path.Combine(this.DataFolder.FullName, AccountSettings.TrashBinFolderName, Path.GetFileName(localPath));
+                            int i = 0;
+                            while (File.Exists(trashCopy))
+                            {
+                                i++;
+                                trashCopy = Path.Combine(this.DataFolder.FullName, AccountSettings.TrashBinFolderName, $"copy({i})_" + Path.GetFileName(localPath));
+                            }
+
+                            this.OnBeforeSave?.Invoke(this, new FilePathEventArgs { FullPath = localPath });
+                            this.OnBeforeSave?.Invoke(this, new FilePathEventArgs { FullPath = trashCopy });
+                            System.IO.File.Replace(downloadPath, localPath, trashCopy);
+                            this.OnAfterSave?.Invoke(this, new FilePathEventArgs { FullPath = localPath });
+                            this.OnAfterSave?.Invoke(this, new FilePathEventArgs { FullPath = trashCopy });
                         }
                         else
                         {
+                            this.OnBeforeSave?.Invoke(this, new FilePathEventArgs { FullPath = localPath });
                             System.IO.File.Move(downloadPath, localPath);
+                            this.OnAfterSave?.Invoke(this, new FilePathEventArgs { FullPath = localPath });
                         }
                     }
 
@@ -76,8 +98,9 @@ namespace FexSync.Data
                     this.SyncDb.Downloads.Remove(di);
                     this.SyncDb.SaveChanges();
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    ex.Process();
                     this.SyncDb.AcceptAllChangesWithoutSaving();
                 }
             }

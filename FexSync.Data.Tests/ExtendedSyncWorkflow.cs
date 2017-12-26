@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace FexSync.Data.Tests
 {
@@ -9,24 +10,20 @@ namespace FexSync.Data.Tests
             this.Reconfigure(config);
         }
 
-        public void WaitForOneIterationAndStoppped(TimeSpan timeout)
+        public void StartForOneIterationAndStop(TimeSpan timeout)
         {
-            if (this.worker != null)
+            using (System.Threading.AutoResetEvent waiter = new System.Threading.AutoResetEvent(false))
             {
-                using (System.Threading.AutoResetEvent waiter = new System.Threading.AutoResetEvent(false))
+                EventHandler c = (object sender, EventArgs e) =>
                 {
-                    waiter.Reset();
-                    lock (SyncWorkflow.lockObj)
-                    {
-                        if (this.worker != null)
-                        {
-                            this.OnIterationFinished += (object sender, EventArgs e) => { this.Stop(); };
-                            this.worker.RunWorkerCompleted += (object sender, System.ComponentModel.RunWorkerCompletedEventArgs e) => { waiter.Set(); };
-                        }
-                    }
+                    waiter.Set();
+                };
 
-                    waiter.WaitOne();
-                }
+                this.OnTransferFinished += c;
+                this.Start();
+                waiter.WaitOne();
+                this.OnTransferFinished -= c;
+                this.Stop();
             }
         }
     }

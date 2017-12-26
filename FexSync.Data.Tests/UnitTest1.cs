@@ -74,25 +74,41 @@ namespace FexSync.Data.Tests
         public async Task SyncWorkflowTest()
         {
             var root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            Console.WriteLine(root);
-            System.Diagnostics.Debug.WriteLine(root);
-            var localFileName = Path.Combine(root, "Data", TokenValid, Path.ChangeExtension(Path.GetRandomFileName(), ".txt"));
-            var remoteFileNameSource = Path.Combine(root, "Data", TokenValid, Path.ChangeExtension(Path.GetRandomFileName(), ".txt"));
+            System.Diagnostics.Trace.WriteLine(root);
+            var localFileName = Path.Combine(root, "Data", TokenValid, Path.ChangeExtension(Path.GetRandomFileName(), ".txt_1111"));
+            var remoteFileNameSource = Path.Combine(root, Path.ChangeExtension(Path.GetRandomFileName(), ".txt"));
 
             try
             {
-                var config = new SyncWorkflow.SyncWorkflowConfig();
-                config.AccountSettings = new AccountSettings(root);
-                config.AccountSettings.Login = ConnectionTestFixture.LoginValid;
-                config.AccountSettings.Password = ConnectionTestFixture.PasswordValid;
-                config.ApiHost = this.UriValid.ToString();
-                config.AccountSettings.TokenForSync = ConnectionTestFixture.TokenValid;
+                var config = new SyncWorkflow.SyncWorkflowConfig
+                {
+                    AccountSettings = new AccountSettings(root)
+                    {
+                        Login = ConnectionTestFixture.LoginValid,
+                        Password = ConnectionTestFixture.PasswordValid,
+                        TokenForSync = ConnectionTestFixture.TokenValid
+                    },
+                    ApiHost = this.UriValid.ToString()
+                };
 
                 var builder = new ContainerBuilder();
                 builder.RegisterInstance<IConnectionFactory>(new Data.ConnectionFactory());
                 var syncDb = new FexSync.Data.SyncDataDbContext(config.AccountSettings.AccountCacheDbFile);
                 builder.RegisterInstance<FexSync.Data.ISyncDataDbContext>(syncDb);
-                builder.RegisterInstance<FexSync.Data.IFileSystemWatcher>(new FakseFileSystemWatcher());
+                builder.RegisterInstance<FexSync.Data.IFileSystemWatcher>(new FakeFileSystemWatcher());
+
+                using (var conn = new Net.Fex.Api.Connection(new Net.Fex.Api.HttpClientWrapper(), this.UriValid, this.UserAgent))
+                {
+                    conn.OnCaptchaUserInputRequired = this.ProcessCaptchaUserInputRequired;
+
+                    CommandSignIn.User user = await conn.SignInAsync(LoginValid, PasswordValid, false);
+                    using (var cmd = new CommandClearObject(config.AccountSettings.TokenForSync))
+                    {
+                        cmd.Execute(conn);
+                    }
+
+                    await conn.SignOutAsync();
+                }
 
                 using (config.Container = builder.Build())
                 {
@@ -100,21 +116,25 @@ namespace FexSync.Data.Tests
                     {
                         using (var syncWorkflow = new ExtendedSyncWorkflow(config))
                         {
-                            syncWorkflow.OnCaptchaUserInputRequired = this.ProcessCaptchaUserInputRequired;
+                            syncWorkflow.OnAlert += this.SyncWorkflow_OnAlert;
 
-                            syncWorkflow.OnIterationFinished += (object sender, EventArgs e) =>
-                            {
-                                syncWorkflow.Stop();
-                            };
+                            Exception firstException = null;
                             syncWorkflow.OnException += (object sender, ExceptionEventArgs e) =>
                             {
-                                throw e.Exception;
+                                if (firstException == null)
+                                {
+                                    firstException = e.Exception;
+                                }
                             };
+
+                            if (firstException != null)
+                            {
+                                throw firstException;
+                            }
 
                             Assert.IsFalse(File.Exists(config.AccountSettings.AccountCacheDbFile));
 
-                            syncWorkflow.Start();
-                            syncWorkflow.WaitForOneIterationAndStoppped(TimeSpan.FromSeconds(30));
+                            syncWorkflow.StartForOneIterationAndStop(TimeSpan.FromSeconds(30));
 
                             Assert.AreEqual(0, syncDb.Downloads.Count(x => Path.GetFileName(x.FilePathLocalRelative) == Path.GetFileName(remoteFileNameSource)));
                             Assert.AreEqual(0, syncDb.Uploads.Count(x => Path.GetFileName(x.Path) == Path.GetFileName(localFileName)));
@@ -144,8 +164,7 @@ namespace FexSync.Data.Tests
                                 await conn.SignOutAsync();
                             }
 
-                            syncWorkflow.Start();
-                            syncWorkflow.WaitForOneIterationAndStoppped(TimeSpan.FromSeconds(30));
+                            syncWorkflow.StartForOneIterationAndStop(TimeSpan.FromSeconds(30));
 
                             Assert.AreEqual(0, syncDb.Downloads.Count(x => Path.GetFileName(x.FilePathLocalRelative) == Path.GetFileName(remoteFileNameSource)));
                             Assert.AreEqual(0, syncDb.Downloads.Count(x => Path.GetFileName(x.FilePathLocalRelative) == Path.GetFileName(localFileName)));
@@ -224,9 +243,11 @@ namespace FexSync.Data.Tests
                                     File.WriteAllText(localFileName, localFileName);
                                     System.Threading.Thread.Sleep(2000);
 
+                                    //// make second copy of file at server (will be two files with same file names)
                                     conn.Upload(ConnectionTestFixture.TokenValid, null, localFileName);
 
                                     System.Threading.Thread.Sleep(2000);
+                                    //// modify local file
                                     File.WriteAllText(localFileName, localFileName + localFileName);
 
                                     rescan();
@@ -264,19 +285,35 @@ namespace FexSync.Data.Tests
             }
         }
 
+        private void SyncWorkflow_OnAlert(object sender, Alert.AlertEventArgs e)
+        {
+            if (e.Alert is CaptchaRequiredAlert a)
+            {
+                this.ProcessCaptchaUserInputRequired(null, a.CaptchaRequestedEventArgs);
+                e.Alert.MarkProcessed();
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
         [TestMethod]
         public void CommandSaveLocalTreeTest()
         {
             var root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            Console.WriteLine(root);
-            System.Diagnostics.Debug.WriteLine(root);
+            System.Diagnostics.Trace.WriteLine(root);
 
-            var config = new SyncWorkflow.SyncWorkflowConfig();
-            config.AccountSettings = new AccountSettings(root);
-            config.AccountSettings.Login = ConnectionTestFixture.LoginValid;
-            config.AccountSettings.Password = ConnectionTestFixture.PasswordValid;
-            config.ApiHost = this.UriValid.ToString();
-            config.AccountSettings.TokenForSync = ConnectionTestFixture.TokenValid;
+            var config = new SyncWorkflow.SyncWorkflowConfig
+            {
+                AccountSettings = new AccountSettings(root)
+                {
+                    Login = ConnectionTestFixture.LoginValid,
+                    Password = ConnectionTestFixture.PasswordValid,
+                    TokenForSync = ConnectionTestFixture.TokenValid
+                },
+                ApiHost = this.UriValid.ToString()
+            };
 
             Directory.CreateDirectory(config.AccountSettings.AccountDataFolder);
             try
@@ -333,15 +370,18 @@ namespace FexSync.Data.Tests
         public void RemoteCRUDTest()
         {
             var root = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-            Console.WriteLine(root);
-            System.Diagnostics.Debug.WriteLine(root);
+            System.Diagnostics.Trace.WriteLine(root);
 
-            var config = new SyncWorkflow.SyncWorkflowConfig();
-            config.AccountSettings = new AccountSettings(root);
-            config.AccountSettings.Login = ConnectionTestFixture.LoginValid;
-            config.AccountSettings.Password = ConnectionTestFixture.PasswordValid;
-            config.ApiHost = this.UriValid.ToString();
-            config.AccountSettings.TokenForSync = "invalid";
+            var config = new SyncWorkflow.SyncWorkflowConfig
+            {
+                AccountSettings = new AccountSettings(root)
+                {
+                    Login = ConnectionTestFixture.LoginValid,
+                    Password = ConnectionTestFixture.PasswordValid,
+                    TokenForSync = "invalid"
+                },
+                ApiHost = this.UriValid.ToString()
+            };
 
             Directory.CreateDirectory(config.AccountSettings.AccountDataFolder);
             try

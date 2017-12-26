@@ -2,17 +2,16 @@
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 using FexSync.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Threading.Tasks;
 
-namespace FexSync.Windows.Tests
+namespace FexSync.Data.Windows.Tests
 {
     [TestClass]
     public class WindowsFileSystemWatcher_MoveFolder_TestFixture
     {
-
         [TestMethod]
         public void MoveFileWithinObjectFromRootToDeepTest()
         {
@@ -40,7 +39,6 @@ namespace FexSync.Windows.Tests
                     var e = (FolderMovedEventArgs)w.FiredEvents.Single();
                     Assert.AreEqual(srcFolder, e.OldPath);
                     Assert.AreEqual(dstFolder, e.NewPath);
-
                 }
             }
             finally
@@ -99,7 +97,6 @@ namespace FexSync.Windows.Tests
                 using (var w = new WindowsFileSystemWatcherTest())
                 {
                     w.Start(new[] { new DirectoryInfo(testDir) });
-
 
                     Directory.Move(srcFolder, dstFolder);
 
@@ -188,7 +185,6 @@ namespace FexSync.Windows.Tests
             }
         }
 
-
         [TestMethod]
         public void MoveFolleRenameInRootFolderTest()
         {
@@ -203,7 +199,6 @@ namespace FexSync.Windows.Tests
                 using (var w = new WindowsFileSystemWatcherTest())
                 {
                     w.Start(new[] { new DirectoryInfo(testDir) });
-
 
                     Directory.Move(srcFolder, dstFolder);
 
@@ -283,29 +278,23 @@ namespace FexSync.Windows.Tests
 
                     for (int i = 0; i < fn.Length; i++)
                     {
-
                         var srcFolder = fn[i];
                         tt[i] = Task.Run(() =>
                         {
-                            {
-                                //System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
-
-
-                                var dstFolder = Path.Combine( Path.GetDirectoryName(Path.GetDirectoryName(srcFolder)),  Path.GetFileName(srcFolder));
-                                Assert.IsTrue(Directory.Exists(srcFolder));
-                                Assert.IsFalse(Directory.Exists(dstFolder));
-                                Directory.Move(srcFolder, dstFolder);
-                                Assert.IsFalse(Directory.Exists(srcFolder));
-                                Assert.IsTrue(Directory.Exists(dstFolder));
-                                System.Diagnostics.Debug.WriteLine($"Moved Test folder is {srcFolder}");
-                            }
-
+                            var dstFolder = Path.Combine(Path.GetDirectoryName(Path.GetDirectoryName(srcFolder)),  Path.GetFileName(srcFolder));
+                            Assert.IsTrue(Directory.Exists(srcFolder));
+                            Assert.IsFalse(Directory.Exists(dstFolder));
+                            Directory.Move(srcFolder, dstFolder);
+                            Assert.IsFalse(Directory.Exists(srcFolder));
+                            Assert.IsTrue(Directory.Exists(dstFolder));
+                            System.Diagnostics.Trace.WriteLine($"Moved Test folder is {srcFolder}");
                         });
-
                     }
 
                     for (int i = 0; i < fn.Length; i++)
+                    {
                         tt[i].Wait();
+                    }
 
                     System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
                     System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
@@ -315,8 +304,6 @@ namespace FexSync.Windows.Tests
                     Assert.AreEqual(fn.Length, w.FiredEvents.Count);
                     Assert.IsTrue(w.FiredEvents.All(x => x is FolderMovedEventArgs));
                     Assert.AreEqual(0, w.EventFilterPublic.Count);
-                    //var e = (FileModifiedEventArgs)w.FiredEvents.Single();
-                    //Assert.AreEqual(fileName, e.FullPath);
                 }
             }
             finally
@@ -324,6 +311,5 @@ namespace FexSync.Windows.Tests
                 Directory.Delete(testDir, true);
             }
         }
-
     }
 }

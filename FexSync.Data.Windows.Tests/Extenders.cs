@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FexSync
+namespace FexSync.Data.Windows.Tests
 {
     public static class Extenders
     {

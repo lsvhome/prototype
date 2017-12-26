@@ -49,8 +49,9 @@ namespace FexSync.Data
                     if (File.Exists(localPath))
                     {
                         var localDirectory = Path.GetDirectoryName(localPath);
+                        var localDirectoryRelativePath = localDirectory.Replace(this.DataFolder.FullName, string.Empty).TrimStart(Path.DirectorySeparatorChar);
 
-                        int? folderUploadId = this.SyncDb.RemoteFiles.SingleOrDefault(item => string.Equals(item.Path, localDirectory, StringComparison.InvariantCultureIgnoreCase))?.UploadId;
+                        int? folderUploadId = this.SyncDb.RemoteFiles.SingleOrDefault(item => string.Equals(item.Path, localDirectoryRelativePath, StringComparison.InvariantCultureIgnoreCase))?.UploadId;
 
                         if (!folderUploadId.HasValue)
                         {
@@ -60,8 +61,20 @@ namespace FexSync.Data
                                 folderUploadId = cmdEnsureFolderExists.Result;
                             }
                         }
+                        
+                        var x11 = this.SyncDb.RemoteFiles.SingleOrDefault(item => string.Equals(item.Path, localDirectoryRelativePath, StringComparison.InvariantCultureIgnoreCase));
+                        System.Diagnostics.Debug.Assert(folderUploadId == x11?.UploadId);
 
-                        var folderContentsBeforeUpload = conn.GetChildren(this.TokenForSync, folderUploadId).Where(x => string.Equals(x.Name, Path.GetFileName(localPath), StringComparison.InvariantCultureIgnoreCase));
+                        var folderContentsBeforeUpload = conn.GetChildren(this.TokenForSync, folderUploadId).Where(x => string.Equals(x.Name, Path.GetFileName(localPath), StringComparison.InvariantCultureIgnoreCase)).ToList();
+
+#if DEBUG
+                        var parentFolder = this.SyncDb.RemoteFiles.SingleOrDefault(item => string.Equals(item.Path, localDirectoryRelativePath, StringComparison.InvariantCultureIgnoreCase));
+                        if (parentFolder == null && localDirectoryRelativePath != this.TokenForSync)
+                        {
+                            throw new ApplicationException();
+                        }
+#endif
+
                         var uploadedFile = conn.Upload(this.TokenForSync, folderUploadId, localPath);
                         if (folderContentsBeforeUpload.Any())
                         {
@@ -70,14 +83,15 @@ namespace FexSync.Data
                         }
 
 #if DEBUG
-                        var folderContentsAfterUpload = conn.GetChildren(this.TokenForSync, folderUploadId).Where(item => string.Equals(item.Name, Path.GetFileName(localPath), StringComparison.InvariantCultureIgnoreCase));
+                        var folderContentsAfterUpload = conn.GetChildren(this.TokenForSync, folderUploadId).Where(item => string.Equals(item.Name, Path.GetFileName(localPath), StringComparison.InvariantCultureIgnoreCase)).ToList();
                         if (folderContentsAfterUpload.Count() != 1)
                         {
                             throw new ApplicationException();
                         }
 #endif
 
-                        var removeFileQuery = this.SyncDb.RemoteFiles.Where(item => string.Equals(item.Path, ui.Path, StringComparison.InvariantCultureIgnoreCase));
+                        var relativePath = ui.Path.Replace(this.DataFolder.FullName, string.Empty).TrimStart(Path.DirectorySeparatorChar);
+                        var removeFileQuery = this.SyncDb.RemoteFiles.Where(item => string.Equals(item.Path, relativePath, StringComparison.InvariantCultureIgnoreCase));
 
                         System.Diagnostics.Debug.Assert(removeFileQuery.Count() <= 1, $"{removeFileQuery.Count()} files with identical paths found: {ui.Path}");
 

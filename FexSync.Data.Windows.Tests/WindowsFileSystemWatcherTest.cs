@@ -1,9 +1,10 @@
-﻿using FexSync.Data;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace FexSync.Windows.Tests
+using FexSync.Data;
+
+namespace FexSync.Data.Windows.Tests
 {
     public class WindowsFileSystemWatcherTest : FexSync.WindowsFileSystemWatcher
     {
@@ -29,23 +30,24 @@ namespace FexSync.Windows.Tests
             {
                 throw new ArgumentNullException();
             }
+
             this.FiredEvents.Add(e);
 
             if (e is FexSync.Data.FilePathEventArgs x)
             {
-                System.Diagnostics.Debug.WriteLine($" = = = Fired event {e.ToString()} {x.FullPath} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+                System.Diagnostics.Trace.WriteLine($" = = = Fired event {e.ToString()} {x.FullPath} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
             }
             else if (e is FexSync.Data.FilePathChangedEventArgs y)
             {
-                System.Diagnostics.Debug.WriteLine($" = = = Fired event {e.ToString()} {y.OldPath} {y.NewPath} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+                System.Diagnostics.Trace.WriteLine($" = = = Fired event {e.ToString()} {y.OldPath} {y.NewPath} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
             }
             else
             {
-                System.Diagnostics.Debug.WriteLine($" = = = Fired event {e.ToString()} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+                System.Diagnostics.Trace.WriteLine($" = = = Fired event {e.ToString()} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
             }
         }
 
-        public IList<EventArgs> FiredEvents = new ThreadSafeListWithLock<EventArgs>();
+        public IList<EventArgs> FiredEvents { get; private set; } = new ThreadSafeListWithLock<EventArgs>();
 
         public IList<FileSystemEventFilter> EventFilterPublic => new List<FileSystemEventFilter>();
 

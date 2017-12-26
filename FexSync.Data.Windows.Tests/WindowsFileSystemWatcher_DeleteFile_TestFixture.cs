@@ -2,12 +2,12 @@
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 
 using FexSync.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Threading.Tasks;
 
-namespace FexSync.Windows.Tests
+namespace FexSync.Data.Windows.Tests
 {
     [TestClass]
     public class WindowsFileSystemWatcher_DeleteFile_TestFixture
@@ -25,13 +25,9 @@ namespace FexSync.Windows.Tests
                 {
                     w.Start(new[] { new DirectoryInfo(testDir) });
 
-                    System.Diagnostics.Debug.WriteLine($"Start Deleteing {fileName} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+                    System.Diagnostics.Trace.WriteLine($"Start Deleteing {fileName} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
                     File.Delete(fileName);
-                    System.Diagnostics.Debug.WriteLine($"Finished Deleteing {fileName} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-
-                    //System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
-                    //System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
-                    //System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
+                    System.Diagnostics.Trace.WriteLine($"Finished Deleteing {fileName} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
 
                     w.Stop();
 
@@ -97,7 +93,6 @@ namespace FexSync.Windows.Tests
                 Directory.CreateDirectory(Path.GetDirectoryName(fileName));
                 File.WriteAllText(fileName, string.Empty);
                 fn[i] = fileName;
-
             }
 
             try
@@ -108,36 +103,26 @@ namespace FexSync.Windows.Tests
 
                     for (int i = 0; i < fn.Length; i++)
                     {
-
                         var fileName = fn[i];
                         tt[i] = Task.Run(() =>
                         {
-                            {
-                                //System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
-
-
-                                Assert.IsTrue(File.Exists(fileName));
-                                File.Delete(fileName);
-                                Assert.IsFalse(File.Exists(fileName));
-                                System.Diagnostics.Debug.WriteLine($"Deleted Test file is {fileName}");
-                            }
-
+                            Assert.IsTrue(File.Exists(fileName));
+                            File.Delete(fileName);
+                            Assert.IsFalse(File.Exists(fileName));
+                            System.Diagnostics.Trace.WriteLine($"Deleted Test file is {fileName}");
                         });
-
                     }
 
                     for (int i = 0; i < fn.Length; i++)
+                    {
                         tt[i].Wait();
+                    }
 
-                    System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
-                    System.Threading.Thread.Sleep(WindowsFileSystemWatcherTest.TestWaitPeriod);
+                    w.Stop();
 
                     Assert.AreEqual(fn.Length, w.FiredEvents.Count);
                     Assert.IsTrue(w.FiredEvents.All(x => x is FileDeletedEventArgs));
                     Assert.AreEqual(0, w.EventFilterPublic.Count);
-                    //var e = (FileModifiedEventArgs)w.FiredEvents.Single();
-                    //Assert.AreEqual(fileName, e.FullPath);
-                    w.Stop();
                 }
             }
             finally
@@ -145,6 +130,5 @@ namespace FexSync.Windows.Tests
                 Directory.Delete(testDir, true);
             }
         }
-
     }
 }

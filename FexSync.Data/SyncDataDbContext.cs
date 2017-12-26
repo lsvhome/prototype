@@ -5,6 +5,16 @@ namespace FexSync.Data
 {
     public class SyncDataDbContext : DbContext, ISyncDataDbContext
     {
+        private readonly object lockObj = new object();
+
+        public void LockedRun(System.Action action)
+        {
+            lock (this.lockObj)
+            {
+                action();
+            }
+        }
+
         private string databaseFullPath = "syncdata.db";
 
         public SyncDataDbContext() : base()
@@ -36,7 +46,7 @@ namespace FexSync.Data
         {
             System.Diagnostics.Debug.Assert(Directory.Exists(Path.GetDirectoryName(this.databaseFullPath)), $"Database {this.databaseFullPath} does not exists.");
             var connectionString = $"Data Source={this.databaseFullPath}";
-            System.Diagnostics.Debug.WriteLine(connectionString);
+            System.Diagnostics.Trace.WriteLine(connectionString);
             optionsBuilder.UseSqlite(connectionString);
         }
 

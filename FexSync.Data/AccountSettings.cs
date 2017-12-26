@@ -108,7 +108,7 @@ namespace FexSync.Data
             try
             {
                 var ret = File.Exists(this.AccountConfigFile) && !string.IsNullOrWhiteSpace(this.Login);
-                System.Diagnostics.Debug.WriteLine($"AccountSettings {this.AccountConfigFile} exists = {ret}   Login = {this.Login}");
+                System.Diagnostics.Trace.WriteLine($"AccountSettings {this.AccountConfigFile} exists = {ret}   Login = {this.Login}");
                 return ret;
             }
             catch (Exception)

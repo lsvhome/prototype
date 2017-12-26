@@ -1,4 +1,5 @@
-﻿//// #define FSEVENTS_DEBUG
+﻿//// 
+#define FSEVENTS_DEBUG
 using System;
 using System.IO;
 using System.Linq;
@@ -32,10 +33,13 @@ namespace FexSync
 
             Action<string> fireDeleted = (fullPath) =>
             {
-                var deletedEventHandler = this.OnFileDeleted;
-                if (deletedEventHandler != null)
+                if (!filterPath.Contains(fullPath))
                 {
-                    deletedEventHandler(this, new FexSync.Data.FileDeletedEventArgs { FullPath = fullPath });
+                    var deletedEventHandler = this.OnFileDeleted;
+                    if (deletedEventHandler != null)
+                    {
+                        deletedEventHandler(this, new FexSync.Data.FileDeletedEventArgs { FullPath = fullPath });
+                    }
                 }
             };
 
@@ -55,10 +59,13 @@ namespace FexSync
 
             Action<string> fireDeleted = (deletedFilePath) => 
             {
-                var deletedEventHandler = this.OnFolderDeleted;
-                if (deletedEventHandler != null)
+                if (!filterPath.Contains(deletedFilePath))
                 {
-                    deletedEventHandler(this, new FexSync.Data.FolderDeletedEventArgs { FullPath = deletedFilePath });
+                    var deletedEventHandler = this.OnFolderDeleted;
+                    if (deletedEventHandler != null)
+                    {
+                        deletedEventHandler(this, new FexSync.Data.FolderDeletedEventArgs { FullPath = deletedFilePath });
+                    }
                 }
             };
 
@@ -70,6 +77,12 @@ namespace FexSync
         private void Watcher_DeletedCommon(object sender, FileSystemEventArgs e, Action<string, string> fireMoved, Action<string> fireDeleted)
         {
             this.DebugMessage($"Watcher_Deleted {e.ChangeType.ToString()} : {e.FullPath} :");
+
+            if (this.filterPath.Contains(e.FullPath))
+            {
+                return;
+            }
+
             string movedToPath = null; //// indicator move operation instead of delete (move = delete + create)
 
             EventHandler<CancellableFileSystemEventArgs> createdHandler = null;

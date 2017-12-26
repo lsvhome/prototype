@@ -6,7 +6,7 @@ using System.Threading;
 using FexSync.Data;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace FexSync.Windows.Tests
+namespace FexSync.Data.Windows.Tests
 {
     [TestClass]
     public class WindowsFileSystemWatcher_CreateFolder_TestFixture

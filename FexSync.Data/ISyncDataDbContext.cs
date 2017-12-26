@@ -10,6 +10,8 @@ namespace FexSync.Data
 {
     public interface ISyncDataDbContext : Microsoft.EntityFrameworkCore.Internal.IDbContextPoolable
     {
+        void LockedRun(System.Action action);
+
         DbSet<RemoteTree> RemoteTrees { get; set; }
 
         DbSet<RemoteFile> RemoteFiles { get; set; }

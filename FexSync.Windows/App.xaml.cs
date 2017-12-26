@@ -59,7 +59,7 @@ namespace FexSync
                 //// Required for log4net setup
                 log4net.ILog log = log4net.LogManager.GetLogger(typeof(App));
 
-                System.Diagnostics.Debug.WriteLine("Startup Trace");
+                System.Diagnostics.Trace.WriteLine("Startup Trace");
                 System.Diagnostics.Trace.WriteLine("Startup Debug");
             }
             catch (Exception ex)
@@ -200,7 +200,7 @@ namespace FexSync
             }
 
             base.OnExit(e);
-            System.Diagnostics.Debug.WriteLine("Exit Trace");
+            System.Diagnostics.Trace.WriteLine("Exit Trace");
             System.Diagnostics.Trace.WriteLine("Exit Debug");
         }
     }

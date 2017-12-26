@@ -4,14 +4,14 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FexSync.Windows.Tests
+namespace FexSync
 {
     public static class Extenders
     {
         internal static void Process(this Exception exception)
         {
 #if DEBUG
-            System.Diagnostics.Debug.WriteLine(exception.ToString());
+            System.Diagnostics.Trace.WriteLine(exception.ToString());
             System.Diagnostics.Debugger.Break();
 #endif
         }

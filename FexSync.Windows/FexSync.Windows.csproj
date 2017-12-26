@@ -85,8 +85,6 @@
       <DependentUpon>AuthWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Extenders.cs" />
-    <Compile Include="FileSystemWatcher\CancellableFileSystemEventArgs.cs" />
-    <Compile Include="FileSystemWatcher\WindowsFileSystemWatcher_Deleted.cs" />
     <Compile Include="FreeUserAccessDeniedException.cs" />
     <Compile Include="Settings\AccountSettings.cs" />
     <Compile Include="DelegateCommand.cs" />
@@ -95,7 +93,6 @@
       <DependentUpon>QuickStartWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings\ApplicationSettingsManager.cs" />
-    <Compile Include="FileSystemWatcher\WindowsFileSystemWatcher.cs" />
     <Page Include="AlertsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -155,6 +152,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FexSync.Data.Windows\FexSync.Data.Windows.csproj">
+      <Project>{05b735b8-f2b4-4916-95f7-278c64131963}</Project>
+      <Name>FexSync.Data.Windows</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FexSync.Data\FexSync.Data.csproj">
       <Project>{c74ecd46-32d8-4705-9be9-402c180eee4d}</Project>
       <Name>FexSync.Data</Name>

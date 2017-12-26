@@ -100,7 +100,7 @@ namespace FexSync
             }
 
             var uri = new Uri(this.captchaUrl + this.CaptchaToken);
-            System.Diagnostics.Debug.WriteLine(uri.ToString());
+            System.Diagnostics.Trace.WriteLine(uri.ToString());
             this.ImgCaptcha.Source = new BitmapImage(uri, this.requestCachePolicy);
 
             this.TxtCaptcha.Text = string.Empty;
@@ -163,10 +163,7 @@ namespace FexSync
                         throw new FreeUserAccessDeniedException();
                     }
 
-                    if (this.OnSignedIn != null)
-                    {
-                        this.OnSignedIn(this, new CommandSignIn.SignInEventArgs(conn, login, password));
-                    }
+                    this.OnSignedIn.Invoke(this, new CommandSignIn.SignInEventArgs(conn, login, password));
 
                     this.Dispatcher.Invoke(() =>
                     {

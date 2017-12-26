@@ -1,4 +1,5 @@
-﻿//// #define FSEVENTS_DEBUG
+﻿//// 
+#define FSEVENTS_DEBUG
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -125,11 +126,37 @@ namespace FexSync
 
         public event EventHandler<ErrorEventArgs> OnError;
 
+        private IList<string> filterPath = new ThreadSafeListWithLock<string>();
+
+        public void AddFilterPath(string path)
+        {
+            if (!this.filterPath.Contains(path))
+            {
+                System.Diagnostics.Trace.WriteLine($"Filter Add {path}");
+                this.filterPath.Add(path);
+            }
+        }
+
+        public void RemoveFilterPath(string path)
+        {
+            if (this.filterPath.Contains(path))
+            {
+                this.filterPath.Remove(path);
+                System.Diagnostics.Trace.WriteLine($"Filter Removed {path}");
+            }
+        }
+
         private event EventHandler<CancellableFileSystemEventArgs> ShouldSuppressCreated = delegate { };
 
         private void Watcher_CreatedFile(object sender, FileSystemEventArgs e)
         {
             this.DebugMessage($"Watcher_Created {e.ChangeType.ToString()} : {e.FullPath}");
+
+            if (this.filterPath.Contains(e.FullPath))
+            {
+                this.DebugMessage($"Watcher_Created exit 001 {e.ChangeType.ToString()} : {e.FullPath}");
+                return;
+            }
 
             var createdArgs = new CancellableFileSystemEventArgs(e);
 
@@ -150,7 +177,8 @@ namespace FexSync
 
                 this.ShouldSuppressChangedFile += fileChangedHandler;
 
-                this.ScheduleTask(() => {
+                this.ScheduleTask(() =>
+                {
                     while (true)
                     {
                         try
@@ -168,13 +196,17 @@ namespace FexSync
 
                                 this.ScheduleTask(() =>
                                 {
-                                    var fileCreatedHandler = this.OnFileCreated;
-                                    if (fileCreatedHandler != null)
+                                    if (!filterPath.Contains(e.FullPath))
                                     {
-                                        this.OnFileCreated?.Invoke(this, new FexSync.Data.FileCreatedEventArgs { FullPath = e.FullPath });
+                                        var fileCreatedHandler = this.OnFileCreated;
+                                        if (fileCreatedHandler != null)
+                                        {
+                                            fileCreatedHandler(this, new FexSync.Data.FileCreatedEventArgs { FullPath = e.FullPath });
+                                        }
                                     }
                                 });
                             }
+
                             return;
                         }
                         catch (Exception)
@@ -190,6 +222,11 @@ namespace FexSync
         {
             this.DebugMessage($"Watcher_CreatedFolder {e.ChangeType.ToString()} : {e.FullPath}");
 
+            if (this.filterPath.Contains(e.FullPath))
+            {
+                return;
+            }
+
             var createdArgs = new CancellableFileSystemEventArgs(e);
 
             this.ShouldSuppressCreated(this, createdArgs);
@@ -200,7 +237,14 @@ namespace FexSync
                 {
                     this.ScheduleTask(() =>
                     {
-                        this.OnFolderCreated(this, new FexSync.Data.FolderCreatedEventArgs { FullPath = e.FullPath });
+                        if (!filterPath.Contains(e.FullPath))
+                        {
+                            var folderCreatedEventHandler = this.OnFolderCreated;
+                            if (folderCreatedEventHandler != null)
+                            {
+                                folderCreatedEventHandler(this, new FexSync.Data.FolderCreatedEventArgs { FullPath = e.FullPath });
+                            }
+                        }
                     });
                 }
             }
@@ -211,6 +255,11 @@ namespace FexSync
         private void Watcher_ChangedFile(object sender, FileSystemEventArgs e)
         {
             this.DebugMessage($"Watcher_Changed {e.ChangeType.ToString()} : {e.FullPath}");
+
+            if (this.filterPath.Contains(e.FullPath))
+            {
+                return;
+            }
 
             var changedArgs = new CancellableFileSystemEventArgs(e);
             this.ShouldSuppressChangedFile(this, changedArgs);
@@ -244,7 +293,16 @@ namespace FexSync
                                 }
 
                                 this.ShouldSuppressChangedFile -= nestedChangeCatcher;
-                                this.OnFileModified(this, new FexSync.Data.FileModifiedEventArgs { FullPath = e.FullPath });
+
+                                if (!filterPath.Contains(e.FullPath))
+                                {
+                                    var movedEventHandler = this.OnFileModified;
+                                    if (movedEventHandler != null)
+                                    {
+                                        movedEventHandler(this, new FexSync.Data.FileModifiedEventArgs { FullPath = e.FullPath });
+                                    }
+                                }
+
                                 return;
                             }
                             catch (Exception)
@@ -261,9 +319,20 @@ namespace FexSync
         {
             this.DebugMessage($"Watcher_Renamed {e.ChangeType.ToString()} : {e.FullPath}");
 
+            if (this.filterPath.Contains(e.FullPath) || this.filterPath.Contains(e.OldFullPath))
+            {
+                return;
+            }
+
             if (this.OnFileMoved != null)
             {
-                this.ScheduleTask(() => { this.OnFileMoved(this, new FexSync.Data.FileMovedEventArgs { OldPath = e.OldFullPath, NewPath = e.FullPath }); });
+                this.ScheduleTask(() =>
+                {
+                    if (!filterPath.Contains(e.FullPath))
+                    {
+                        this.OnFileMoved(this, new FexSync.Data.FileMovedEventArgs { OldPath = e.OldFullPath, NewPath = e.FullPath });
+                    }
+                });
             }
         }
 
@@ -271,9 +340,24 @@ namespace FexSync
         {
             this.DebugMessage($"Watcher_Renamed {e.ChangeType.ToString()} : {e.FullPath}");
 
+            if (this.filterPath.Contains(e.FullPath) || this.filterPath.Contains(e.OldFullPath))
+            {
+                return;
+            }
+
             if (this.OnFolderMoved != null)
             {
-                this.ScheduleTask(() => { this.OnFolderMoved(this, new FexSync.Data.FolderMovedEventArgs { OldPath = e.OldFullPath, NewPath = e.FullPath }); });
+                this.ScheduleTask(() => 
+                {
+                    if (!filterPath.Contains(e.FullPath) && !filterPath.Contains(e.OldFullPath))
+                    {
+                        var folderMovedEventHandler = this.OnFolderMoved;
+                        if (folderMovedEventHandler != null)
+                        {
+                            folderMovedEventHandler(this, new FexSync.Data.FolderMovedEventArgs { OldPath = e.OldFullPath, NewPath = e.FullPath });
+                        }
+                    }
+                });
             }
         }
 
@@ -281,7 +365,7 @@ namespace FexSync
         private void DebugMessage(string msg)
         {
 #if FSEVENTS_DEBUG
-            System.Diagnostics.Debug.WriteLine($"{DateTime.Now.ToString("HH:mm:ss:ffff")}  " + msg);
+            System.Diagnostics.Trace.WriteLine($"{DateTime.Now.ToString("HH:mm:ss:ffff")}  " + msg);
 #endif
         }
     }

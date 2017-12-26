@@ -12,6 +12,7 @@ namespace FexSync.Data
     {
         internal static void Process(this Exception exception)
         {
+            System.Diagnostics.Trace.WriteLine(exception.ToString());
 #if DEBUG
             System.Diagnostics.Debugger.Break();
 #endif
@@ -32,7 +33,7 @@ namespace FexSync.Data
                             formatted.AppendFormat("{0:X2}", b);
                         }
 
-                        return formatted.ToString();
+                        return formatted.ToString().ToLower();
                     }
                 }
             }

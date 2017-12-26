@@ -56,7 +56,7 @@ namespace FexSync.Data
 
                 foreach (var each in root.Childern.FilterUniqueNames())
                 {
-                    this.SaveRemoteItemRecursive(each, this.SyncDb, treeItem.RemoteTreeId);
+                    this.SaveRemoteItemRecursive(each, null, this.SyncDb, treeItem.RemoteTreeId);
                 }
 
                 this.SyncDb.SaveChanges();
@@ -92,7 +92,7 @@ namespace FexSync.Data
             return treeItem.RemoteTreeId;
         }
 
-        private void SaveRemoteItemRecursive(CommandBuildRemoteTree.CommandBuildRemoteTreeItemObject item, ISyncDataDbContext syncDb, int remoteTreeId)
+        private void SaveRemoteItemRecursive(CommandBuildRemoteTree.CommandBuildRemoteTreeItemObject item, int? parentId, ISyncDataDbContext syncDb, int remoteTreeId)
         {
             var remoteFile = syncDb.RemoteFiles.SingleOrDefault(x => x.Token == item.Token && x.UploadId == item.UploadId && x.RemoteTreeId == remoteTreeId);
 
@@ -117,7 +117,7 @@ namespace FexSync.Data
             {
                 foreach (var each in item.Childern.FilterUniqueNames())
                 {
-                    this.SaveRemoteItemRecursive(each, syncDb, remoteTreeId);
+                    this.SaveRemoteItemRecursive(each, remoteFile.RemoteFileId, syncDb, remoteTreeId);
                 }
             }
         }

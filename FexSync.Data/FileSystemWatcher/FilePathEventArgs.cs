@@ -2,7 +2,7 @@
 
 namespace FexSync.Data
 {
-    public abstract class FilePathEventArgs : EventArgs
+    public class FilePathEventArgs : EventArgs
     {
         public string FullPath { get; set; }
     }

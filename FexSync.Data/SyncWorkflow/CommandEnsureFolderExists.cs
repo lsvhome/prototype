@@ -32,7 +32,7 @@ namespace FexSync.Data
 
         public override void Execute(IConnection connection)
         {
-            var relativePath = this.folderPath.Replace(this.dataFolder.FullName, string.Empty);
+            var relativePath = this.folderPath.Replace(this.dataFolder.FullName, string.Empty).TrimStart(Path.DirectorySeparatorChar);
 
             this.Result = this.ExecuteInternal(connection, relativePath);
         }
@@ -59,9 +59,17 @@ namespace FexSync.Data
             }
             else if (pathItems.Length == 2)
             {
-                var uploadId = connection.CreateFolder(this.token, null, name);
-                this.AddFolderToDb(relativePath, uploadId);
-                return uploadId;
+                try
+                {
+                    var uploadId = connection.CreateFolder(this.token, null, name);
+                    this.AddFolderToDb(relativePath, uploadId);
+                    return uploadId;
+                }
+                catch (Exception ex)
+                {
+                    ex.Process();
+                    throw;
+                }
             }
             else
             {

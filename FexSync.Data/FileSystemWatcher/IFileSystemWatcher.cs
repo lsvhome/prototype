@@ -25,5 +25,11 @@ namespace FexSync.Data
         event EventHandler<FexSync.Data.FolderDeletedEventArgs> OnFolderDeleted;
 
         event EventHandler<FexSync.Data.FolderMovedEventArgs> OnFolderMoved;
+
+        event EventHandler<ErrorEventArgs> OnError;
+
+        void AddFilterPath(string path);
+
+        void RemoveFilterPath(string path);
     }
 }

@@ -24,6 +24,12 @@ namespace FexSync.Data
             set
             {
                 this.path = value.Trim(System.IO.Path.DirectorySeparatorChar);
+#if DEBUG
+                if (System.IO.Path.IsPathRooted(this.path))
+                {
+                    throw new ApplicationException();
+                }
+#endif
             }
         }
 

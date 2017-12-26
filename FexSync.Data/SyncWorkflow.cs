@@ -10,12 +10,10 @@ using Autofac;
 using FexSync.Data;
 using Net.Fex.Api;
 
-namespace FexSync
+namespace FexSync.Data
 {
     public partial class SyncWorkflow : IDisposable, IConfigurable
     {
-        private static object lockDb = new object();
-
         public enum SyncWorkflowStatus
         {
             Stopped,
@@ -56,10 +54,17 @@ namespace FexSync
         [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
         protected System.ComponentModel.BackgroundWorker worker;
 
+        private IConnection connection = null;
+
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         public SyncWorkflow()
         {
+        }
+
+        private void Watcher_OnError(object sender, ErrorEventArgs e)
+        {
+            this.OnException?.Invoke(this, new ExceptionEventArgs(e.GetException()));
         }
 
         public void Reconfigure(SyncWorkflowConfig config)
@@ -67,6 +72,30 @@ namespace FexSync
             lock (lockObj)
             {
                 this.config = config;
+
+                FexSync.Data.IFileSystemWatcher fileSystemWatcher = this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>();
+
+                // usubscribe
+                fileSystemWatcher.OnFileCreated -= this.Watcher_OnFileCreated;
+                fileSystemWatcher.OnFileModified -= this.Watcher_OnFileModified;
+                fileSystemWatcher.OnFileMoved -= this.Watcher_OnFileMoved;
+                fileSystemWatcher.OnFileDeleted -= this.Watcher_OnFileDeleted;
+
+                fileSystemWatcher.OnFolderDeleted -= this.Watcher_OnFolderDeleted;
+                fileSystemWatcher.OnFolderMoved -= this.Watcher_OnFolderMoved;
+
+                fileSystemWatcher.OnError -= this.Watcher_OnError;
+
+                // subscribe
+                fileSystemWatcher.OnFileCreated += this.Watcher_OnFileCreated;
+                fileSystemWatcher.OnFileModified += this.Watcher_OnFileModified;
+                fileSystemWatcher.OnFileMoved += this.Watcher_OnFileMoved;
+                fileSystemWatcher.OnFileDeleted += this.Watcher_OnFileDeleted;
+
+                fileSystemWatcher.OnFolderDeleted += this.Watcher_OnFolderDeleted;
+                fileSystemWatcher.OnFolderMoved += this.Watcher_OnFolderMoved;
+
+                fileSystemWatcher.OnError += this.Watcher_OnError;
             }
         }
 
@@ -74,44 +103,25 @@ namespace FexSync
         {
             lock (lockObj)
             {
-                if (this.config != null && this.worker == null)
+                if (this.config != null && this.worker == null && this.connection == null)
                 {
-                    System.Diagnostics.Debug.WriteLine("BackgroundWorker creating");
+                    System.Diagnostics.Trace.WriteLine("BackgroundWorker creating");
                     this.worker = new System.ComponentModel.BackgroundWorker();
-                    System.Diagnostics.Debug.WriteLine("BackgroundWorker created");
+                    System.Diagnostics.Trace.WriteLine("BackgroundWorker created");
                     this.worker.WorkerSupportsCancellation = true;
                     this.worker.DoWork += this.Worker_DoWork;
 
-                    this.worker.RunWorkerCompleted += (object sender, System.ComponentModel.RunWorkerCompletedEventArgs e) =>
-                    {
-                        Task.Run(() =>
-                        {
-                            var stoppedWorker = this.worker;
-                            lock (lockObj)
-                            {
-                                System.Threading.Thread.Sleep(TimeSpan.FromSeconds(1));
-                                System.Diagnostics.Debug.WriteLine("BackgroundWorker destroing");
-                                this.worker = null;
-                                System.Diagnostics.Debug.WriteLine("BackgroundWorker destroyed");
-                            }
-
-                            stoppedWorker.Dispose();
-
-                            System.Diagnostics.Debug.WriteLine("OnStopped begin");
-                            if (this.OnStopped != null)
-                            {
-                                this.OnStopped(this, new EventArgs());
-                            }
-                        });
-                    };
-
+                    //// recreate cancellationTokenSource
                     this.cancellationTokenSource.Dispose();
                     this.cancellationTokenSource = new CancellationTokenSource();
+
+                    Uri endPoint = new Uri(this.config.ApiHost);
+                    this.connection = this.config.Container.Resolve<IConnectionFactory>().CreateConnection(endPoint, this.cancellationTokenSource.Token);
                     this.worker.RunWorkerAsync();
                 }
                 else
                 {
-                    System.Diagnostics.Debug.WriteLine("ApplicationException");
+                    System.Diagnostics.Trace.WriteLine("ApplicationException");
                     System.Diagnostics.Debug.Flush();
                     throw new ApplicationException();
                 }
@@ -122,18 +132,50 @@ namespace FexSync
         {
             lock (lockObj)
             {
-                if (this.worker != null)
+                if (this.connection != null)
                 {
-                    this.worker.CancelAsync();
+                    this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>().Stop();
+
+                    if (this.worker != null)
+                    {
+                        using (var workerCompleteWaiter = new AutoResetEvent(false))
+                        {
+                            this.worker.RunWorkerCompleted += (workerSender, args) =>
+                            {
+                                workerCompleteWaiter.Set();
+                            };
+
+                            if (this.worker.IsBusy)
+                            {
+                                this.cancellationTokenSource.Cancel();
+                                this.worker.CancelAsync();
+                                workerCompleteWaiter.WaitOne();
+                            }
+                        }
+
+                        this.worker.Dispose();
+                        this.worker = null;
+                    }
+
+                    Task.WaitAll(this.scheduledTasks.ToArray());
+
+                    this.connection.SignOut();
+                    this.connection.OnCaptchaUserInputRequired = null;
+
+                    this.connection.Dispose();
+                    this.connection = null;
                 }
 
-                this.cancellationTokenSource.Cancel();
+                //// Wait for all db opertions finished
+                ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
+                syncDb.LockedRun(() => { });
+                this.OnStopped?.Invoke(this, new EventArgs());
             }
         }
 
-        public event EventHandler<ExceptionEventArgs> OnException;
+        public event EventHandler<Alert.AlertEventArgs> OnAlert;
 
-        public event EventHandler OnIterationFinished;
+        public event EventHandler<ExceptionEventArgs> OnException;
 
         public event EventHandler OnStarted;
 
@@ -141,6 +183,19 @@ namespace FexSync
 
         public void Dispose()
         {
+            FexSync.Data.IFileSystemWatcher fileSystemWatcher = this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>();
+
+            fileSystemWatcher.OnFileCreated -= this.Watcher_OnFileCreated;
+            fileSystemWatcher.OnFileModified -= this.Watcher_OnFileModified;
+            fileSystemWatcher.OnFileMoved -= this.Watcher_OnFileMoved;
+            fileSystemWatcher.OnFileDeleted -= this.Watcher_OnFileDeleted;
+
+            fileSystemWatcher.OnFolderDeleted -= this.Watcher_OnFolderDeleted;
+            fileSystemWatcher.OnFolderMoved -= this.Watcher_OnFolderMoved;
+
+            fileSystemWatcher.OnError -= this.Watcher_OnError;
+            fileSystemWatcher.Dispose();
+
             this.Stop();
             this.cancellationTokenSource.Dispose();
         }
@@ -153,25 +208,25 @@ namespace FexSync
                 {
                     if (this.alerts.Any())
                     {
-                        System.Diagnostics.Debug.WriteLine("Status = WaitingForAlert");
+                        System.Diagnostics.Trace.WriteLine("Status = WaitingForAlert");
                         return SyncWorkflowStatus.WaitingForAlert;
                     }
 
                     if (this.worker == null)
                     {
-                        System.Diagnostics.Debug.WriteLine("Status = Stopped");
+                        System.Diagnostics.Trace.WriteLine("Status = Stopped");
                         return SyncWorkflowStatus.Stopped;
                     }
                     else
                     {
                         if (this.cancellationTokenSource.IsCancellationRequested)
                         {
-                            System.Diagnostics.Debug.WriteLine("Status = Stopping");
+                            System.Diagnostics.Trace.WriteLine("Status = Stopping");
                             return SyncWorkflowStatus.Stopping;
                         }
                         else
                         {
-                            System.Diagnostics.Debug.WriteLine("Status = Started");
+                            System.Diagnostics.Trace.WriteLine("Status = Started");
                             return SyncWorkflowStatus.Started;
                         }
                     }
@@ -181,8 +236,6 @@ namespace FexSync
             }
         }
 
-        public Action<object, CommandCaptchaRequestPossible.CaptchaRequestedEventArgs> OnCaptchaUserInputRequired { get; set; }
-
         private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs args)
         {
             using (var waiter = new AutoResetEvent(false))
@@ -191,96 +244,57 @@ namespace FexSync
 
                 this.alerts.Add(alert);
 
+                this.OnAlert?.Invoke(this, new Alert.AlertEventArgs { Alert = alert });
+
                 waiter.WaitOne();
 
                 this.alerts.Remove(alert);
-            }
-
-            if (this.OnCaptchaUserInputRequired != null)
-            {
-                this.OnCaptchaUserInputRequired(sender, args);
             }
         }
 
         protected virtual void Worker_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
         {
-            if (this.OnStarted != null)
-            {
-                this.OnStarted(this, new EventArgs());
-            }
+            this.OnStarted?.Invoke(this, new EventArgs());
 
             try
             {
                 Uri endPoint = new Uri(this.config.ApiHost);
-                using (var conn = this.config.Container.Resolve<IConnectionFactory>().CreateConnection(endPoint, this.cancellationTokenSource.Token))
+
+                this.connection.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
+                while (!this.connection.IsSignedIn)
                 {
+                    this.connection.CancellationToken.ThrowIfCancellationRequested();
                     try
                     {
-                        conn.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
-                        while (!conn.IsSignedIn)
-                        {
-                            conn.CancellationToken.ThrowIfCancellationRequested();
-                            try
-                            {
-                                conn.SignIn(this.config.AccountSettings.Login, this.config.AccountSettings.Password, false);
-                            }
-                            catch (CaptchaRequiredException ex)
-                            {
-                                ex.Process();
-                            }
-                        }
-
-                        this.Init(conn);
-
-                        this.PrepareTransferQueues(conn);
-
-                        this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>().Start(new[] { new DirectoryInfo(this.config.AccountSettings.AccountDataFolder) });
-
-                        while (true)
-                        {
-                            conn.CancellationToken.ThrowIfCancellationRequested();
-
-                            this.Transfer(conn);
-
-                            if (this.OnIterationFinished != null)
-                            {
-                                this.OnIterationFinished(this, new EventArgs());
-                            }
-
-                            conn.CancellationToken.ThrowIfCancellationRequested();
-
-                            System.Diagnostics.Debug.WriteLine("FexSync goes to sleep.");
-#if DEBUG
-                            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(5));
-#else
-                            System.Threading.Thread.Sleep(TimeSpan.FromSeconds(60));
-#endif
-                            System.Diagnostics.Debug.WriteLine("FexSync waked up.");
-                        }
+                        this.connection.SignIn(this.config.AccountSettings.Login, this.config.AccountSettings.Password, false);
                     }
-                    catch (OperationCanceledException)
-                    {
-                        //// do nothing - suppress exception
-                    }
-                    catch (Exception ex)
+                    catch (CaptchaRequiredException ex)
                     {
                         ex.Process();
-                        throw;
-                    }
-                    finally
-                    {
-                        this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>().Stop();
-                        conn.SignOut();
-                        conn.OnCaptchaUserInputRequired = null;
                     }
                 }
+
+                this.Init(this.connection);
+
+                this.PrepareTransferQueues(this.connection);
+
+                this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>().Start(new[] { new DirectoryInfo(this.config.AccountSettings.AccountDataFolder) });
+
+                this.connection.CancellationToken.ThrowIfCancellationRequested();
+
+                this.Transfer(this.connection);
+
+                this.connection.CancellationToken.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException)
+            {
+                //// do nothing - suppress exception
             }
             catch (Exception ex)
             {
-                if (this.OnException != null)
-                {
-                    this.OnException(this, new ExceptionEventArgs(ex));
-                }
+                ex.Process();
+
+                this.OnException?.Invoke(this, new ExceptionEventArgs(ex));
 
                 System.Diagnostics.Debug.Fail(ex.ToString());
             }
@@ -300,16 +314,13 @@ namespace FexSync
             }
 
             ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
-            lock (lockDb)
-            {
-                syncDb.EnsureDatabaseExists();
-            }
+            syncDb.LockedRun(() => { syncDb.EnsureDatabaseExists(); });
         }
 
         private void PrepareTransferQueues(IConnection conn)
         {
             ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
-            lock (lockDb)
+            syncDb.LockedRun(() =>
             {
                 using (CommandSaveLocalTree cmd = new CommandSaveLocalTree(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder)))
                 {
@@ -332,14 +343,28 @@ namespace FexSync
                 {
                     cmd.Execute(conn);
                 }
-            }
+            });
         }
+
+        private long transferQueue = 0;
+
+        public event EventHandler OnTransferFinished;
 
         private void Transfer(IConnection conn)
         {
-            ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
-            lock (lockDb)
+            if (Interlocked.Read(ref this.transferQueue) > 0)
             {
+                return;
+            }
+
+            Interlocked.Increment(ref this.transferQueue);
+
+            ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
+            //// Transfer should be locked!!!
+            syncDb.LockedRun(() =>
+            {
+                Interlocked.Decrement(ref this.transferQueue);
+
                 using (CommandUploadQueue cmd = new CommandUploadQueue(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder), this.config.AccountSettings.TokenForSync))
                 {
                     cmd.Execute(conn);
@@ -347,9 +372,23 @@ namespace FexSync
 
                 using (CommandDownloadQueue cmd = new CommandDownloadQueue(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder)))
                 {
+                    var fileSystemWatcher = this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>();
+
+                    cmd.OnBeforeSave += (sender, args) =>
+                    {
+                        fileSystemWatcher.AddFilterPath(args.FullPath);
+                    };
+
+                    cmd.OnAfterSave += (sender, args) =>
+                    {
+                        fileSystemWatcher.RemoveFilterPath(args.FullPath);
+                    };
+
                     cmd.Execute(conn);
                 }
-            }
+            });
+
+            this.OnTransferFinished?.Invoke(this, new EventArgs());
         }
 
         private readonly ThreadSafeListWithLock<Alert> alerts = new ThreadSafeListWithLock<Alert>();
@@ -358,7 +397,7 @@ namespace FexSync
         {
             get
             {
-                Task.Run(() => { this.alerts.RemoveAll(x => x.Processed); });
+                this.Task_RunSafe(() => { this.alerts.RemoveAll(x => x.Processed); });
                 return this.alerts.Where(item => !item.Processed).ToArray();
             }
         }

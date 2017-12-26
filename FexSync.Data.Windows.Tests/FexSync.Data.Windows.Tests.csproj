@@ -1,18 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ProjectGuid>{311DB44D-69F0-40B4-9DFE-C71DF9B366F9}</ProjectGuid>
+    <ProjectGuid>90002704-4185-4287-87a3-14c382bc4ce4</ProjectGuid>
     <TargetFramework>netcoreapp2.0</TargetFramework>
 
     <IsPackable>false</IsPackable>
 
-    <RootNamespace>FexSync.Data.Tests</RootNamespace>
+    <RootNamespace>FexSync.Data.Windows.Tests</RootNamespace>
 
-    <AssemblyName>FexSync.Data.Tests</AssemblyName>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0</DefineConstants>
+    <AssemblyName>FexSync.Data.Windows.Tests</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -24,12 +20,12 @@
     <PackageReference Include="MSTest.TestAdapter" Version="1.1.18" />
     <PackageReference Include="MSTest.TestFramework" Version="1.1.18" />
     <PackageReference Include="StyleCop.MSBuild" Version="5.0.0" />
-    <PackageReference Include="System.Diagnostics.Debug" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\FexSync.Data.Tests\FexSync.Data.Tests.csproj" />
+    <ProjectReference Include="..\FexSync.Data.Windows\FexSync.Data.Windows.csproj" />
     <ProjectReference Include="..\FexSync.Data\FexSync.Data.csproj" />
-    <ProjectReference Include="..\submodules\fex-api\net.fex.api.v1.tests\net.fex.api.v1.tests.csproj" />
     <ProjectReference Include="..\submodules\fex-api\net.fex.api.v1\net.fex.api.v1.csproj" />
   </ItemGroup>
 
