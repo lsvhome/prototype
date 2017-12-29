@@ -41,7 +41,7 @@ namespace FexSync.Data
                 {
                 }
 
-                using (var cmd = new CommandPrepareLocalFolderMoved(syncDb, fiOld, fiNew, this.config.AccountSettings.AccountDataFolder))
+                using (var cmd = new CommandPrepareLocalFolderMoved(syncDb, fiOld, fiNew))
                 {
                     cmd.Execute(this.connection);
                 }
@@ -59,21 +59,21 @@ namespace FexSync.Data
 
         private FileInfo CreatedFile { get; set; }
 
-        private string AccountDataFolder { get; set; }
-
-        public CommandPrepareLocalFolderMoved(ISyncDataDbContext context, FileInfo deletedFile, FileInfo createdFile, string accountDataFolder) : base(new Dictionary<string, string>())
+        public CommandPrepareLocalFolderMoved(ISyncDataDbContext context, FileInfo deletedFile, FileInfo createdFile) : base(new Dictionary<string, string>())
         {
             System.Diagnostics.Debug.Assert(createdFile.Exists, $"File {createdFile.FullName} does not exists");
             this.SyncDb = context;
             this.DeletedFile = deletedFile;
             this.CreatedFile = createdFile;
-            this.AccountDataFolder = accountDataFolder;
         }
 
         protected override string Suffix => throw new NotImplementedException();
 
         public override void Execute(IConnection connection)
         {
+            var syncObjectDeleted = this.SyncDb.AccountSyncObjects.Single(x => this.DeletedFile.FullName.Contains(x.Path));
+            var syncObjectCreated = this.SyncDb.AccountSyncObjects.Single(x => this.CreatedFile.FullName.Contains(x.Path));
+
             var localOldFile = this.SyncDb.LocalFiles.SingleOrDefault(x => string.Equals(x.Path, this.DeletedFile.FullName, StringComparison.InvariantCultureIgnoreCase));
             System.Diagnostics.Debug.Assert(localOldFile != null, $"File {this.DeletedFile.FullName} does not exists in db");
 
@@ -92,19 +92,16 @@ namespace FexSync.Data
                 throw new ApplicationException();
             }
 
-            var oldObjectToken = localOldFile.Path.Split(Path.DirectorySeparatorChar).First();
-            var newObjectToken = this.CreatedFile.FullName.Replace(this.AccountDataFolder, string.Empty).TrimStart(Path.DirectorySeparatorChar).Split(Path.DirectorySeparatorChar).First();
 #if DEBUG
-            if (oldObjectToken != newObjectToken)
+            if (syncObjectCreated != syncObjectDeleted)
             {
 #warning cross-object moving isn't implemented
                 throw new NotImplementedException();
             }
 #endif
-            var objectToken = newObjectToken;
-
+            var syncObject = syncObjectCreated;
             int? newFolderUploadId;
-            using (var cmd = new CommandEnsureFolderExists(this.SyncDb, new DirectoryInfo(this.AccountDataFolder), objectToken, Path.GetDirectoryName(this.CreatedFile.FullName)))
+            using (var cmd = new CommandEnsureFolderExists(this.SyncDb, syncObject, Path.GetDirectoryName(this.CreatedFile.FullName)))
             {
                 cmd.Execute(connection);
                 newFolderUploadId = cmd.Result;
@@ -115,14 +112,14 @@ namespace FexSync.Data
             this.SyncDb.LocalModifications.Add(new LocalFileModified { Path = localOldFile.Path, LocalFileOld = localOldFile });
             this.SyncDb.RemoteModifications.Add(new RemoteFileModified { Path = remoteOldFile.Path, RemoteFileOld = remoteOldFile });
 
-            connection.Move(objectToken, newFolderUploadId.Value, localOldFile.LocalFileId);
+            connection.Move(syncObject.Token, newFolderUploadId.Value, localOldFile.LocalFileId);
 
-            bool newFileExists = connection.Exists(objectToken, newFolderUploadId.Value, Path.GetFileName(this.CreatedFile.FullName));
+            bool newFileExists = connection.Exists(syncObject.Token, newFolderUploadId.Value, Path.GetFileName(this.CreatedFile.FullName));
 
             var remoteOldFileFolder = this.SyncDb.RemoteFiles.SingleOrDefault(x => string.Equals(x.Path, Path.GetDirectoryName(this.DeletedFile.FullName), StringComparison.InvariantCultureIgnoreCase));
             var remoteNewFileFolder = this.SyncDb.RemoteFiles.SingleOrDefault(x => string.Equals(x.Path, Path.GetDirectoryName(this.CreatedFile.FullName), StringComparison.InvariantCultureIgnoreCase));
             System.Diagnostics.Debug.Assert(remoteNewFileFolder.UploadId == newFolderUploadId.Value, "Error #82374629384");
-            bool oldFileExists = connection.Exists(objectToken, remoteOldFileFolder.UploadId, Path.GetFileName(this.CreatedFile.FullName));
+            bool oldFileExists = connection.Exists(syncObject.Token, remoteOldFileFolder.UploadId, Path.GetFileName(this.CreatedFile.FullName));
 
             if (!newFileExists || oldFileExists)
             {

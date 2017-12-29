@@ -35,7 +35,9 @@ namespace FexSync.Data
                 {
                 }
 
-                using (var cmd = new CommandPrepareLocalFileCreated(syncDb, fi, this.config.AccountSettings.AccountDataFolder))
+                var syncObject = this.config.SyncObjects.Single(x => fullPath.Contains(x.Path));
+
+                using (var cmd = new CommandPrepareLocalFileCreated(syncDb, fi, syncObject))
                 {
                     cmd.Execute(this.connection);
                 }
@@ -51,14 +53,14 @@ namespace FexSync.Data
 
         private FileInfo NewFile { get; set; }
 
-        private string AccountDataFolder { get; set; }
+        private AccountSyncObject SyncObject { get; set; }
 
-        public CommandPrepareLocalFileCreated(ISyncDataDbContext context, FileInfo newFile, string accountDataFolder) : base(new Dictionary<string, string>())
+        public CommandPrepareLocalFileCreated(ISyncDataDbContext context, FileInfo newFile, AccountSyncObject syncObject) : base(new Dictionary<string, string>())
         {
             System.Diagnostics.Debug.Assert(newFile.Exists, $"File {newFile.FullName} does not exists");
             this.SyncDb = context;
             this.NewFile = newFile;
-            this.AccountDataFolder = accountDataFolder;
+            this.SyncObject = syncObject;
         }
 
         protected override string Suffix => throw new NotImplementedException();
@@ -69,7 +71,8 @@ namespace FexSync.Data
 
             var localFile = new LocalFile
             {
-                Path = this.NewFile.FullName.Replace(this.AccountDataFolder, string.Empty).Trim(Path.DirectorySeparatorChar),
+                Path = this.NewFile.FullName.Replace(this.SyncObject.Path, string.Empty).Trim(Path.DirectorySeparatorChar),
+                Token = this.SyncObject.Token,
                 Length = (ulong)this.NewFile.Length,
                 LastWriteTime = this.NewFile.LastWriteTime,
                 Sha1 = this.NewFile.Sha1()

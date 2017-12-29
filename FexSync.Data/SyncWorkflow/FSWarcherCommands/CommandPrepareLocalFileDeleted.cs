@@ -14,22 +14,42 @@ namespace FexSync.Data
     {
         private ThreadSafeListWithLock<Task> scheduledTasks = new ThreadSafeListWithLock<Task>();
 
-        private void Task_RunSafe(Action action)
+        private Action SafeAction(Action action)
         {
-            Task t = Task.Run(() =>
+            return () =>
             {
                 try
                 {
                     action();
                 }
+                catch (OperationCanceledException)
+                {
+                    //// do nothing - suppress exception
+                }
                 catch (Exception ex)
                 {
                     ex.Process();
-                }
-            });
 
-            this.scheduledTasks.RemoveAll(task => task.IsCompleted);
-            this.scheduledTasks.Add(t);
+                    this.OnException?.Invoke(this, new ExceptionEventArgs(ex));
+
+                    System.Diagnostics.Debug.Fail(ex.ToString());
+                }
+            };
+        }
+
+        private Task SafeTask(Action action)
+        {
+            return new Task(this.SafeAction(action));
+        }
+
+        private Task Task_RunSafe(Action action)
+        {
+            this.scheduledTasks.RemoveAll(eachTask => eachTask.IsCompleted);
+
+            Task task = this.SafeTask(action);
+            this.scheduledTasks.Add(task);
+            task.Start();
+            return task;
         }
 
         private void Watcher_OnFileDeleted(object sender, FileDeletedEventArgs e)
@@ -48,7 +68,9 @@ namespace FexSync.Data
                     throw new ApplicationException();
                 }
 
-                using (var cmd = new CommandPrepareLocalFileDeleted(syncDb, fullPath, this.config.AccountSettings.AccountDataFolder))
+                var syncObject = this.config.SyncObjects.Single(x => fullPath.Contains(x.Path));
+
+                using (var cmd = new CommandPrepareLocalFileDeleted(syncDb, fullPath, syncObject))
                 {
                     cmd.Execute(this.connection);
                 }
@@ -64,14 +86,14 @@ namespace FexSync.Data
 
         private string DeletedFilePath { get; set; }
 
-        private string AccountDataFolder { get; set; }
+        private AccountSyncObject SyncObject { get; set; }
 
-        public CommandPrepareLocalFileDeleted(ISyncDataDbContext context, string deletedFilePath, string accountDataFolder) : base(new Dictionary<string, string>())
+        public CommandPrepareLocalFileDeleted(ISyncDataDbContext context, string deletedFilePath, AccountSyncObject syncObject) : base(new Dictionary<string, string>())
         {
             System.Diagnostics.Debug.Assert(!File.Exists(deletedFilePath), $"File {deletedFilePath} still exists");
             this.SyncDb = context;
             this.DeletedFilePath = deletedFilePath;
-            this.AccountDataFolder = accountDataFolder;
+            this.SyncObject = syncObject;
         }
 
         protected override string Suffix => throw new NotImplementedException();
@@ -80,7 +102,7 @@ namespace FexSync.Data
         {
             System.Diagnostics.Debug.Assert(!this.SyncDb.LocalFiles.Any(x => string.Equals(x.Path, this.DeletedFilePath, StringComparison.InvariantCultureIgnoreCase)), $"File {this.DeletedFilePath} already indexed");
 
-            var relativePath = this.DeletedFilePath.Replace(this.AccountDataFolder, string.Empty).TrimStart(Path.DirectorySeparatorChar);
+            var relativePath = this.DeletedFilePath.Replace(this.SyncObject.Path, string.Empty).TrimStart(Path.DirectorySeparatorChar);
 
             var localFile = this.SyncDb.LocalFiles.SingleOrDefault(x => string.Equals(x.Path, relativePath, StringComparison.InvariantCultureIgnoreCase));
             System.Diagnostics.Debug.Assert(localFile != null, $"File {this.DeletedFilePath} have not been found");
@@ -90,17 +112,15 @@ namespace FexSync.Data
 
             var remoteFileFolder = this.SyncDb.RemoteFiles.SingleOrDefault(x => string.Equals(x.Path, Path.GetDirectoryName(relativePath), StringComparison.InvariantCultureIgnoreCase));
 
-            var objectToken = localFile.Path.Split(Path.DirectorySeparatorChar).First();
-
             this.SyncDb.LocalModifications.Add(new LocalFileModified { LocalFileOld = localFile, Path = localFile.Path });
             this.SyncDb.LocalFiles.Remove(localFile);
 
             this.SyncDb.RemoteModifications.Add(new RemoteFileModified { RemoteFileOld = remoteFile, Path = remoteFile.Path });
             this.SyncDb.RemoteFiles.Remove(remoteFile);
 
-            connection.DeleteFile(objectToken, remoteFile.UploadId);
+            connection.DeleteFile(this.SyncObject.Token, remoteFile.UploadId);
 
-            bool fileStillExists = connection.Exists(objectToken, remoteFileFolder?.UploadId, Path.GetFileName(this.DeletedFilePath));
+            bool fileStillExists = connection.Exists(this.SyncObject.Token, remoteFileFolder?.UploadId, Path.GetFileName(this.DeletedFilePath));
 
             if (fileStillExists)
             {

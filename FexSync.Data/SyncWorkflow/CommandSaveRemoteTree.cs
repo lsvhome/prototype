@@ -10,14 +10,14 @@ namespace FexSync.Data
     {
         private ISyncDataDbContext SyncDb { get; set; }
 
-        private string TokenForSync { get; set; }
+        private AccountSyncObject SyncObject { get; set; }
 
         public int? Result { get; private set; } = null;
 
-        public CommandSaveRemoteTree(ISyncDataDbContext context, string tokenForSync) : base(new Dictionary<string, string>())
+        public CommandSaveRemoteTree(ISyncDataDbContext context, AccountSyncObject syncObject) : base(new Dictionary<string, string>())
         {
             this.SyncDb = context;
-            this.TokenForSync = tokenForSync;
+            this.SyncObject = syncObject;
         }
 
         public override void Execute(IConnection connection)
@@ -31,7 +31,7 @@ namespace FexSync.Data
         {
             CommandBuildRemoteTree.CommandBuildRemoteTreeResponse tree;
 
-            using (var cmd = new CommandBuildRemoteTree { Token = this.TokenForSync })
+            using (var cmd = new CommandBuildRemoteTree { Token = this.SyncObject.Token })
             {
                 cmd.Execute(conn);
                 tree = cmd.Result;
@@ -39,16 +39,16 @@ namespace FexSync.Data
 
             System.Diagnostics.Debug.Assert(tree.List.All(listItem => listItem is CommandBuildRemoteTree.CommandBuildRemoteTreeItemArchive), "Type check failed");
 
-            var root = tree.List.OfType<CommandBuildRemoteTree.CommandBuildRemoteTreeItemArchive>().FirstOrDefault(item => item.ArchiveObject.Token == this.TokenForSync);
+            var root = tree.List.OfType<CommandBuildRemoteTree.CommandBuildRemoteTreeItemArchive>().FirstOrDefault(item => item.ArchiveObject.Token == this.SyncObject.Token);
 
-            var treeItem = new RemoteTree { Created = DateTime.Now };
+            var treeItem = new RemoteTree { Created = DateTime.Now, SyncObject = this.SyncObject };
             this.SyncDb.RemoteTrees.Add(treeItem);
             this.SyncDb.SaveChanges();
 
             if (root != null)
             {
                 // hide trash contents
-                var trashFolder = root.Childern.SingleOrDefault(x => x.Object.Name == AccountSettings.TrashBinFolderName);
+                var trashFolder = root.Childern.SingleOrDefault(x => x.Object.Name == Constants.TrashBinFolderName);
                 if (trashFolder != null)
                 {
                     root.Childern.Remove(trashFolder);
@@ -81,10 +81,10 @@ namespace FexSync.Data
             }
 
             // clear old metadata
-            this.SyncDb.RemoteFiles.RemoveRange(this.SyncDb.RemoteFiles.Where(x => x.RemoteTreeId != treeItem.RemoteTreeId));
+            this.SyncDb.RemoteFiles.RemoveRange(this.SyncDb.RemoteFiles.Where(x => x.SyncObject.Token == this.SyncObject.Token && x.RemoteTreeId != treeItem.RemoteTreeId));
             this.SyncDb.SaveChanges();
 #if DEBUG       
-            if (this.SyncDb.RemoteFiles.Select(x => x.RemoteTreeId).Distinct().Count() > 1)
+            if (this.SyncDb.RemoteFiles.Where(x => x.SyncObject.Token == this.SyncObject.Token).Select(x => x.RemoteTreeId).Distinct().Count() > 1)
             {
                 throw new ApplicationException();
             }
@@ -94,14 +94,14 @@ namespace FexSync.Data
 
         private void SaveRemoteItemRecursive(CommandBuildRemoteTree.CommandBuildRemoteTreeItemObject item, int? parentId, ISyncDataDbContext syncDb, int remoteTreeId)
         {
-            var remoteFile = syncDb.RemoteFiles.SingleOrDefault(x => x.Token == item.Token && x.UploadId == item.UploadId && x.RemoteTreeId == remoteTreeId);
+            var remoteFile = syncDb.RemoteFiles.SingleOrDefault(x => x.SyncObject.Token == item.Token && x.UploadId == item.UploadId && x.RemoteTreeId == remoteTreeId);
 
             if (remoteFile == null || !this.IsItemsEqual(item, remoteFile))
             {
                 remoteFile = new RemoteFile
                 {
                     RemoteTreeId = remoteTreeId,
-                    Token = item.Token,
+                    SyncObject = this.SyncObject,
                     UploadId = item.UploadId,
                     Path = item.Path,
                     Name = item.Object.Name,
@@ -139,7 +139,7 @@ namespace FexSync.Data
                 return false;
             }
 
-            if (item.Token != remoteFile.Token)
+            if (item.Token != remoteFile.SyncObject.Token)
             {
                 return false;
             }

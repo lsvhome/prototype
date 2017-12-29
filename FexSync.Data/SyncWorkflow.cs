@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -12,7 +13,7 @@ using Net.Fex.Api;
 
 namespace FexSync.Data
 {
-    public partial class SyncWorkflow : IDisposable, IConfigurable
+    public partial class SyncWorkflow : IDisposable
     {
         public enum SyncWorkflowStatus
         {
@@ -24,12 +25,13 @@ namespace FexSync.Data
 
             WaitingForAlert,
 
-            Stopping
-        }
+            Indexing,
 
-        public void Configure(object settings)
-        {
-            this.Reconfigure((SyncWorkflowConfig)settings);
+            Transferring,
+
+            Idle,
+
+            Stopping
         }
 
         public class Singleton : Singleton<SyncWorkflow>
@@ -42,7 +44,9 @@ namespace FexSync.Data
 
             public Autofac.IContainer Container { get; set; }
 
-            public AccountSettings AccountSettings { get; set; }
+            public Account Account { get; set; }
+
+            public AccountSyncObject[] SyncObjects { get; set; }
         }
 
         [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
@@ -51,15 +55,17 @@ namespace FexSync.Data
         [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
         protected static object lockObj = new object();
 
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1401:FieldsMustBePrivate", Justification = "Reviewed.")]
-        protected System.ComponentModel.BackgroundWorker worker;
-
         private IConnection connection = null;
 
         private CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
 
         public SyncWorkflow()
         {
+            this.Status = SyncWorkflowStatus.Stopped;
+            this.alerts.OnChanged += (object sender, EventArgs e) =>
+            {
+                this.OnStatusChanged?.Invoke(this, new EventArgs());
+            };
         }
 
         private void Watcher_OnError(object sender, ErrorEventArgs e)
@@ -103,27 +109,35 @@ namespace FexSync.Data
         {
             lock (lockObj)
             {
-                if (this.config != null && this.worker == null && this.connection == null)
+                try
                 {
-                    System.Diagnostics.Trace.WriteLine("BackgroundWorker creating");
-                    this.worker = new System.ComponentModel.BackgroundWorker();
-                    System.Diagnostics.Trace.WriteLine("BackgroundWorker created");
-                    this.worker.WorkerSupportsCancellation = true;
-                    this.worker.DoWork += this.Worker_DoWork;
+                    if (this.config != null && this.connection == null)
+                    {
+                        //// recreate cancellationTokenSource
+                        this.cancellationTokenSource.Dispose();
+                        this.cancellationTokenSource = new CancellationTokenSource();
 
-                    //// recreate cancellationTokenSource
-                    this.cancellationTokenSource.Dispose();
-                    this.cancellationTokenSource = new CancellationTokenSource();
+                        this.Status = SyncWorkflowStatus.Starting;
 
-                    Uri endPoint = new Uri(this.config.ApiHost);
-                    this.connection = this.config.Container.Resolve<IConnectionFactory>().CreateConnection(endPoint, this.cancellationTokenSource.Token);
-                    this.worker.RunWorkerAsync();
+                        Uri endPoint = new Uri(this.config.ApiHost);
+                        this.connection = this.config.Container.Resolve<IConnectionFactory>()
+                            .CreateConnection(endPoint, this.cancellationTokenSource.Token);
+
+                        this.Task_RunSafe(this.SignIn);
+
+                        this.OnStarted?.Invoke(this, new EventArgs());
+                    }
+                    else
+                    {
+                        System.Diagnostics.Trace.WriteLine("ApplicationException");
+                        System.Diagnostics.Debug.Flush();
+                        throw new ApplicationException();
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    System.Diagnostics.Trace.WriteLine("ApplicationException");
-                    System.Diagnostics.Debug.Flush();
-                    throw new ApplicationException();
+                    ex.Process();
+                    throw;
                 }
             }
         }
@@ -132,34 +146,21 @@ namespace FexSync.Data
         {
             lock (lockObj)
             {
+                this.Status = SyncWorkflow.SyncWorkflowStatus.Stopping;
+
                 if (this.connection != null)
                 {
                     this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>().Stop();
 
-                    if (this.worker != null)
-                    {
-                        using (var workerCompleteWaiter = new AutoResetEvent(false))
-                        {
-                            this.worker.RunWorkerCompleted += (workerSender, args) =>
-                            {
-                                workerCompleteWaiter.Set();
-                            };
-
-                            if (this.worker.IsBusy)
-                            {
-                                this.cancellationTokenSource.Cancel();
-                                this.worker.CancelAsync();
-                                workerCompleteWaiter.WaitOne();
-                            }
-                        }
-
-                        this.worker.Dispose();
-                        this.worker = null;
-                    }
+                    this.cancellationTokenSource.Cancel();
 
                     Task.WaitAll(this.scheduledTasks.ToArray());
 
-                    this.connection.SignOut();
+                    if (this.connection.IsSignedIn)
+                    {
+                        this.connection.SignOut();
+                    }
+
                     this.connection.OnCaptchaUserInputRequired = null;
 
                     this.connection.Dispose();
@@ -200,41 +201,45 @@ namespace FexSync.Data
             this.cancellationTokenSource.Dispose();
         }
 
+        #region Status
+
+        public event EventHandler OnStatusChanged;
+
+        private SyncWorkflowStatus internalStatus = SyncWorkflowStatus.Stopped;
+
         public SyncWorkflowStatus Status
         {
             get
             {
                 lock (lockObj)
                 {
-                    if (this.alerts.Any())
+                    if (this.cancellationTokenSource.IsCancellationRequested)
+                    {
+                        System.Diagnostics.Trace.WriteLine("Status = Stopping");
+                        return SyncWorkflowStatus.Stopping;
+                    }
+                    else if (this.alerts.Any())
                     {
                         System.Diagnostics.Trace.WriteLine("Status = WaitingForAlert");
                         return SyncWorkflowStatus.WaitingForAlert;
                     }
-
-                    if (this.worker == null)
-                    {
-                        System.Diagnostics.Trace.WriteLine("Status = Stopped");
-                        return SyncWorkflowStatus.Stopped;
-                    }
                     else
                     {
-                        if (this.cancellationTokenSource.IsCancellationRequested)
-                        {
-                            System.Diagnostics.Trace.WriteLine("Status = Stopping");
-                            return SyncWorkflowStatus.Stopping;
-                        }
-                        else
-                        {
-                            System.Diagnostics.Trace.WriteLine("Status = Started");
-                            return SyncWorkflowStatus.Started;
-                        }
+                        System.Diagnostics.Trace.WriteLine($"Status = {this.internalStatus}");
+                        return this.internalStatus;
                     }
-
-                    throw new ApplicationException();
                 }
             }
+
+            private set
+            {
+                this.internalStatus = value;
+                this.OnStatusChanged?.Invoke(this, new EventArgs());
+                System.Diagnostics.Trace.WriteLine($"Status2 = {value}");
+            }
         }
+
+        #endregion Status
 
         private void Connect_OnCaptchaUserInputRequired(object sender, Net.Fex.Api.CommandCaptchaRequestPossible.CaptchaRequestedEventArgs args)
         {
@@ -246,43 +251,142 @@ namespace FexSync.Data
 
                 this.OnAlert?.Invoke(this, new Alert.AlertEventArgs { Alert = alert });
 
-                waiter.WaitOne();
+                WaitHandle.WaitAny(new WaitHandle[] { waiter, this.cancellationTokenSource.Token.WaitHandle });
 
                 this.alerts.Remove(alert);
             }
         }
 
-        protected virtual void Worker_DoWork(object sender, System.ComponentModel.DoWorkEventArgs e)
+        protected virtual void SignIn()
         {
-            this.OnStarted?.Invoke(this, new EventArgs());
-
-            try
+            this.connection.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
+            while (!this.connection.IsSignedIn)
             {
-                Uri endPoint = new Uri(this.config.ApiHost);
-
-                this.connection.OnCaptchaUserInputRequired = this.Connect_OnCaptchaUserInputRequired;
-                while (!this.connection.IsSignedIn)
+                this.connection.CancellationToken.ThrowIfCancellationRequested();
+                try
                 {
-                    this.connection.CancellationToken.ThrowIfCancellationRequested();
-                    try
-                    {
-                        this.connection.SignIn(this.config.AccountSettings.Login, this.config.AccountSettings.Password, false);
-                    }
-                    catch (CaptchaRequiredException ex)
-                    {
-                        ex.Process();
-                    }
+                    this.connection.SignIn(this.config.Account.Login, this.config.Account.Password, false);
+                }
+                catch (CaptchaRequiredException ex)
+                {
+                    ex.Process();
+                }
+            }
+
+            this.Task_RunSafe(() => { this.Init(this.connection); });
+        }
+
+        protected virtual void ReIndex()
+        {
+            this.Status = SyncWorkflowStatus.Indexing;
+            this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>().Stop();
+
+            this.PrepareTransferQueues(this.connection);
+
+            this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>().Start(this.config.SyncObjects.Select(obj => new DirectoryInfo(obj.Path)).ToArray());
+
+            this.Task_RunSafe(() => { this.Transfer(this.connection); });
+        }
+
+        private void Init(IConnection conn)
+        {
+            foreach (var syncObject in this.config.SyncObjects)
+            {
+                if (!Directory.Exists(syncObject.Path))
+                {
+                    Directory.CreateDirectory(syncObject.Path);
                 }
 
-                this.Init(this.connection);
+                if (!conn.Exists(syncObject.Token, null, Constants.TrashBinFolderName))
+                {
+                    conn.CreateFolder(syncObject.Token, null, Constants.TrashBinFolderName);
+                }
+            }
 
-                this.PrepareTransferQueues(this.connection);
+            this.Task_RunSafe(this.ReIndex);
+        }
 
-                this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>().Start(new[] { new DirectoryInfo(this.config.AccountSettings.AccountDataFolder) });
+        private void PrepareTransferQueues(IConnection conn)
+        {
+            ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
+            syncDb.LockedRun(() =>
+            {
+                foreach (var syncObject in this.config.SyncObjects)
+                {
+                    using (CommandSaveLocalTree cmd = new CommandSaveLocalTree(syncDb, syncObject))
+                    {
+                        cmd.Execute(conn);
+                    }
 
+                    int treeId;
+                    using (CommandSaveRemoteTree cmd = new CommandSaveRemoteTree(syncDb, syncObject))
+                    {
+                        cmd.Execute(conn);
+                        treeId = cmd.Result.Value;
+                    }
+
+                    using (CommandPrepareDownload cmd = new CommandPrepareDownload(syncDb, treeId))
+                    {
+                        cmd.Execute(conn);
+                    }
+
+                    using (CommandPrepareUpload cmd = new CommandPrepareUpload(syncDb, treeId, syncObject))
+                    {
+                        cmd.Execute(conn);
+                    }
+                }
+            });
+        }
+
+        private long transferQueue = 0;
+
+        public event EventHandler OnTransferFinished;
+
+        private void Transfer(IConnection conn)
+        {
+            try
+            {
                 this.connection.CancellationToken.ThrowIfCancellationRequested();
+                this.Status = SyncWorkflowStatus.Transferring;
 
-                this.Transfer(this.connection);
+                if (Interlocked.Read(ref this.transferQueue) > 0)
+                {
+                    return;
+                }
+
+                Interlocked.Increment(ref this.transferQueue);
+
+                ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
+                //// Transfer should be locked!!!
+                syncDb.LockedRun(() =>
+                {
+                    Interlocked.Decrement(ref this.transferQueue);
+
+                    foreach (var syncObject in this.config.SyncObjects)
+                    {
+                        this.connection.CancellationToken.ThrowIfCancellationRequested();
+
+                        using (CommandUploadQueue cmd = new CommandUploadQueue(syncDb, new DirectoryInfo(syncObject.Path), syncObject.Token))
+                        {
+                            cmd.Execute(conn);
+                        }
+
+                        using (CommandDownloadQueue cmd = new CommandDownloadQueue(syncDb, syncObject))
+                        {
+                            var fileSystemWatcher = this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>();
+
+                            cmd.OnBeforeSave += (sender, args) => { fileSystemWatcher.AddFilterPath(args.FullPath); };
+
+                            cmd.OnAfterSave += (sender, args) => { fileSystemWatcher.RemoveFilterPath(args.FullPath); };
+
+                            cmd.Execute(conn);
+                        }
+                    }
+                });
+
+                this.Status = SyncWorkflowStatus.Idle;
+
+                this.OnTransferFinished?.Invoke(this, new EventArgs());
 
                 this.connection.CancellationToken.ThrowIfCancellationRequested();
             }
@@ -298,97 +402,6 @@ namespace FexSync.Data
 
                 System.Diagnostics.Debug.Fail(ex.ToString());
             }
-        }
-
-        private void Init(IConnection conn)
-        {
-            string tokenFolder = Path.Combine(this.config.AccountSettings.AccountDataFolder, this.config.AccountSettings.TokenForSync);
-            if (!Directory.Exists(tokenFolder))
-            {
-                Directory.CreateDirectory(tokenFolder);
-            }
-
-            if (!conn.Exists(this.config.AccountSettings.TokenForSync, null, AccountSettings.TrashBinFolderName))
-            {
-                conn.CreateFolder(this.config.AccountSettings.TokenForSync, null, AccountSettings.TrashBinFolderName);
-            }
-
-            ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
-            syncDb.LockedRun(() => { syncDb.EnsureDatabaseExists(); });
-        }
-
-        private void PrepareTransferQueues(IConnection conn)
-        {
-            ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
-            syncDb.LockedRun(() =>
-            {
-                using (CommandSaveLocalTree cmd = new CommandSaveLocalTree(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder)))
-                {
-                    cmd.Execute(conn);
-                }
-
-                int treeId;
-                using (CommandSaveRemoteTree cmd = new CommandSaveRemoteTree(syncDb, this.config.AccountSettings.TokenForSync))
-                {
-                    cmd.Execute(conn);
-                    treeId = cmd.Result.Value;
-                }
-
-                using (CommandPrepareDownload cmd = new CommandPrepareDownload(syncDb, treeId))
-                {
-                    cmd.Execute(conn);
-                }
-
-                using (CommandPrepareUpload cmd = new CommandPrepareUpload(syncDb, treeId))
-                {
-                    cmd.Execute(conn);
-                }
-            });
-        }
-
-        private long transferQueue = 0;
-
-        public event EventHandler OnTransferFinished;
-
-        private void Transfer(IConnection conn)
-        {
-            if (Interlocked.Read(ref this.transferQueue) > 0)
-            {
-                return;
-            }
-
-            Interlocked.Increment(ref this.transferQueue);
-
-            ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
-            //// Transfer should be locked!!!
-            syncDb.LockedRun(() =>
-            {
-                Interlocked.Decrement(ref this.transferQueue);
-
-                using (CommandUploadQueue cmd = new CommandUploadQueue(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder), this.config.AccountSettings.TokenForSync))
-                {
-                    cmd.Execute(conn);
-                }
-
-                using (CommandDownloadQueue cmd = new CommandDownloadQueue(syncDb, new DirectoryInfo(this.config.AccountSettings.AccountDataFolder)))
-                {
-                    var fileSystemWatcher = this.config.Container.Resolve<FexSync.Data.IFileSystemWatcher>();
-
-                    cmd.OnBeforeSave += (sender, args) =>
-                    {
-                        fileSystemWatcher.AddFilterPath(args.FullPath);
-                    };
-
-                    cmd.OnAfterSave += (sender, args) =>
-                    {
-                        fileSystemWatcher.RemoveFilterPath(args.FullPath);
-                    };
-
-                    cmd.Execute(conn);
-                }
-            });
-
-            this.OnTransferFinished?.Invoke(this, new EventArgs());
         }
 
         private readonly ThreadSafeListWithLock<Alert> alerts = new ThreadSafeListWithLock<Alert>();

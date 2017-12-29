@@ -8,9 +8,13 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FexSync.Data
 {
-    public interface ISyncDataDbContext : Microsoft.EntityFrameworkCore.Internal.IDbContextPoolable
+    public interface ISyncDataDbContext : Microsoft.EntityFrameworkCore.Internal.IDbContextPoolable, IDisposable
     {
         void LockedRun(System.Action action);
+
+        DbSet<Account> Accounts { get; set; }
+
+        DbSet<AccountSyncObject> AccountSyncObjects { get; set; }
 
         DbSet<RemoteTree> RemoteTrees { get; set; }
 

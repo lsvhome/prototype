@@ -79,12 +79,12 @@ namespace FexSync.Data
             downloadList.ForEach(
                 (each) =>
                 {
-                    if (!SyncDb.Downloads.Any(item => item.Token == each.Token && item.UploadId == each.UploadId))
+                    if (!SyncDb.Downloads.Any(item => item.SyncObject.Token == each.SyncObject.Token && item.UploadId == each.UploadId))
                     {
                         SyncDb.Downloads.Add(new DownloadItem
                         {
                             TriesCount = 0,
-                            Token = each.Token,
+                            SyncObject = each.SyncObject,
                             UploadId = each.UploadId,
                             FilePathLocalRelative = each.Path,
                             ItemCreated = DateTime.Now

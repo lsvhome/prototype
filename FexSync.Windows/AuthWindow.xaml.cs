@@ -163,7 +163,7 @@ namespace FexSync
                         throw new FreeUserAccessDeniedException();
                     }
 
-                    this.OnSignedIn.Invoke(this, new CommandSignIn.SignInEventArgs(conn, login, password));
+                    this.OnSignedIn?.Invoke(this, new CommandSignIn.SignInEventArgs(conn, login, password));
 
                     this.Dispatcher.Invoke(() =>
                     {

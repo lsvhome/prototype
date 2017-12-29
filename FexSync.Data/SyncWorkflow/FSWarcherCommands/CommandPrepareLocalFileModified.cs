@@ -33,7 +33,9 @@ namespace FexSync.Data
                 {
                 }
 
-                using (var cmd = new CommandPrepareLocalFileModified(syncDb, fi, this.config.AccountSettings.AccountDataFolder))
+                var syncObject = this.config.SyncObjects.Single(x => fullPath.Contains(x.Path));
+
+                using (var cmd = new CommandPrepareLocalFileModified(syncDb, fi, syncObject.Path))
                 {
                     cmd.Execute(this.connection);
                 }

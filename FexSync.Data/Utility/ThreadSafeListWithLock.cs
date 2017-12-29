@@ -42,12 +42,16 @@ namespace FexSync.Data
             return threadClonedList.Value;
         }
 
+        public event EventHandler OnChanged;
+
         public void Add(T item)
         {
             lock (this.lockList)
             {
                 this.internalList.Add(item);
             }
+
+            this.OnChanged?.Invoke(this, new EventArgs());
         }
 
         public bool Remove(T item)
@@ -59,6 +63,8 @@ namespace FexSync.Data
                 isRemoved = this.internalList.Remove(item);
             }
 
+            this.OnChanged?.Invoke(this, new EventArgs());
+
             return isRemoved;
         }
 
@@ -68,6 +74,8 @@ namespace FexSync.Data
             {
                 this.internalList.Clear();
             }
+
+            this.OnChanged?.Invoke(this, new EventArgs());
         }
 
         public bool Contains(T item)
@@ -128,6 +136,8 @@ namespace FexSync.Data
             {
                 this.internalList.Insert(index, item);
             }
+
+            this.OnChanged?.Invoke(this, new EventArgs());
         }
 
         public void RemoveAt(int index)
@@ -136,13 +146,21 @@ namespace FexSync.Data
             {
                 this.internalList.RemoveAt(index);
             }
+
+            this.OnChanged?.Invoke(this, new EventArgs());
         }
 
         public void RemoveAll(Predicate<T> match)
         {
+            int removed = 0;
             lock (this.lockList)
             {
-                this.internalList.RemoveAll(match);
+                removed = this.internalList.RemoveAll(match);
+            }
+
+            if (removed > 0)
+            {
+                this.OnChanged?.Invoke(this, new EventArgs());
             }
         }
 
@@ -162,6 +180,8 @@ namespace FexSync.Data
                 {
                     this.internalList[index] = value;
                 }
+
+                this.OnChanged?.Invoke(this, new EventArgs());
             }
         }
 
@@ -171,6 +191,8 @@ namespace FexSync.Data
             {
                 action(this.internalList);
             }
+
+            this.OnChanged?.Invoke(this, new EventArgs());
         }
 
         protected virtual T LockInternalListAndGet(Func<IList<T>, T> func)

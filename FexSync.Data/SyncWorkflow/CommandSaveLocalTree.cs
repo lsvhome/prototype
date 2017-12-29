@@ -11,12 +11,12 @@ namespace FexSync.Data
     {
         private ISyncDataDbContext SyncDb { get; set; }
 
-        private DirectoryInfo DataFolder { get; set; }
+        private AccountSyncObject SyncObject { get; set; }
 
-        public CommandSaveLocalTree(ISyncDataDbContext context, DirectoryInfo dataFolder) : base(new Dictionary<string, string>())
+        public CommandSaveLocalTree(ISyncDataDbContext context, AccountSyncObject syncObject) : base(new Dictionary<string, string>())
         {
             this.SyncDb = context;
-            this.DataFolder = dataFolder;
+            this.SyncObject = syncObject;
         }
 
         protected override string Suffix => throw new NotImplementedException();
@@ -30,7 +30,7 @@ namespace FexSync.Data
         {
             var localFiles = this.GetLocalFiles();
 
-            var savedFiles = this.SyncDb.LocalFiles.ToList();
+            var savedFiles = this.SyncDb.LocalFiles.Where(item => item.Token == this.SyncObject.Token).ToList();
 
             var removedLocalFiles = savedFiles.Where(item => !localFiles.Keys.Contains(item.Path)).ToList();
             var added = localFiles.Keys.Where(item => !savedFiles.Select(z => z.Path).Contains(item)).ToList();
@@ -51,7 +51,8 @@ namespace FexSync.Data
                 var fi = localFiles[each];
                 var localFile = new LocalFile
                 {
-                    Path = fi.FullName.Replace(this.DataFolder.FullName, string.Empty).Trim(Path.DirectorySeparatorChar),
+                    Path = fi.FullName.Replace(this.SyncObject.Path, string.Empty).Trim(Path.DirectorySeparatorChar),
+                    Token = this.SyncObject.Token,
                     Length = (ulong)fi.Length,
                     LastWriteTime = fi.LastWriteTime,
                     Sha1 = fi.Sha1()
@@ -68,7 +69,8 @@ namespace FexSync.Data
 
                 var newVersion = new LocalFile
                 {
-                    Path = fileInfo.FullName.Replace(this.DataFolder.FullName, string.Empty).Trim(Path.DirectorySeparatorChar),
+                    Path = fileInfo.FullName.Replace(this.SyncObject.Path, string.Empty).Trim(Path.DirectorySeparatorChar),
+                    Token = this.SyncObject.Token,
                     Length = (ulong)fileInfo.Length,
                     LastWriteTime = fileInfo.LastWriteTime,
                     Sha1 = fileInfo.Sha1()
@@ -78,14 +80,14 @@ namespace FexSync.Data
                 this.SyncDb.LocalFiles.Remove(each.oldVersion);
 
                 this.SyncDb.LocalModifications.Add(new LocalFileModified { LocalFileOld = each.oldVersion, LocalFileNew = newVersion, Path = each.oldVersion.Path });
-
-                this.SyncDb.SaveChanges();
             }
+
+            this.SyncDb.SaveChanges();
         }
 
         private Dictionary<string, FileInfo> GetLocalFiles()
         {
-            var allFiles = System.IO.Directory.GetFiles(this.DataFolder.FullName, "*", SearchOption.AllDirectories);
+            var allFiles = System.IO.Directory.GetFiles(this.SyncObject.Path, "*", SearchOption.AllDirectories);
 
             Dictionary<string, FileInfo> ret = new Dictionary<string, FileInfo>();
 

@@ -86,7 +86,6 @@
     </Compile>
     <Compile Include="Extenders.cs" />
     <Compile Include="FreeUserAccessDeniedException.cs" />
-    <Compile Include="Settings\AccountSettings.cs" />
     <Compile Include="DelegateCommand.cs" />
     <Compile Include="QuickStartImageList.cs" />
     <Compile Include="QuickStartWindow.xaml.cs">
@@ -187,7 +186,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Design" Version="1.1.4" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'" >
     <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.0" Visible="false" />
   </ItemGroup>
   <ItemGroup>

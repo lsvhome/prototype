@@ -11,12 +11,12 @@ namespace FexSync.Data
     {
         private ISyncDataDbContext SyncDb { get; set; }
 
-        private DirectoryInfo DataFolder { get; set; }
+        private AccountSyncObject SyncObject { get; set; }
 
-        public CommandDownloadQueue(ISyncDataDbContext context, DirectoryInfo dataFolder) : base(new Dictionary<string, string>())
+        public CommandDownloadQueue(ISyncDataDbContext context, AccountSyncObject syncObject) : base(new Dictionary<string, string>())
         {
             this.SyncDb = context;
-            this.DataFolder = dataFolder;
+            this.SyncObject = syncObject;
         }
 
         protected override string Suffix => throw new NotImplementedException();
@@ -33,8 +33,14 @@ namespace FexSync.Data
         private void Download(IConnection conn)
         {
             var maxTriesCount = this.SyncDb.Downloads.Max(x => (int?)x.TriesCount) ?? 0;
+            var downloadQueue = this.SyncDb.Downloads
+                .Where(item => item.TriesCount <= maxTriesCount)
+                .Where(item => item.SyncObject.Token == this.SyncObject.Token)
+                .OrderBy(item => item.TriesCount)
+                .ThenByDescending(x => x.ItemCreated);
+
             DownloadItem di = null;
-            while ((di = this.SyncDb.Downloads.Where(item => item.TriesCount <= maxTriesCount).OrderBy(item => item.TriesCount).ThenByDescending(x => x.ItemCreated).FirstOrDefault()) != null)
+            while ((di = downloadQueue.FirstOrDefault()) != null)
             {
                 conn.CancellationToken.ThrowIfCancellationRequested();
 
@@ -43,9 +49,9 @@ namespace FexSync.Data
                 try
                 {
                     var downloadPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                    var localPath = Path.Combine(this.DataFolder.FullName, di.FilePathLocalRelative);
+                    var localPath = Path.Combine(this.SyncObject.Path, di.FilePathLocalRelative);
 
-                    conn.Get(di.Token, di.UploadId, downloadPath);
+                    conn.Get(di.SyncObject.Token, di.UploadId, downloadPath);
                     if (File.Exists(downloadPath))
                     {
                         if (!Directory.Exists(Path.GetDirectoryName(localPath)))
@@ -58,12 +64,12 @@ namespace FexSync.Data
                         System.Diagnostics.Trace.WriteLine($"Downloaded {localPath}");
                         if (File.Exists(localPath))
                         {
-                            var trashCopy = Path.Combine(this.DataFolder.FullName, AccountSettings.TrashBinFolderName, Path.GetFileName(localPath));
+                            var trashCopy = Path.Combine(this.SyncObject.Path, Constants.TrashBinFolderName, Path.GetFileName(localPath));
                             int i = 0;
                             while (File.Exists(trashCopy))
                             {
                                 i++;
-                                trashCopy = Path.Combine(this.DataFolder.FullName, AccountSettings.TrashBinFolderName, $"copy({i})_" + Path.GetFileName(localPath));
+                                trashCopy = Path.Combine(this.SyncObject.Path, Constants.TrashBinFolderName, $"copy({i})_" + Path.GetFileName(localPath));
                             }
 
                             this.OnBeforeSave?.Invoke(this, new FilePathEventArgs { FullPath = localPath });
@@ -89,6 +95,7 @@ namespace FexSync.Data
                     var localFile = new LocalFile
                     {
                         Path = remoteFile.Path,
+                        Token = this.SyncObject.Token,
                         Length = remoteFile.Size,
                         LastWriteTime = dt,
                         Sha1 = remoteFile.Sha1

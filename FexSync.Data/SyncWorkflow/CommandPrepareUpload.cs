@@ -13,10 +13,13 @@ namespace FexSync.Data
 
         private int TreeId { get; set; }
 
-        public CommandPrepareUpload(ISyncDataDbContext context, int treeId) : base(new Dictionary<string, string>())
+        private AccountSyncObject SyncObject { get; set; }
+
+        public CommandPrepareUpload(ISyncDataDbContext context, int treeId, AccountSyncObject syncObject) : base(new Dictionary<string, string>())
         {
             this.SyncDb = context;
             this.TreeId = treeId;
+            this.SyncObject = syncObject;
         }
 
         protected override string Suffix => throw new NotImplementedException();
@@ -28,8 +31,8 @@ namespace FexSync.Data
 
         private void BuildUploadList(int treeId)
         {
-            var remoteFiles = this.SyncDb.RemoteFiles.Where(item => item.RemoteTreeId == treeId);
-            var localFiles = this.SyncDb.LocalFiles;
+            var remoteFiles = this.SyncDb.RemoteFiles.Where(item => item.SyncObject.Token == this.SyncObject.Token && item.RemoteTreeId == treeId);
+            var localFiles = this.SyncDb.LocalFiles.Where(item => item.Token == this.SyncObject.Token);
 
             //// unexisted remptely files
             var uploadList = localFiles.Where(x => !remoteFiles.Any(item => item.Path == x.Path)).ToList();

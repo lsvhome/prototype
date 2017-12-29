@@ -28,7 +28,9 @@ namespace FexSync.Data
                     throw new ApplicationException();
                 }
 
-                using (var cmd = new CommandPrepareLocalFolderDeleted(syncDb, fullPath, this.config.AccountSettings.AccountDataFolder))
+                var syncObject = this.config.SyncObjects.Single(x => fullPath.Contains(x.Path));
+
+                using (var cmd = new CommandPrepareLocalFolderDeleted(syncDb, fullPath, syncObject))
                 {
                     cmd.Execute(this.connection);
                 }
@@ -44,14 +46,14 @@ namespace FexSync.Data
 
         private string DeletedFolderPath { get; set; }
 
-        private string AccountDataFolder { get; set; }
+        private AccountSyncObject SyncObject { get; set; }
 
-        public CommandPrepareLocalFolderDeleted(ISyncDataDbContext context, string deletedFolderPath, string accountDataFolder) : base(new Dictionary<string, string>())
+        public CommandPrepareLocalFolderDeleted(ISyncDataDbContext context, string deletedFolderPath, AccountSyncObject syncObject) : base(new Dictionary<string, string>())
         {
             System.Diagnostics.Debug.Assert(!File.Exists(deletedFolderPath), $"Folder {deletedFolderPath} still exists");
             this.SyncDb = context;
             this.DeletedFolderPath = deletedFolderPath;
-            this.AccountDataFolder = accountDataFolder;
+            this.SyncObject = syncObject;
         }
 
         protected override string Suffix => throw new NotImplementedException();
@@ -61,8 +63,7 @@ namespace FexSync.Data
             var remoteFolder = this.SyncDb.RemoteFiles.SingleOrDefault(x => string.Equals(x.Path, this.DeletedFolderPath, StringComparison.InvariantCultureIgnoreCase));
             System.Diagnostics.Debug.Assert(remoteFolder != null, $"Folder {this.DeletedFolderPath} does not exists in db");
 
-            var objectToken = remoteFolder.Path.Split(Path.DirectorySeparatorChar).First();
-            connection.DeleteFile(objectToken, remoteFolder.UploadId);
+            connection.DeleteFile(this.SyncObject.Token, remoteFolder.UploadId);
 
             var deletedLocalSubFoldersAndFiles = this.SyncDb.LocalFiles.Where(item => item.Path.Contains(remoteFolder.Path)).ToList();
 
@@ -78,7 +79,7 @@ namespace FexSync.Data
                 this.SyncDb.RemoteFiles.Remove(each);
             }
 
-            bool itemStillExists = connection.Exists(objectToken, remoteFolder.UploadId, Path.GetFileName(this.DeletedFolderPath));
+            bool itemStillExists = connection.Exists(this.SyncObject.Token, remoteFolder.UploadId, Path.GetFileName(this.DeletedFolderPath));
 
             if (itemStillExists)
             {

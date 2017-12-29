@@ -8,8 +8,14 @@ namespace FexSync.Data
     [Serializable]
     public class LocalFile
     {
+        public LocalFile()
+        {
+        }
+
         [Key]
         public int LocalFileId { get; set; }
+
+        public string Token { get; set; }
 
         [NotMapped]
         private string path;

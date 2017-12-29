@@ -18,14 +18,14 @@ namespace FexSync.Data.Tests
         public static void AssemblyInit(TestContext context)
         {
             System.Configuration.Configuration config = System.Configuration.ConfigurationManager.OpenExeConfiguration(System.Configuration.ConfigurationUserLevel.None);
-
+            string value = "false";
             if (!config.AppSettings.Settings.AllKeys.Contains("net.fex.api.trace"))
             {
-                config.AppSettings.Settings.Add("net.fex.api.trace", "false");
+                config.AppSettings.Settings.Add("net.fex.api.trace", value);
             }
             else
             {
-                config.AppSettings.Settings["net.fex.api.trace"].Value = "false";
+                config.AppSettings.Settings["net.fex.api.trace"].Value = value;
             }
 
             config.Save(System.Configuration.ConfigurationSaveMode.Modified);

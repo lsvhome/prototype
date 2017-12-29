@@ -26,6 +26,10 @@ namespace FexSync.Data
             this.databaseFullPath = databaseFullPath;
         }
 
+        public DbSet<Account> Accounts { get; set; }
+
+        public DbSet<AccountSyncObject> AccountSyncObjects { get; set; }
+
         public DbSet<RemoteTree> RemoteTrees { get; set; }
 
         public DbSet<RemoteFile> RemoteFiles { get; set; }
@@ -58,6 +62,12 @@ namespace FexSync.Data
         public void AcceptAllChangesWithoutSaving()
         {
             this.ChangeTracker.AcceptAllChanges();
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            Account.RegisterType(modelBuilder);
         }
     }
 }

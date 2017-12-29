@@ -1,4 +1,5 @@
 ﻿using System;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,13 +18,37 @@ namespace FexSync
     /// view model is assigned to the NotifyIcon in XAML. Alternatively, the startup routing
     /// in App.xaml.cs could have created this view model, and assigned it to the NotifyIcon.
     /// </summary>
-    public class NotifyIconViewModel
+    public class NotifyIconViewModel : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        private bool AccountSettingsExists
+        {
+            get
+            {
+                try
+                {
+                    var db = ((App)Application.Current).Container.Resolve<ISyncDataDbContext>();
+                    bool ret = false;
+                    db.LockedRun(() =>
+                    {
+                        ret = db.Accounts.Any();
+                    });
+
+                    return ret;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }
+        }
+
         private SyncWorkflow SyncWorkflow
         {
             get
             {
-                if (!ApplicationSettingsManager.AccountSettings.Exists())
+                if (!this.AccountSettingsExists)
                 {
                     return null;
                 }
@@ -41,7 +66,7 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => ApplicationSettingsManager.AccountSettings.Exists() && (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Started || SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped),
+                    CanExecuteFunc = () => this.AccountSettingsExists && (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Started || SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped),
                     CommandAction = () =>
                     {
                         try
@@ -49,7 +74,11 @@ namespace FexSync
                             SettingsWindow settings = new SettingsWindow();
                             Application.Current.MainWindow = settings;
 
-                            settings.UserDataFolder = ApplicationSettingsManager.CurrentFexUserRootFolder;
+                            var syncDb = ((App)App.Current).Container.Resolve<ISyncDataDbContext>();
+
+                            var defaultSyncObject = syncDb.AccountSyncObjects.Single();
+                            settings.UserDataFolder = defaultSyncObject.Path;
+
                             if (settings.ShowDialog() == true)
                             {
                                 var newFolder = settings.UserDataFolder;
@@ -68,7 +97,11 @@ namespace FexSync
                                         {
                                             Task.Run(() =>
                                             {
-                                                ApplicationSettingsManager.CurrentFexUserRootFolder = newFolder;
+                                                syncDb.LockedRun(() =>
+                                                { 
+                                                    defaultSyncObject.Path = newFolder;
+                                                    syncDb.SaveChanges();
+                                                });
 
                                                 app.ConfigureContainer();
 
@@ -142,7 +175,7 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => ApplicationSettingsManager.AccountSettings.Exists() && SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped,
+                    CanExecuteFunc = () => this.AccountSettingsExists && SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped,
                     CommandAction = () =>
                     {
                         try
@@ -164,7 +197,7 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => ApplicationSettingsManager.AccountSettings.Exists() && (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Started || SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Starting),
+                    CanExecuteFunc = () => this.AccountSettingsExists && (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Started || SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Starting),
 
                     CommandAction = () =>
                     {
@@ -195,7 +228,7 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => !ApplicationSettingsManager.AccountSettings.Exists() && SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped,
+                    CanExecuteFunc = () => !this.AccountSettingsExists && SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped,
 
                     CommandAction = () =>
                     {
@@ -210,11 +243,35 @@ namespace FexSync
                                     {
                                         cmd.Execute(signedUserArgs.Connection);
 
-                                        ApplicationSettingsManager.AccountSettings.Login = signedUserArgs.Login;
-                                        ApplicationSettingsManager.AccountSettings.Password = signedUserArgs.Password;
-                                        ApplicationSettingsManager.AccountSettings.TokenForSync = cmd.Result;
+                                        var db = ((App)Application.Current).Container.Resolve<ISyncDataDbContext>();
+                                        db.LockedRun(() =>
+                                        {
+                                            var account = db.Accounts.SingleOrDefault();
+                                            if (account == null)
+                                            {
+                                                account = new Account();
+                                                db.Accounts.Add(account);
+                                            }
 
-                                        ApplicationSettingsManager.AccountSettings.Save(ApplicationSettingsManager.AccountSettings.AccountConfigFile);
+                                            account.Login = signedUserArgs.Login;
+                                            account.Password = signedUserArgs.Password;
+
+                                            var syncObject = db.AccountSyncObjects.SingleOrDefault();
+                                            if (syncObject == null)
+                                            {
+                                                syncObject = new AccountSyncObject();
+                                                syncObject.Path = ApplicationSettingsManager.DefaultFexUserRootFolder;
+                                                syncObject.Account = account;
+                                                db.AccountSyncObjects.Add(syncObject);
+                                            }
+
+                                            syncObject.Token = cmd.Result;
+                                            
+                                            db.SaveChanges();
+                                        });
+
+                                        ((App)App.Current).ConfigureContainer();
+                                        ((App)App.Current).ConfigureSyncWorkflow();
                                     }
                                 };
 
@@ -244,13 +301,19 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => ApplicationSettingsManager.AccountSettings.Exists() && SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped,
+                    CanExecuteFunc = () => this.AccountSettingsExists && SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped,
 
                     CommandAction = () =>
                     {
                         try
                         {
-                            ApplicationSettingsManager.AccountSettings.Clear();
+                            var db = ((App)Application.Current).Container.Resolve<ISyncDataDbContext>();
+                            db.LockedRun(() =>
+                            {
+                                db.AccountSyncObjects.RemoveRange(db.AccountSyncObjects);
+                                db.Accounts.RemoveRange(db.Accounts);
+                                db.SaveChanges();
+                            });
                         }
                         catch (ApiErrorException ex)
                         {
@@ -278,7 +341,7 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => ApplicationSettingsManager.AccountSettings.Exists() && SyncWorkflow.Singleton.Instance.Alerts.Any(),
+                    CanExecuteFunc = () => this.AccountSettingsExists && SyncWorkflow.Singleton.Instance.Alerts.Any(),
                     CommandAction = () =>
                     {
                         var alert = SyncWorkflow.Singleton.Instance.Alerts.Where(a => a.Priority == Alert.AlertPriority.critical).FirstOrDefault();
@@ -319,7 +382,7 @@ namespace FexSync
                 {
                     CommandAction = () =>
                     {
-                        if (!ApplicationSettingsManager.AccountSettings.Exists())
+                        if (!this.AccountSettingsExists)
                         {
                             this.SignInCommand.Execute(null);
                         }
@@ -340,14 +403,14 @@ namespace FexSync
         {
             get
             {
-                if (!ApplicationSettingsManager.AccountSettings.Exists())
+                if (!this.AccountSettingsExists)
                 {
                     return "Configuration required";
                 }
 
                 if (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.WaitingForAlert)
                 {
-                    return "Alert";
+                    return "Notification";
                 }
 
                 if (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Started)
@@ -357,11 +420,16 @@ namespace FexSync
 
                 if (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped)
                 {
-                    return "Pause";
+                    return "Paused";
                 }
 
                 return SyncWorkflow.Singleton.Instance.Status.ToString();
             }
+        }
+
+        public void FireSyncStatusChanged()
+        {
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.SyncStatus)));
         }
 
         public string ToolTipText
