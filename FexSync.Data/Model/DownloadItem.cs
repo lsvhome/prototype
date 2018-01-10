@@ -11,6 +11,16 @@ namespace FexSync.Data
 {
     public class DownloadItem : RemoteFileBase
     {
+        [Obsolete("Only for (De)Serialization purposes", true)]
+        protected DownloadItem()
+        {
+        }
+
+        public DownloadItem(string relativePath, int uploadId, AccountSyncObject syncObject) : base(uploadId, syncObject)
+        {
+            this.FilePathLocalRelative = relativePath;
+        }
+
         [Key]
         public int DownloadItemId { get; set; }
 

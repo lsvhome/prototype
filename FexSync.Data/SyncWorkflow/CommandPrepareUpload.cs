@@ -83,7 +83,7 @@ namespace FexSync.Data
                 {
                     if (!this.SyncDb.Uploads.Any(item => item.Path == each.Path))
                     {
-                        this.SyncDb.Uploads.Add(new UploadItem { Path = each.Path });
+                        this.SyncDb.Uploads.Add(new UploadItem(each.Path, each.Token));
                     }
                 });
 

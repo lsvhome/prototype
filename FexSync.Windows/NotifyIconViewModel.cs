@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -66,68 +67,87 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => this.AccountSettingsExists && (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Started || SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped),
+                    CanExecuteFunc = () =>
+                    {
+                        SyncWorkflow.SyncWorkflowStatus[] allowedStatuses = new[]
+                        {
+                            SyncWorkflow.SyncWorkflowStatus.Started,
+                            SyncWorkflow.SyncWorkflowStatus.Stopped,
+                            SyncWorkflow.SyncWorkflowStatus.Idle,
+                            SyncWorkflow.SyncWorkflowStatus.Indexing,
+                            SyncWorkflow.SyncWorkflowStatus.Transferring
+                        };
+
+                        return this.AccountSettingsExists && allowedStatuses.Contains(SyncWorkflow.Singleton.Instance.Status);
+                    },
                     CommandAction = () =>
                     {
                         try
                         {
-                            SettingsWindow settings = new SettingsWindow();
-                            Application.Current.MainWindow = settings;
-
                             var syncDb = ((App)App.Current).Container.Resolve<ISyncDataDbContext>();
+                            var account = syncDb.Accounts.Single();
 
-                            var defaultSyncObject = syncDb.AccountSyncObjects.Single();
-                            settings.UserDataFolder = defaultSyncObject.Path;
-
-                            if (settings.ShowDialog() == true)
+                            using (var conn = ((App)Application.Current).Container.Resolve<Data.IConnectionFactory>().CreateConnection(new Uri(ApplicationSettingsManager.ApiHost)))
                             {
-                                var newFolder = settings.UserDataFolder;
-
-                                //// required full restart
-                                Task.Run(() =>
+                                conn.OnCaptchaUserInputRequired = (x, y) =>
                                 {
-                                    var app = (App)Application.Current;
-                                    if (app.SyncWorkflow != null)
+                                    Application.Current.Dispatcher.Invoke(() =>
                                     {
-                                        bool doStopRecofigureStart = app.SyncWorkflow.Status != SyncWorkflow.SyncWorkflowStatus.Stopped;
-
-                                        EventHandler onStoppedSyncWorkflowEventHandler = null;
-
-                                        onStoppedSyncWorkflowEventHandler = (sender, args) =>
+                                        AuthWindow w = new AuthWindow(y.Connection, y.CaptchaToken.Token);
+                                        if (w.ShowDialog() == true)
                                         {
-                                            Task.Run(() =>
+                                        }
+                                    });
+                                };
+
+                                conn.SignIn(account.Login, account.Password, false);
+
+                                SettingsWindow settings = new SettingsWindow(account, conn);
+
+                                Application.Current.MainWindow = settings;
+
+                                if (settings.ShowDialog() == true)
+                                {
+                                    //// required full restart
+                                    Task.Run(() =>
+                                    {
+                                        var app = (App)Application.Current;
+                                        if (app.SyncWorkflow != null)
+                                        {
+                                            bool doStopRecofigureStart = app.SyncWorkflow.Status != SyncWorkflow.SyncWorkflowStatus.Stopped;
+
+                                            EventHandler onStoppedSyncWorkflowEventHandler = null;
+
+                                            onStoppedSyncWorkflowEventHandler = (sender, args) =>
                                             {
-                                                syncDb.LockedRun(() =>
-                                                { 
-                                                    defaultSyncObject.Path = newFolder;
-                                                    syncDb.SaveChanges();
-                                                });
-
-                                                app.ConfigureContainer();
-
-                                                app.ConfigureSyncWorkflow();
-
-                                                if (doStopRecofigureStart)
+                                                Task.Run(() =>
                                                 {
-                                                    app.SyncWorkflow.OnStopped -= onStoppedSyncWorkflowEventHandler;
+                                                    app.ConfigureContainer();
 
-                                                    System.Threading.Thread.Sleep(1);
-                                                    app.SyncWorkflow.Start();
-                                                }
-                                            });
-                                        };
+                                                    app.ConfigureSyncWorkflow();
 
-                                        if (doStopRecofigureStart)
-                                        {
-                                            app.SyncWorkflow.OnStopped += onStoppedSyncWorkflowEventHandler;
-                                            app.SyncWorkflow.Stop();
+                                                    if (doStopRecofigureStart)
+                                                    {
+                                                        app.SyncWorkflow.OnStopped -= onStoppedSyncWorkflowEventHandler;
+
+                                                        System.Threading.Thread.Sleep(1);
+                                                        app.SyncWorkflow.Start();
+                                                    }
+                                                });
+                                            };
+
+                                            if (doStopRecofigureStart)
+                                            {
+                                                app.SyncWorkflow.OnStopped += onStoppedSyncWorkflowEventHandler;
+                                                app.SyncWorkflow.Stop();
+                                            }
+                                            else
+                                            {
+                                                onStoppedSyncWorkflowEventHandler(this, new EventArgs());
+                                            }
                                         }
-                                        else
-                                        {
-                                            onStoppedSyncWorkflowEventHandler(this, new EventArgs());
-                                        }
-                                    }
-                                });
+                                    });
+                                }
                             }
                         }
                         catch (Exception ex)
@@ -175,7 +195,15 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => this.AccountSettingsExists && SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped,
+                    CanExecuteFunc = () =>
+                    {
+                        SyncWorkflow.SyncWorkflowStatus[] allowedStatuses = new[]
+                        {
+                            SyncWorkflow.SyncWorkflowStatus.Stopped
+                        };
+
+                        return this.AccountSettingsExists && allowedStatuses.Contains(SyncWorkflow.Singleton.Instance.Status);
+                    },
                     CommandAction = () =>
                     {
                         try
@@ -197,8 +225,20 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => this.AccountSettingsExists && (SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Started || SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Starting),
+                    CanExecuteFunc = () =>
+                    {
+                        SyncWorkflow.SyncWorkflowStatus[] allowedStatuses = new[]
+                        {
+                            SyncWorkflow.SyncWorkflowStatus.Started,
+                            SyncWorkflow.SyncWorkflowStatus.Idle,
+                            SyncWorkflow.SyncWorkflowStatus.Indexing,
+                            SyncWorkflow.SyncWorkflowStatus.Transferring,
+                            SyncWorkflow.SyncWorkflowStatus.WaitingForAlert
+                        };
 
+                        var ret = this.AccountSettingsExists && allowedStatuses.Contains(SyncWorkflow.Singleton.Instance.Status);
+                        return ret;
+                    },
                     CommandAction = () =>
                     {
                         try
@@ -228,7 +268,15 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => !this.AccountSettingsExists && SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped,
+                    CanExecuteFunc = () =>
+                    {
+                        SyncWorkflow.SyncWorkflowStatus[] allowedStatuses = new[]
+                        {
+                            SyncWorkflow.SyncWorkflowStatus.Stopped,
+                        };
+
+                        return !this.AccountSettingsExists && allowedStatuses.Contains(SyncWorkflow.Singleton.Instance.Status);
+                    },
 
                     CommandAction = () =>
                     {
@@ -256,18 +304,9 @@ namespace FexSync
                                             account.Login = signedUserArgs.Login;
                                             account.Password = signedUserArgs.Password;
 
-                                            var syncObject = db.AccountSyncObjects.SingleOrDefault();
-                                            if (syncObject == null)
-                                            {
-                                                syncObject = new AccountSyncObject();
-                                                syncObject.Path = ApplicationSettingsManager.DefaultFexUserRootFolder;
-                                                syncObject.Account = account;
-                                                db.AccountSyncObjects.Add(syncObject);
-                                            }
-
-                                            syncObject.Token = cmd.Result;
-                                            
                                             db.SaveChanges();
+
+                                            account.EnsureAccountHasDefaultSyncObject(db, conn);
                                         });
 
                                         ((App)App.Current).ConfigureContainer();
@@ -301,7 +340,15 @@ namespace FexSync
             {
                 return new DelegateCommand
                 {
-                    CanExecuteFunc = () => this.AccountSettingsExists && SyncWorkflow.Singleton.Instance.Status == SyncWorkflow.SyncWorkflowStatus.Stopped,
+                    CanExecuteFunc = () =>
+                    {
+                        SyncWorkflow.SyncWorkflowStatus[] allowedStatuses = new[]
+                        {
+                            SyncWorkflow.SyncWorkflowStatus.Stopped,
+                        };
+
+                        return this.AccountSettingsExists && allowedStatuses.Contains(SyncWorkflow.Singleton.Instance.Status);
+                    },
 
                     CommandAction = () =>
                     {
@@ -310,8 +357,8 @@ namespace FexSync
                             var db = ((App)Application.Current).Container.Resolve<ISyncDataDbContext>();
                             db.LockedRun(() =>
                             {
-                                db.AccountSyncObjects.RemoveRange(db.AccountSyncObjects);
-                                db.Accounts.RemoveRange(db.Accounts);
+                                var account = db.Accounts.Single();
+                                db.RemoveAccountRecursive(account);
                                 db.SaveChanges();
                             });
                         }
@@ -429,6 +476,7 @@ namespace FexSync
 
         public void FireSyncStatusChanged()
         {
+            System.Diagnostics.Trace.WriteLine($"Status3 = {this.SyncStatus}");
             this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.SyncStatus)));
         }
 

@@ -68,22 +68,20 @@ namespace FexSync.Data
         public override void Execute(IConnection connection)
         {
             System.Diagnostics.Debug.Assert(!this.SyncDb.LocalFiles.Any(x => string.Equals(x.Path, this.NewFile.FullName, StringComparison.InvariantCultureIgnoreCase)), $"File {this.NewFile.FullName} already indexed");
-
-            var localFile = new LocalFile
+            var localFilePath = this.NewFile.FullName.Replace(this.SyncObject.Path, string.Empty).Trim(Path.DirectorySeparatorChar);
+            var localFile = new LocalFile(localFilePath, this.SyncObject.Token)
             {
-                Path = this.NewFile.FullName.Replace(this.SyncObject.Path, string.Empty).Trim(Path.DirectorySeparatorChar),
-                Token = this.SyncObject.Token,
                 Length = (ulong)this.NewFile.Length,
                 LastWriteTime = this.NewFile.LastWriteTime,
                 Sha1 = this.NewFile.Sha1()
             };
 
             this.SyncDb.LocalFiles.Add(localFile);
-            this.SyncDb.LocalModifications.Add(new LocalFileModified { LocalFileNew = localFile });
+            this.SyncDb.LocalModifications.Add(new LocalFileModified(localFile.Path) { LocalFileNew = localFile });
 
             if (!this.SyncDb.Uploads.Any(item => item.Path == localFile.Path))
             {
-                this.SyncDb.Uploads.Add(new UploadItem { Path = localFile.Path });
+                this.SyncDb.Uploads.Add(new UploadItem(localFile.Path, this.SyncObject.Token));
             }
 
             this.SyncDb.SaveChanges();

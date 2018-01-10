@@ -69,7 +69,7 @@ namespace FexSync.Data
 
             foreach (var each in deletedLocalSubFoldersAndFiles)
             {
-                this.SyncDb.LocalModifications.Add(new LocalFileModified { LocalFileOld = each, Path = each.Path });
+                this.SyncDb.LocalModifications.Add(new LocalFileModified(each.Path) { LocalFileOld = each });
                 this.SyncDb.LocalFiles.Remove(each);
             }
 

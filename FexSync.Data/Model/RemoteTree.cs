@@ -14,6 +14,6 @@ namespace FexSync.Data
 
         public AccountSyncObject SyncObject { get; set; }
 
-        public DateTime Created { get; set; }
+        public DateTime Created { get; set; } = DateTime.Now;
     }
 }

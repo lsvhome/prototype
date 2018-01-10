@@ -81,12 +81,9 @@ namespace FexSync.Data
                 {
                     if (!SyncDb.Downloads.Any(item => item.SyncObject.Token == each.SyncObject.Token && item.UploadId == each.UploadId))
                     {
-                        SyncDb.Downloads.Add(new DownloadItem
+                        SyncDb.Downloads.Add(new DownloadItem(each.Path, each.UploadId, each.SyncObject)
                         {
                             TriesCount = 0,
-                            SyncObject = each.SyncObject,
-                            UploadId = each.UploadId,
-                            FilePathLocalRelative = each.Path,
                             ItemCreated = DateTime.Now
                         });
                     }

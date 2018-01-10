@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using FexSync.Data;
+using Net.Fex.Api;
 
 namespace FexSync
 {
@@ -50,6 +51,35 @@ namespace FexSync
             get
             {
                 return GetExpanded("DefaultFexUserRootFolder");
+            }
+        }
+
+        public static void EnsureAccountHasDefaultSyncObject(this Account account, ISyncDataDbContext syncDb, IConnection conn)
+        {
+            CommandArchive.CommandArchiveResponseObject defaultServerObject;
+            using (var cmd = new CommandEnsureDefaultObjectExists(ApplicationSettingsManager.DefaultFexSyncFolderName))
+            {
+                cmd.Execute(conn);
+                defaultServerObject = cmd.Result;
+            }
+
+            var defaultSyncObject = syncDb.AccountSyncObjects.SingleOrDefault(x => x.Account == account && x.Token == defaultServerObject.Token);
+
+            if (defaultSyncObject == null)
+            {
+                defaultSyncObject = syncDb.AccountSyncObjects.SingleOrDefault(x => x.Account == account && string.Equals(x.Path, ApplicationSettingsManager.DefaultFexUserRootFolder, StringComparison.InvariantCultureIgnoreCase));
+                if (defaultSyncObject == null)
+                {
+                    defaultSyncObject = new AccountSyncObject();
+                    defaultSyncObject.Account = account;
+                    defaultSyncObject.Path = ApplicationSettingsManager.DefaultFexUserRootFolder;
+                    syncDb.AccountSyncObjects.Add(defaultSyncObject);
+                }
+
+                defaultSyncObject.Token = defaultServerObject.Token;
+                defaultSyncObject.Name = defaultServerObject.Preview;
+
+                syncDb.SaveChanges();
             }
         }
 

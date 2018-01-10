@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using Microsoft.EntityFrameworkCore;
 
 namespace FexSync.Data
@@ -68,6 +69,52 @@ namespace FexSync.Data
         {
             base.OnModelCreating(modelBuilder);
             Account.RegisterType(modelBuilder);
+        }
+
+        public void RemoveAccountRecursive(Account account)
+        {
+            var objects = this.AccountSyncObjects.Where(x => x.Account == account).ToList();
+            var localFilesModified = this.LocalModifications.Where(x => objects.Any(z => z.Path.StartsWith(x.Path))).ToList();
+            var remoteFilesModified = this.RemoteModifications.Where(x => objects.Any(z => z.Path.StartsWith(x.Path))).ToList();
+            var localFiles = this.LocalFiles.Where(x => objects.Any(z => z.Token == x.Token)).ToList();
+            var trees = this.RemoteTrees.Where(x => objects.Any(z => z.AccountSyncObjectId == x.SyncObject.AccountSyncObjectId)).ToList();
+            var remoteFiles = this.RemoteFiles.Where(x => trees.Any(z => z.RemoteTreeId == x.RemoteTreeId)).ToList();
+            var downloads = this.Downloads.Where(x => objects.Any(z => z.AccountSyncObjectId == x.SyncObject.AccountSyncObjectId)).ToList();
+            var uploads = this.Uploads.Where(x => objects.Any(z => z.Token == x.Token)).ToList();
+
+            ///////////////////
+
+            this.Uploads.RemoveRange(uploads);
+            this.Downloads.RemoveRange(downloads);
+            this.RemoteFiles.RemoveRange(remoteFiles);
+            this.RemoteTrees.RemoveRange(trees);
+            this.LocalFiles.RemoveRange(localFiles);
+            this.LocalModifications.RemoveRange(localFilesModified);
+            this.RemoteModifications.RemoveRange(remoteFilesModified);
+            this.AccountSyncObjects.RemoveRange(objects);
+            this.Accounts.Remove(account);
+        }
+
+        public void RemoveAccountSyncObjectRecursive(AccountSyncObject syncObject)
+        {
+            var localFilesModified = this.LocalModifications.Where(x => syncObject.Path.StartsWith(x.Path)).ToList();
+            var remoteFilesModified = this.RemoteModifications.Where(x => syncObject.Path.StartsWith(x.Path)).ToList();
+            var localFiles = this.LocalFiles.Where(x => syncObject.Token == x.Token).ToList();
+            var trees = this.RemoteTrees.Where(x => syncObject.AccountSyncObjectId == x.SyncObject.AccountSyncObjectId).ToList();
+            var remoteFiles = this.RemoteFiles.Where(x => trees.Any(z => z.RemoteTreeId == x.RemoteTreeId)).ToList();
+            var downloads = this.Downloads.Where(x => syncObject.AccountSyncObjectId == x.SyncObject.AccountSyncObjectId).ToList();
+            var uploads = this.Uploads.Where(x => syncObject.Token == x.Token).ToList();
+
+            ///////////////////
+
+            this.Uploads.RemoveRange(uploads);
+            this.Downloads.RemoveRange(downloads);
+            this.RemoteFiles.RemoveRange(remoteFiles);
+            this.RemoteTrees.RemoveRange(trees);
+            this.LocalFiles.RemoveRange(localFiles);
+            this.LocalModifications.RemoveRange(localFilesModified);
+            this.RemoteModifications.RemoveRange(remoteFilesModified);
+            this.AccountSyncObjects.Remove(syncObject);
         }
     }
 }

@@ -92,10 +92,8 @@ namespace FexSync.Data
                     File.SetCreationTime(localPath, dt);
                     File.SetLastWriteTime(localPath, dt);
 
-                    var localFile = new LocalFile
+                    var localFile = new LocalFile(remoteFile.Path, this.SyncObject.Token)
                     {
-                        Path = remoteFile.Path,
-                        Token = this.SyncObject.Token,
                         Length = remoteFile.Size,
                         LastWriteTime = dt,
                         Sha1 = remoteFile.Sha1

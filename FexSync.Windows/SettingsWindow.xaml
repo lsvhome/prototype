@@ -1,4 +1,4 @@
-﻿<Window x:Class="FexSync.SettingsWindow"
+﻿<Window x:Class="FexSync.SettingsWindow" x:Name="SettingsWindow111"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -23,10 +23,36 @@
         <TabControl Margin="0,0,0.333,0"  Background="#FFE5E5E5">
             <TabItem Header="Data Folders">
                 <Grid Background="#FFE5E5E5">
-                    <TextBox x:Name="TxtCurrentDataFolder" Height="21" Margin="129,15,34.667,0" VerticalAlignment="Top" IsReadOnly="True" IsReadOnlyCaretVisible="True" TextWrapping="NoWrap">
-                    </TextBox>
-                    <Button x:Name="BtnCurrentDataFolderSelect" Content="..." HorizontalAlignment="Right" Margin="0,16,9.667,0" VerticalAlignment="Top" Width="20" RenderTransformOrigin="-1.517,0" Click="BtnCurrentDataFolderSelect_Click"/>
-                    <Label x:Name="LabelCurrentDataFolder" Content="Current Data Folder" HorizontalAlignment="Left" Margin="10,11,0,0" VerticalAlignment="Top"/>
+                    <DockPanel Margin="0,0, 0,0"  Width="auto" Height="auto" >
+                        <Grid Background="#FFE5E5E5" DockPanel.Dock="Top" Height="50">
+                            <Button x:Name="BtnAddSyncFolder" Content="Add Synchronization" HorizontalAlignment="Right" Margin="0,16,9.667,0" VerticalAlignment="Top" Width="130" RenderTransformOrigin="-1.517,0" Click="BtnAddSyncFolder_Click"/>
+
+                        </Grid>
+                        <DataGrid x:Name="DataGridSyncObjects" Margin="0,0,0,0" ItemsSource="{Binding ElementName=SettingsWindow111, Path=UserDataFolders}"
+                                  IsReadOnly="True"
+                                  CanUserAddRows="False"
+                                  AutoGenerateColumns="False" >
+                            <DataGrid.Columns>
+                                <DataGridTextColumn Binding="{Binding Path}" Header="Local Path"/>
+                                <DataGridTextColumn Binding="{Binding Name}" Header="Object Name"/>
+                                <DataGridTextColumn Binding="{Binding Token}" Header="Object Token"/>
+                                <DataGridTemplateColumn Header="Delete">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button Click="DeleteSyncObjectClick">Delete</Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+
+                        </DataGrid>
+
+                        <!--<Button Content="Left" DockPanel.Dock="Left"/>
+                        <Button Content="Top" DockPanel.Dock="Top"/>
+                        <Button Content="Right" DockPanel.Dock="Right"/>
+                        <Button Content="Bottom" DockPanel.Dock="Bottom"/>
+                        <Button Content="Fill"/>-->
+                    </DockPanel>
                 </Grid>
             </TabItem>
             <TabItem Header="Account Settings">

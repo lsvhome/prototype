@@ -78,12 +78,8 @@ namespace FexSync.Data
         {
             var remoteTreeId = this.SyncDb.RemoteTrees.OrderBy(item => item.Created).Last().RemoteTreeId;
 
-            var remoteFolder = new RemoteFile
+            var remoteFolder = new RemoteFile(relativePath, remoteTreeId, id, this.SyncObject)
             {
-                RemoteTreeId = remoteTreeId,
-                SyncObject = this.SyncObject,
-                UploadId = id,
-                Path = relativePath,
                 Name = Path.GetFileName(relativePath),
                 UploadTime = DateTime.Now.ToUnixTime(),
                 Size = 0,

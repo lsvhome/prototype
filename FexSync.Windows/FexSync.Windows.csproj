@@ -78,6 +78,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AccountSyncObjectEditWindow.xaml.cs">
+      <DependentUpon>AccountSyncObjectEditWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="AlertsWindow.xaml.cs">
       <DependentUpon>AlertsWindow.xaml</DependentUpon>
     </Compile>
@@ -92,6 +95,10 @@
       <DependentUpon>QuickStartWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings\ApplicationSettingsManager.cs" />
+    <Page Include="AccountSyncObjectEditWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="AlertsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -186,7 +193,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Design" Version="1.1.4" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net461'" >
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
     <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.0" Visible="false" />
   </ItemGroup>
   <ItemGroup>

@@ -11,6 +11,17 @@ namespace FexSync.Data
     [Serializable]
     public class RemoteFile : RemoteFileBase
     {
+        [Obsolete("Only for (De)Serialization purposes", true)]
+        protected RemoteFile() : base()
+        {
+        }
+
+        public RemoteFile(string relativePath, int remoteTreeId, int uploadId, AccountSyncObject syncObject) : base(uploadId, syncObject)
+        {
+            this.Path = relativePath;
+            this.RemoteTreeId = remoteTreeId;
+        }
+
         [Key]
         public int RemoteFileId { get; set; }
 

@@ -20,7 +20,8 @@ namespace FexSync.Data
             var d = new System.IO.FileSystemWatcher();
             var httpClientWrapper = new Net.Fex.Api.HttpClientWrapper();
             var userAgent = string.Format("FEX Sync ({0})", Net.Fex.Api.Connection.GetOSName());
-            return new Net.Fex.Api.Connection(httpClientWrapper, endPoint, userAgent, cancellationToken);
+            var ret = new Net.Fex.Api.Connection(httpClientWrapper, endPoint, userAgent, cancellationToken);
+            return ret;
         }
     }
 }

@@ -255,7 +255,7 @@ namespace FexSync.Data.Tests
                                     Action rescan = () =>
                                     {
                                         foreach (var syncObject in config.SyncObjects)
-                                        { 
+                                        {
                                             using (CommandSaveLocalTree cmd = new CommandSaveLocalTree(syncDb, syncObject))
                                             {
                                                 cmd.Execute(conn);

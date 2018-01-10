@@ -6,6 +6,16 @@ namespace FexSync.Data
 {
     public class RemoteFileModified
     {
+        [Obsolete("Only for (De)Serialization purposes", true)]
+        public RemoteFileModified()
+        {
+        }
+
+        public RemoteFileModified(string path)
+        {
+            this.Path = path;
+        }
+
         [Key]
         public int RemoteFileModifiedId { get; set; }
 

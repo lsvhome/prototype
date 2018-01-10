@@ -72,9 +72,7 @@ namespace FexSync.Data
 
                 foreach (var each in modifications)
                 {
-                    var modifiedItem = new RemoteFileModified();
-                    modifiedItem.RemoteFileOld = each.fp;
-                    modifiedItem.RemoteFileNew = each.fl;
+                    var modifiedItem = new RemoteFileModified(each.fl.Path) { RemoteFileOld = each.fp, RemoteFileNew = each.fl };
                     this.SyncDb.RemoteModifications.Add(modifiedItem);
                     this.SyncDb.SaveChanges();
                 }
@@ -98,12 +96,8 @@ namespace FexSync.Data
 
             if (remoteFile == null || !this.IsItemsEqual(item, remoteFile))
             {
-                remoteFile = new RemoteFile
+                remoteFile = new RemoteFile(item.Path, remoteTreeId, item.UploadId, this.SyncObject)
                 {
-                    RemoteTreeId = remoteTreeId,
-                    SyncObject = this.SyncObject,
-                    UploadId = item.UploadId,
-                    Path = item.Path,
                     Name = item.Object.Name,
                     UploadTime = item.Object.UploadTime,
                     Size = item.Object.Size,

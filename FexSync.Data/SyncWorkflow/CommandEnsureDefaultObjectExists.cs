@@ -12,7 +12,7 @@ namespace FexSync.Data
     {
         private string DefaultFexSyncFolderName { get; set; }
 
-        public string Result { get; private set; } = null;
+        public CommandArchive.CommandArchiveResponseObject Result { get; private set; } = null;
 
         public CommandEnsureDefaultObjectExists(string defaultFexSyncFolderName) : base(new Dictionary<string, string>())
         {
@@ -37,7 +37,7 @@ namespace FexSync.Data
                 }
             }
 
-            this.Result = defaultObject.Token;
+            this.Result = defaultObject;
         }
     }
 }

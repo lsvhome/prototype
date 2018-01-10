@@ -95,6 +95,7 @@ namespace FexSync
             config.Container = this.Container;
             config.Account = config.Container.Resolve<ISyncDataDbContext>().Accounts.Single();
             config.SyncObjects = config.Container.Resolve<ISyncDataDbContext>().AccountSyncObjects.ToArray();
+
             this.SyncWorkflow.Reconfigure(config);
         }
 
@@ -147,13 +148,14 @@ namespace FexSync
 
                         using (var conn = ((App)App.Current).Container.Resolve<Data.IConnectionFactory>().CreateConnection(new Uri(ApplicationSettingsManager.ApiHost)))
                         {
+                            Account account = null;
                             var authWindow = new AuthWindow(conn);
                             authWindow.OnSignedIn += (object sender1, CommandSignIn.SignInEventArgs signedUserArgs) =>
                             {
                                 var syncDb = this.Container.Resolve<ISyncDataDbContext>();
                                 syncDb.LockedRun(() =>
                                 {
-                                    var account = syncDb.Accounts.SingleOrDefault();
+                                    account = syncDb.Accounts.SingleOrDefault();
                                     if (account == null)
                                     {
                                         account = new Account();
@@ -164,46 +166,23 @@ namespace FexSync
                                     account.Password = signedUserArgs.Password;
 
                                     syncDb.SaveChanges();
+
+                                    account.EnsureAccountHasDefaultSyncObject(syncDb, conn);
                                 });
-                            };
 
-                            if (authWindow.ShowDialog() == true &&
-                                this.Container.Resolve<ISyncDataDbContext>().Accounts.Any())
-                            {
-                                SettingsWindow settings = new SettingsWindow();
-
-                                var syncDb = this.Container.Resolve<ISyncDataDbContext>();
-
-                                var defaultSyncObject = syncDb.AccountSyncObjects.SingleOrDefault();
-                                if (defaultSyncObject == null)
+                                this.Dispatcher.Invoke(() =>
                                 {
-                                    defaultSyncObject = new AccountSyncObject();
-                                    defaultSyncObject.Path = ApplicationSettingsManager.DefaultFexUserRootFolder;
-                                    defaultSyncObject.Account = this.Container.Resolve<ISyncDataDbContext>().Accounts.Single();
-                                    syncDb.AccountSyncObjects.Add(defaultSyncObject);
-                                }
-
-                                settings.UserDataFolder = defaultSyncObject.Path;
-
-                                if (settings.ShowDialog() == true)
-                                {
-                                    defaultSyncObject.Path = settings.UserDataFolder;
-                                }
-
-                                using (var cmd = new CommandEnsureDefaultObjectExists(ApplicationSettingsManager.DefaultFexSyncFolderName))
-                                {
-                                    cmd.Execute(conn);
-                                    defaultSyncObject.Token = cmd.Result;
-                                }
-
-                                syncDb.SaveChanges();
+                                    SettingsWindow settings = new SettingsWindow(account, conn);
+                                    settings.ShowDialog();
+                                });
 
                                 this.ConfigureContainer();
-
                                 this.ConfigureSyncWorkflow();
 
                                 SyncWorkflow.Singleton.Instance.Start();
-                            }
+                            };
+
+                            authWindow.ShowDialog();
                         }
                     };
 
@@ -215,11 +194,6 @@ namespace FexSync
                 ex.Process();
                 throw;
             }
-        }
-
-        private void Auth_OnSignedIn(object sender, EventArgs e)
-        {
-            throw new NotImplementedException();
         }
 
         protected override void OnExit(ExitEventArgs e)

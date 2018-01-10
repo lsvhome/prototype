@@ -112,10 +112,10 @@ namespace FexSync.Data
 
             var remoteFileFolder = this.SyncDb.RemoteFiles.SingleOrDefault(x => string.Equals(x.Path, Path.GetDirectoryName(relativePath), StringComparison.InvariantCultureIgnoreCase));
 
-            this.SyncDb.LocalModifications.Add(new LocalFileModified { LocalFileOld = localFile, Path = localFile.Path });
+            this.SyncDb.LocalModifications.Add(new LocalFileModified(localFile.Path) { LocalFileOld = localFile });
             this.SyncDb.LocalFiles.Remove(localFile);
 
-            this.SyncDb.RemoteModifications.Add(new RemoteFileModified { RemoteFileOld = remoteFile, Path = remoteFile.Path });
+            this.SyncDb.RemoteModifications.Add(new RemoteFileModified(remoteFile.Path) { RemoteFileOld = remoteFile });
             this.SyncDb.RemoteFiles.Remove(remoteFile);
 
             connection.DeleteFile(this.SyncObject.Token, remoteFile.UploadId);

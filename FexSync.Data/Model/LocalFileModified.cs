@@ -6,6 +6,16 @@ namespace FexSync.Data
 {
     public class LocalFileModified
     {
+        [Obsolete("Only for (De)Serialization purposes", true)]
+        protected LocalFileModified()
+        {
+        }
+
+        public LocalFileModified(string path)
+        {
+            this.Path = path;
+        }
+
         [Key]
         public int LocalFileModifiedId { get; set; }
 

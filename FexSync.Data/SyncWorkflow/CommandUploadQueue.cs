@@ -95,8 +95,8 @@ namespace FexSync.Data
                         var remoteFile = removeFileQuery.SingleOrDefault();
                         if (remoteFile == null)
                         {
-                            remoteFile = new RemoteFile();
-                            remoteFile.RemoteTreeId = this.SyncDb.RemoteTrees.OrderBy(item => item.Created).Last().RemoteTreeId;
+                            var remoteTreeId = this.SyncDb.RemoteTrees.OrderBy(item => item.Created).Last().RemoteTreeId;
+                            remoteFile = new RemoteFile(ui.Path, remoteTreeId, uploadedFile.UploadId, this.SyncObject);
                             this.SyncDb.RemoteFiles.Add(remoteFile);
                         }
 

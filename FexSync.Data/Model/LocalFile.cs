@@ -8,8 +8,15 @@ namespace FexSync.Data
     [Serializable]
     public class LocalFile
     {
-        public LocalFile()
+        [Obsolete("Only for (De)Serialization purposes", true)]
+        protected LocalFile()
         {
+        }
+
+        public LocalFile(string path, string token)
+        {
+            this.Path = path;
+            this.Token = token;
         }
 
         [Key]

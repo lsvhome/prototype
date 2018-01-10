@@ -37,5 +37,9 @@ namespace FexSync.Data
         void AcceptAllChangesWithoutSaving();
 
         bool EnsureDatabaseExists();
+
+        void RemoveAccountRecursive(Account account);
+
+        void RemoveAccountSyncObjectRecursive(AccountSyncObject syncObject);
     }
 }

@@ -109,8 +109,8 @@ namespace FexSync.Data
 
             System.Diagnostics.Debug.Assert(newFolderUploadId.HasValue, $"Server folder {Path.GetDirectoryName(this.CreatedFile.FullName)} had not been created");
 
-            this.SyncDb.LocalModifications.Add(new LocalFileModified { Path = localOldFile.Path, LocalFileOld = localOldFile });
-            this.SyncDb.RemoteModifications.Add(new RemoteFileModified { Path = remoteOldFile.Path, RemoteFileOld = remoteOldFile });
+            this.SyncDb.LocalModifications.Add(new LocalFileModified(localOldFile.Path) { LocalFileOld = localOldFile });
+            this.SyncDb.RemoteModifications.Add(new RemoteFileModified(remoteOldFile.Path) { RemoteFileOld = remoteOldFile });
 
             connection.Move(syncObject.Token, newFolderUploadId.Value, localOldFile.LocalFileId);
 
@@ -130,8 +130,8 @@ namespace FexSync.Data
             remoteOldFile.Path = localOldFile.Path;
             remoteOldFile.ParentRemoteFileId = remoteNewFileFolder.RemoteFileId;
 
-            this.SyncDb.LocalModifications.Add(new LocalFileModified { Path = localOldFile.Path, LocalFileNew = localOldFile });
-            this.SyncDb.RemoteModifications.Add(new RemoteFileModified { Path = remoteOldFile.Path, RemoteFileNew = remoteOldFile });
+            this.SyncDb.LocalModifications.Add(new LocalFileModified(localOldFile.Path) { LocalFileNew = localOldFile });
+            this.SyncDb.RemoteModifications.Add(new RemoteFileModified(remoteOldFile.Path) { RemoteFileNew = remoteOldFile });
 
             this.SyncDb.SaveChanges();
         }

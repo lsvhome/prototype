@@ -35,7 +35,7 @@ namespace FexSync.Data
 
                 var syncObject = this.config.SyncObjects.Single(x => fullPath.Contains(x.Path));
 
-                using (var cmd = new CommandPrepareLocalFileModified(syncDb, fi, syncObject.Path))
+                using (var cmd = new CommandPrepareLocalFileModified(syncDb, fi, syncObject))
                 {
                     cmd.Execute(this.connection);
                 }
@@ -51,31 +51,28 @@ namespace FexSync.Data
 
         private FileInfo ModifiedFile { get; set; }
 
-        private string AccountDataFolder { get; set; }
+        private AccountSyncObject SyncObject { get; set; }
 
-        public CommandPrepareLocalFileModified(ISyncDataDbContext context, FileInfo modifiedFile, string accountDataFolder) : base(new Dictionary<string, string>())
+        public CommandPrepareLocalFileModified(ISyncDataDbContext context, FileInfo modifiedFile, AccountSyncObject syncObject) : base(new Dictionary<string, string>())
         {
             System.Diagnostics.Debug.Assert(modifiedFile.Exists, $"File {modifiedFile.FullName} does not exists");
             this.SyncDb = context;
             this.ModifiedFile = modifiedFile;
-            this.AccountDataFolder = accountDataFolder;
+            this.SyncObject = syncObject;
         }
 
         protected override string Suffix => throw new NotImplementedException();
 
         public override void Execute(IConnection connection)
         {
-            var relativeModifiedName = this.ModifiedFile.FullName.Replace(this.AccountDataFolder, string.Empty).TrimStart(Path.DirectorySeparatorChar);
+            var relativeModifiedName = this.ModifiedFile.FullName.Replace(this.SyncObject.Path, string.Empty).TrimStart(Path.DirectorySeparatorChar);
             var localFile = this.SyncDb.LocalFiles.SingleOrDefault(x => string.Equals(x.Path, relativeModifiedName, StringComparison.InvariantCultureIgnoreCase));
             System.Diagnostics.Debug.Assert(localFile != null, $"File {this.ModifiedFile.FullName} does not exists");
 
             var newSha1 = this.ModifiedFile.Sha1();
             if (localFile.Length != (ulong)this.ModifiedFile.Length || localFile.Sha1 != newSha1)
             {
-                var mod = new LocalFileModified
-                {
-                    LocalFileOld = localFile
-                };
+                var mod = new LocalFileModified(localFile.Path) { LocalFileOld = localFile };
 
                 localFile.Length = (ulong)this.ModifiedFile.Length;
                 localFile.Sha1 = newSha1;
@@ -86,7 +83,7 @@ namespace FexSync.Data
 
                 if (!this.SyncDb.Uploads.Any(item => item.Path == this.ModifiedFile.FullName))
                 {
-                    this.SyncDb.Uploads.Add(new UploadItem { Path = localFile.Path });
+                    this.SyncDb.Uploads.Add(new UploadItem(localFile.Path, this.SyncObject.Token));
                 }
 
                 this.SyncDb.SaveChanges();

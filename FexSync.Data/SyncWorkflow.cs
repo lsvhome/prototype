@@ -170,6 +170,8 @@ namespace FexSync.Data
                 //// Wait for all db opertions finished
                 ISyncDataDbContext syncDb = this.config.Container.Resolve<ISyncDataDbContext>();
                 syncDb.LockedRun(() => { });
+
+                this.Status = SyncWorkflow.SyncWorkflowStatus.Stopped;
                 this.OnStopped?.Invoke(this, new EventArgs());
             }
         }
@@ -215,8 +217,16 @@ namespace FexSync.Data
                 {
                     if (this.cancellationTokenSource.IsCancellationRequested)
                     {
-                        System.Diagnostics.Trace.WriteLine("Status = Stopping");
-                        return SyncWorkflowStatus.Stopping;
+                        if (this.scheduledTasks.Any(eachTask => !eachTask.IsCompleted))
+                        {
+                            System.Diagnostics.Trace.WriteLine("Status = Stopping");
+                            return SyncWorkflowStatus.Stopping;
+                        }
+                        else
+                        {
+                            System.Diagnostics.Trace.WriteLine("Status = Stopped");
+                            return SyncWorkflowStatus.Stopped;
+                        }
                     }
                     else if (this.alerts.Any())
                     {

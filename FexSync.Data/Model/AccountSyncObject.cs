@@ -10,14 +10,14 @@ namespace FexSync.Data
         }
 
         [Key]
-        public int RootObjectId { get; set; }
+        public int AccountSyncObjectId { get; set; }
 
         public Account Account { get; set; }
 
         public string Token { get; set; }
 
-        public string Path { get; set; }
+        public string Name { get; set; }
 
-        public bool Active { get; set; } = true;
+        public string Path { get; set; }
     }
 }

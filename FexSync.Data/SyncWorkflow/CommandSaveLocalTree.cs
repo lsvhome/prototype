@@ -28,19 +28,21 @@ namespace FexSync.Data
 
         protected void BuildLocalList()
         {
+            //// each iten has absolute path
             var localFiles = this.GetLocalFiles();
 
-            var savedFiles = this.SyncDb.LocalFiles.Where(item => item.Token == this.SyncObject.Token).ToList();
+            //// LocalFiles are with relative paths, so we have to add fullPath field
+            var savedFiles = this.SyncDb.LocalFiles.Where(item => item.Token == this.SyncObject.Token).Select(x => new { file = x, fullPath = Path.Combine(this.SyncObject.Path, x.Path) }).ToList();
 
-            var removedLocalFiles = savedFiles.Where(item => !localFiles.Keys.Contains(item.Path)).ToList();
-            var added = localFiles.Keys.Where(item => !savedFiles.Select(z => z.Path).Contains(item)).ToList();
+            var removedLocalFiles = savedFiles.Where(item => !localFiles.Keys.Contains(item.fullPath)).Select(x => x.file).ToList();
+            var added = localFiles.Keys.Where(item => !savedFiles.Select(z => z.fullPath).Contains(item)).ToList();
             var modifiedPaths =
                 from oldVersion in savedFiles
                 from localFileKey in localFiles.Keys
-                where oldVersion.Path == localFileKey
-                && (oldVersion.Length != (ulong)localFiles[localFileKey].Length
+                where oldVersion.fullPath == localFileKey
+                && (oldVersion.file.Length != (ulong)localFiles[localFileKey].Length
                 ||
-                oldVersion.LastWriteTime != localFiles[localFileKey].LastWriteTime)
+                oldVersion.file.LastWriteTime != localFiles[localFileKey].LastWriteTime)
                 select new { oldVersion, localFileKey };
 
             this.SyncDb.LocalFiles.RemoveRange(removedLocalFiles);
@@ -49,10 +51,9 @@ namespace FexSync.Data
             foreach (var each in added)
             {
                 var fi = localFiles[each];
-                var localFile = new LocalFile
+                var localFilePath = fi.FullName.Replace(this.SyncObject.Path, string.Empty).Trim(Path.DirectorySeparatorChar);
+                var localFile = new LocalFile(localFilePath, this.SyncObject.Token)
                 {
-                    Path = fi.FullName.Replace(this.SyncObject.Path, string.Empty).Trim(Path.DirectorySeparatorChar),
-                    Token = this.SyncObject.Token,
                     Length = (ulong)fi.Length,
                     LastWriteTime = fi.LastWriteTime,
                     Sha1 = fi.Sha1()
@@ -67,19 +68,18 @@ namespace FexSync.Data
             {
                 var fileInfo = localFiles[each.localFileKey];
 
-                var newVersion = new LocalFile
+                var newVersionPath = fileInfo.FullName.Replace(this.SyncObject.Path, string.Empty).Trim(Path.DirectorySeparatorChar);
+                var newVersion = new LocalFile(newVersionPath, this.SyncObject.Token)
                 {
-                    Path = fileInfo.FullName.Replace(this.SyncObject.Path, string.Empty).Trim(Path.DirectorySeparatorChar),
-                    Token = this.SyncObject.Token,
                     Length = (ulong)fileInfo.Length,
                     LastWriteTime = fileInfo.LastWriteTime,
                     Sha1 = fileInfo.Sha1()
                 };
 
                 this.SyncDb.LocalFiles.Add(newVersion);
-                this.SyncDb.LocalFiles.Remove(each.oldVersion);
+                this.SyncDb.LocalFiles.Remove(each.oldVersion.file);
 
-                this.SyncDb.LocalModifications.Add(new LocalFileModified { LocalFileOld = each.oldVersion, LocalFileNew = newVersion, Path = each.oldVersion.Path });
+                this.SyncDb.LocalModifications.Add(new LocalFileModified(each.oldVersion.file.Path) { LocalFileOld = each.oldVersion.file, LocalFileNew = newVersion });
             }
 
             this.SyncDb.SaveChanges();

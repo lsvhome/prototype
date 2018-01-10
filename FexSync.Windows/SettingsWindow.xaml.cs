@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
@@ -13,52 +14,69 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Autofac;
+using FexSync.Data;
+using Net.Fex.Api;
 
 namespace FexSync
 {
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class SettingsWindow : Window
+    public partial class SettingsWindow : Window, INotifyPropertyChanged
     {
-        public SettingsWindow()
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public Account Account { get; private set; }
+
+        private IConnection Connection { get; set; }
+
+        public SettingsWindow(Account account, IConnection connection)
         {
+            this.Account = account;
+            this.Connection = connection;
             this.InitializeComponent();
         }
 
-        protected override void OnInitialized(EventArgs e)
+        private void BtnAddSyncFolder_Click(object sender, RoutedEventArgs e)
         {
-            base.OnInitialized(e);
-        }
-
-        private void BtnCurrentDataFolderSelect_Click(object sender, RoutedEventArgs e)
-        {
-            using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+            AccountSyncObject[] alreadyUsedLocalSyncObjects = null;
+            this.SyncDb.LockedRun(() =>
             {
-                if (System.IO.Directory.Exists(this.TxtCurrentDataFolder.Text))
+                alreadyUsedLocalSyncObjects = this.SyncDb.AccountSyncObjects.ToArray();
+            });
+
+            var allRemoteObjects = this.Connection.ArchiveAll().ObjectList;
+            CommandArchive.CommandArchiveResponseObject[] allowedObjects = allRemoteObjects.Where(z => !alreadyUsedLocalSyncObjects.Any(c => c.Token == z.Token)).ToArray();
+
+            var addWindow = new AccountSyncObjectEditWindow(string.Empty, null, allowedObjects);
+            addWindow.OnLocalFolderChanging += (senderWindow, args) =>
+            {
+                args.Allow = !alreadyUsedLocalSyncObjects.Any(d =>
+                    d.Path.Contains(args.LocalPath.TrimEnd(System.IO.Path.DirectorySeparatorChar))
+                    ||
+                    args.LocalPath.Contains(d.Path.TrimEnd(System.IO.Path.DirectorySeparatorChar))
+                    ||
+                    string.Equals(args.LocalPath, d.Path, StringComparison.InvariantCultureIgnoreCase));
+            };
+
+            addWindow.OnServerObjectChanging += (x, y) => { /* Do nothing ? */ };
+
+            if (addWindow.ShowDialog() == true)
+            {
+                var defaultSyncObject = new AccountSyncObject();
+                defaultSyncObject.Account = Account;
+                defaultSyncObject.Path = ApplicationSettingsManager.DefaultFexUserRootFolder;
+                defaultSyncObject.Token = addWindow.SelKey;
+                defaultSyncObject.Name = allowedObjects.Single(x => x.Token == addWindow.SelKey).Preview;
+
+                this.SyncDb.LockedRun(() =>
                 {
-                    dialog.SelectedPath = this.TxtCurrentDataFolder.Text;
-                }
+                    SyncDb.AccountSyncObjects.Add(defaultSyncObject);
+                    SyncDb.SaveChanges();
+                });
 
-                System.Windows.Forms.DialogResult result = dialog.ShowDialog();
-                if (result == System.Windows.Forms.DialogResult.OK)
-                {
-                    var di = new System.IO.DirectoryInfo(dialog.SelectedPath);
-
-                    if (!di.Exists)
-                    {
-                        MessageBox.Show($"Folder {dialog.SelectedPath} does not exists.");
-                        return;
-                    }
-
-                    if (di.GetFileSystemInfos().Count() > 0)
-                    {
-                        MessageBox.Show($"Folder {dialog.SelectedPath} isn't empty.");
-                        return;
-                    }
-
-                    this.TxtCurrentDataFolder.Text = dialog.SelectedPath;
-                }
+                this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.UserDataFolders)));
             }
         }
 
@@ -73,16 +91,58 @@ namespace FexSync
             this.Close();
         }
 
-        public string UserDataFolder
+        private void DeleteSyncObjectClick(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                AccountSyncObject obj = ((FrameworkElement)sender).DataContext as AccountSyncObject;
+
+                this.SyncDb.LockedRun(() =>
+                {
+                    var syncObject = this.SyncDb.AccountSyncObjects.Single(x => x.AccountSyncObjectId == obj.AccountSyncObjectId);
+                    this.SyncDb.RemoveAccountSyncObjectRecursive(syncObject);
+                    this.SyncDb.SaveChanges();
+                });
+
+                this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.UserDataFolders)));
+            }
+            catch (Exception exception)
+            {
+                exception.Process();
+                throw;
+            }
+        }
+
+        public ISyncDataDbContext SyncDb
         {
             get
             {
-                return this.TxtCurrentDataFolder.Text;
+                var ret = ((App)Application.Current).Container.Resolve<ISyncDataDbContext>();
+                return ret;
+            }
+        }
+
+        private readonly ObservableCollection<AccountSyncObject> userDataFolders = new ObservableCollection<AccountSyncObject>();
+
+        public ObservableCollection<AccountSyncObject> UserDataFolders
+        {
+            get
+            {
+                this.SyncDb.LockedRun(() =>
+                {
+                    this.userDataFolders.Clear();
+                    foreach (var folderDefinition in this.SyncDb.AccountSyncObjects.Where(x => x.Account == Account))
+                    {
+                        userDataFolders.Add(folderDefinition);
+                    }
+                });
+
+                return this.userDataFolders;
             }
 
             set
             {
-                this.TxtCurrentDataFolder.Text = value;
+                this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.UserDataFolders)));
             }
         }
     }
