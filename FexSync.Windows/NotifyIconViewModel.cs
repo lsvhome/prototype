@@ -446,6 +446,16 @@ namespace FexSync
             }
         }
 
+        public string IconPath { get; set; } = "/resources/default.ico";
+
+        public string SyncStatusHeader
+        {
+            get
+            {
+                return $"Status: {this.SyncStatus}";
+            }
+        }
+
         public string SyncStatus
         {
             get
@@ -476,8 +486,27 @@ namespace FexSync
 
         public void FireSyncStatusChanged()
         {
-            System.Diagnostics.Trace.WriteLine($"Status3 = {this.SyncStatus}");
-            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.SyncStatus)));
+            System.Diagnostics.Trace.WriteLine($"Status3 = {this.SyncStatusHeader}");
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.SyncStatusHeader)));
+            switch (SyncWorkflow.Singleton.Instance.Status)
+            {
+                case SyncWorkflow.SyncWorkflowStatus.Idle:
+                    this.IconPath = "/resources/done.ico";
+                    break;
+                case SyncWorkflow.SyncWorkflowStatus.WaitingForAlert:
+                case SyncWorkflow.SyncWorkflowStatus.Stopped:
+                    this.IconPath = "/resources/pause.ico";
+                    break;
+                case SyncWorkflow.SyncWorkflowStatus.Indexing:
+                case SyncWorkflow.SyncWorkflowStatus.Transferring:
+                    this.IconPath = "/resources/sync.ico";
+                    break;
+                default:
+                    this.IconPath = "/resources/default.ico";
+                    break;
+            }
+
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(this.IconPath)));
         }
 
         public string ToolTipText
