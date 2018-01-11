@@ -11,15 +11,12 @@ namespace FexSync.Data
     {
         private ISyncDataDbContext SyncDb { get; set; }
 
-        private DirectoryInfo DataFolder { get; set; }
-
-        private string TokenForSync { get; set; }
+        private AccountSyncObject SyncObject { get; set; }
 
         public CommandUploadQueue(ISyncDataDbContext context, DirectoryInfo dataFolder, string tokenForSync) : base(new Dictionary<string, string>())
         {
             this.SyncDb = context;
-            this.DataFolder = dataFolder;
-            this.TokenForSync = tokenForSync;
+            this.SyncObject = this.SyncDb.AccountSyncObjects.Single(x => x.Token == tokenForSync && x.Path == dataFolder.FullName);
         }
 
         protected override string Suffix => throw new NotImplementedException();
@@ -44,48 +41,62 @@ namespace FexSync.Data
                 this.SyncDb.SaveChanges();
                 try
                 {
-                    var localPath = Path.Combine(this.DataFolder.FullName, ui.Path.Trim(Path.DirectorySeparatorChar));
+                    var localPath = Path.Combine(this.SyncObject.Path, ui.Path.Trim(Path.DirectorySeparatorChar));
 
                     if (File.Exists(localPath))
                     {
                         var localDirectory = Path.GetDirectoryName(localPath);
+                        var localDirectoryRelativePath = localDirectory.Replace(this.SyncObject.Path, string.Empty).TrimStart(Path.DirectorySeparatorChar);
 
-                        int? folderUploadId = this.SyncDb.RemoteFiles.SingleOrDefault(item => string.Equals(item.Path, localDirectory, StringComparison.InvariantCultureIgnoreCase))?.UploadId;
+                        int? folderUploadId = this.SyncDb.RemoteFiles.SingleOrDefault(item => string.Equals(item.Path, localDirectoryRelativePath, StringComparison.InvariantCultureIgnoreCase))?.UploadId;
 
                         if (!folderUploadId.HasValue)
                         {
-                            using (var cmdEnsureFolderExists = new CommandEnsureFolderExists(this.SyncDb, this.DataFolder, this.TokenForSync, localDirectory))
+                            using (var cmdEnsureFolderExists = new CommandEnsureFolderExists(this.SyncDb, this.SyncObject, localDirectory))
                             {
                                 cmdEnsureFolderExists.Execute(conn);
                                 folderUploadId = cmdEnsureFolderExists.Result;
                             }
                         }
+                        
+                        var parentFolder = this.SyncDb.RemoteFiles.SingleOrDefault(item => string.Equals(item.Path, localDirectoryRelativePath, StringComparison.InvariantCultureIgnoreCase));
+                        System.Diagnostics.Debug.Assert(folderUploadId == parentFolder?.UploadId);
 
-                        var folderContentsBeforeUpload = conn.GetChildren(this.TokenForSync, folderUploadId).Where(x => string.Equals(x.Name, Path.GetFileName(localPath), StringComparison.InvariantCultureIgnoreCase));
-                        var uploadedFile = conn.Upload(this.TokenForSync, folderUploadId, localPath);
+                        var folderContentsBeforeUpload = conn.GetChildren(this.SyncObject.Token, folderUploadId).Where(x => string.Equals(x.Name, Path.GetFileName(localPath), StringComparison.InvariantCultureIgnoreCase)).ToList();
+
+#if DEBUG
+                        var parentFolder1 = this.SyncDb.RemoteFiles.SingleOrDefault(item => string.Equals(item.Path, localDirectoryRelativePath, StringComparison.InvariantCultureIgnoreCase));
+                        if (parentFolder1 == null && !string.IsNullOrWhiteSpace(localDirectoryRelativePath))
+                        {
+                            throw new ApplicationException();
+                        }
+#endif
+
+                        var uploadedFile = conn.Upload(this.SyncObject.Token, folderUploadId, localPath);
                         if (folderContentsBeforeUpload.Any())
                         {
-                            var trashFolder = conn.ObjectView(this.TokenForSync).UploadList.Single(x => string.Equals(x.Name, AccountSettings.TrashBinFolderName, StringComparison.InvariantCultureIgnoreCase));
-                            conn.Move(this.TokenForSync, trashFolder.UploadId, folderContentsBeforeUpload.Select(item => item.UploadId).ToArray());
+                            var trashFolder = conn.ObjectView(this.SyncObject.Token).UploadList.Single(x => string.Equals(x.Name, Constants.TrashBinFolderName, StringComparison.InvariantCultureIgnoreCase));
+                            conn.Move(this.SyncObject.Token, trashFolder.UploadId, folderContentsBeforeUpload.Select(item => item.UploadId).ToArray());
                         }
 
 #if DEBUG
-                        var folderContentsAfterUpload = conn.GetChildren(this.TokenForSync, folderUploadId).Where(item => string.Equals(item.Name, Path.GetFileName(localPath), StringComparison.InvariantCultureIgnoreCase));
+                        var folderContentsAfterUpload = conn.GetChildren(this.SyncObject.Token, folderUploadId).Where(item => string.Equals(item.Name, Path.GetFileName(localPath), StringComparison.InvariantCultureIgnoreCase)).ToList();
                         if (folderContentsAfterUpload.Count() != 1)
                         {
                             throw new ApplicationException();
                         }
 #endif
 
-                        var removeFileQuery = this.SyncDb.RemoteFiles.Where(item => string.Equals(item.Path, ui.Path, StringComparison.InvariantCultureIgnoreCase));
+                        var relativePath = ui.Path.Replace(this.SyncObject.Path, string.Empty).TrimStart(Path.DirectorySeparatorChar);
+                        var removeFileQuery = this.SyncDb.RemoteFiles.Where(item => string.Equals(item.Path, relativePath, StringComparison.InvariantCultureIgnoreCase));
 
                         System.Diagnostics.Debug.Assert(removeFileQuery.Count() <= 1, $"{removeFileQuery.Count()} files with identical paths found: {ui.Path}");
 
                         var remoteFile = removeFileQuery.SingleOrDefault();
                         if (remoteFile == null)
                         {
-                            remoteFile = new RemoteFile();
-                            remoteFile.RemoteTreeId = this.SyncDb.RemoteTrees.OrderBy(item => item.Created).Last().RemoteTreeId;
+                            var remoteTreeId = this.SyncDb.RemoteTrees.OrderBy(item => item.Created).Last().RemoteTreeId;
+                            remoteFile = new RemoteFile(ui.Path, remoteTreeId, uploadedFile.UploadId, this.SyncObject);
                             this.SyncDb.RemoteFiles.Add(remoteFile);
                         }
 
@@ -97,7 +108,7 @@ namespace FexSync.Data
                         remoteFile.UploadId = uploadedFile.UploadId;
                         remoteFile.UploadTime = uploadedFile.UploadTime;
 
-                        remoteFile.Token = this.TokenForSync;
+                        remoteFile.SyncObject = this.SyncObject;
                         remoteFile.Crc32 = uploadedFile.Crc32;
 
                         var remoteFileUnixTime = remoteFile.UploadTime.FromUnixTime();

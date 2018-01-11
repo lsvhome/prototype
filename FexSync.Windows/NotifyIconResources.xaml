@@ -10,7 +10,7 @@
         reuse the same context menu (which is a resource) again (which will have its DataContext set to the old TaskbarIcon)
   -->
     <ContextMenu x:Shared="false" x:Key="SysTrayMenu">
-        <MenuItem Header="{Binding SyncStatus}" />
+        <MenuItem Header="{Binding SyncStatusHeader, Mode=OneWay}" />
         <MenuItem Header="Sign In" Command="{Binding SignInCommand}" />
         <MenuItem Header="Sign Out" Command="{Binding SignOutCommand}" />
         <MenuItem Header="Pause" Command="{Binding DisconnectCommand}" />
@@ -25,7 +25,7 @@
 
     <!-- the application's NotifyIcon - started from App.xaml.cs. Declares its own view model. -->
     <tb:TaskbarIcon x:Key="NotifyIcon"
-                    IconSource="/resources/default.ico"
+                    IconSource="{Binding IconPath}"
                     ToolTipText="{Binding ToolTipText}"
                     DoubleClickCommand="{Binding ShowMainWindowCommand}"
                     ContextMenu="{StaticResource SysTrayMenu}">

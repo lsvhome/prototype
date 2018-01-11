@@ -57,7 +57,7 @@ namespace Net.Fex.Api
                     }
                     else if (this.Parent is CommandBuildRemoteTreeItemArchive pa)
                     {
-                        return pa.ArchiveObject.Token + System.IO.Path.DirectorySeparatorChar + this.Object.Name;
+                        return this.Object.Name;
                     }
                     else
                     {

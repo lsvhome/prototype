@@ -43,6 +43,7 @@ namespace FexSync
                 {
                     if (exceptionObjectParam.ExceptionObject is Exception exception)
                     {
+                        exception.Process();
                         System.Diagnostics.Trace.Fail(exception.ToString());
                     }
                     else
@@ -59,7 +60,7 @@ namespace FexSync
                 //// Required for log4net setup
                 log4net.ILog log = log4net.LogManager.GetLogger(typeof(App));
 
-                System.Diagnostics.Debug.WriteLine("Startup Trace");
+                System.Diagnostics.Trace.WriteLine("Startup Trace");
                 System.Diagnostics.Trace.WriteLine("Startup Debug");
             }
             catch (Exception ex)
@@ -75,13 +76,13 @@ namespace FexSync
         {
             var builder = new ContainerBuilder();
             builder.RegisterInstance<IConnectionFactory>(new Data.ConnectionFactory());
-            var fn = ApplicationSettingsManager.AccountSettings.AccountCacheDbFile;
-            builder.RegisterInstance<FexSync.Data.ISyncDataDbContext>(new FexSync.Data.SyncDataDbContext(fn));
+            builder.RegisterInstance<FexSync.Data.ISyncDataDbContext>(new FexSync.Data.SyncDataDbContext(ApplicationSettingsManager.AccountCacheDbFile));
             builder.RegisterInstance<FexSync.Data.IFileSystemWatcher>(new FexSync.WindowsFileSystemWatcher());
 
             if (this.Container != null)
             {
                 this.Container.Dispose();
+                this.Container = null;
             }
 
             this.Container = builder.Build();
@@ -90,10 +91,11 @@ namespace FexSync
         public void ConfigureSyncWorkflow()
         {
             var config = new SyncWorkflow.SyncWorkflowConfig();
-
-            config.AccountSettings = ApplicationSettingsManager.AccountSettings;
             config.ApiHost = ApplicationSettingsManager.ApiHost;
             config.Container = this.Container;
+            config.Account = config.Container.Resolve<ISyncDataDbContext>().Accounts.Single();
+            config.SyncObjects = config.Container.Resolve<ISyncDataDbContext>().AccountSyncObjects.ToArray();
+
             this.SyncWorkflow.Reconfigure(config);
         }
 
@@ -115,10 +117,18 @@ namespace FexSync
 
                 //// create the notifyicon (it's a resource declared in NotifyIconResources.xaml
                 this.NotifyIcon = (TaskbarIcon)((App)App.Current).FindResource("NotifyIcon");
+                var iconDataContext = new NotifyIconViewModel();
+                this.NotifyIcon.DataContext = iconDataContext;
+                SyncWorkflow.Singleton.Instance.OnStatusChanged += (sender, args) => { iconDataContext.FireSyncStatusChanged(); };
 
-                this.NotifyIcon.DataContext = new NotifyIconViewModel();
+                bool accountExists = false;
+                using (var db0 = new FexSync.Data.SyncDataDbContext(ApplicationSettingsManager.AccountCacheDbFile))
+                {
+                    db0.EnsureDatabaseExists();
+                    accountExists = db0.Accounts.Any();
+                }
 
-                if (ApplicationSettingsManager.AccountSettings.Exists())
+                if (accountExists)
                 {
                     this.ConfigureContainer();
                     this.ConfigureSyncWorkflow();
@@ -133,39 +143,46 @@ namespace FexSync
                         //// build temporary container
                         var builder = new ContainerBuilder();
                         builder.RegisterInstance<IConnectionFactory>(new Data.ConnectionFactory());
+                        builder.RegisterInstance<FexSync.Data.ISyncDataDbContext>(new FexSync.Data.SyncDataDbContext(ApplicationSettingsManager.AccountCacheDbFile));
                         this.Container = builder.Build();
 
                         using (var conn = ((App)App.Current).Container.Resolve<Data.IConnectionFactory>().CreateConnection(new Uri(ApplicationSettingsManager.ApiHost)))
                         {
+                            Account account = null;
                             var authWindow = new AuthWindow(conn);
                             authWindow.OnSignedIn += (object sender1, CommandSignIn.SignInEventArgs signedUserArgs) =>
                             {
-                                using (var cmd = new CommandEnsureDefaultObjectExists(ApplicationSettingsManager.DefaultFexSyncFolderName))
+                                var syncDb = this.Container.Resolve<ISyncDataDbContext>();
+                                syncDb.LockedRun(() =>
                                 {
-                                    cmd.Execute(signedUserArgs.Connection);
+                                    account = syncDb.Accounts.SingleOrDefault();
+                                    if (account == null)
+                                    {
+                                        account = new Account();
+                                        syncDb.Accounts.Add(account);
+                                    }
 
-                                    ApplicationSettingsManager.AccountSettings.Login = signedUserArgs.Login;
-                                    ApplicationSettingsManager.AccountSettings.Password = signedUserArgs.Password;
-                                    ApplicationSettingsManager.AccountSettings.TokenForSync = cmd.Result;
-                                }
-                            };
+                                    account.Login = signedUserArgs.Login;
+                                    account.Password = signedUserArgs.Password;
 
-                            if (authWindow.ShowDialog() == true && !string.IsNullOrWhiteSpace(ApplicationSettingsManager.AccountSettings.Login))
-                            {
-                                SettingsWindow settings = new SettingsWindow();
+                                    syncDb.SaveChanges();
 
-                                settings.UserDataFolder = ApplicationSettingsManager.CurrentFexUserRootFolder;
-                                if (settings.ShowDialog() == true)
+                                    account.EnsureAccountHasDefaultSyncObject(syncDb, conn);
+                                });
+
+                                this.Dispatcher.Invoke(() =>
                                 {
-                                    ApplicationSettingsManager.CurrentFexUserRootFolder = settings.TxtCurrentDataFolder.Text;
-                                }
+                                    SettingsWindow settings = new SettingsWindow(account, conn);
+                                    settings.ShowDialog();
+                                });
 
                                 this.ConfigureContainer();
-
                                 this.ConfigureSyncWorkflow();
 
                                 SyncWorkflow.Singleton.Instance.Start();
-                            }
+                            };
+
+                            authWindow.ShowDialog();
                         }
                     };
 
@@ -177,11 +194,6 @@ namespace FexSync
                 ex.Process();
                 throw;
             }
-        }
-
-        private void Auth_OnSignedIn(object sender, EventArgs e)
-        {
-            throw new NotImplementedException();
         }
 
         protected override void OnExit(ExitEventArgs e)
@@ -200,7 +212,7 @@ namespace FexSync
             }
 
             base.OnExit(e);
-            System.Diagnostics.Debug.WriteLine("Exit Trace");
+            System.Diagnostics.Trace.WriteLine("Exit Trace");
             System.Diagnostics.Trace.WriteLine("Exit Debug");
         }
     }

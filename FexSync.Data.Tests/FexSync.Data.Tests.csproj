@@ -11,13 +11,12 @@
     <AssemblyName>FexSync.Data.Tests</AssemblyName>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="StyleCop.Cache" />
-  </ItemGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0</DefineConstants>
+  </PropertyGroup>
 
   <ItemGroup>
-    <Compile Include="..\submodules\fex-api\net.fex.api.v1.tests\ConnectionTestFixtureSettings.cs" Link="ConnectionTestFixtureSettings.cs" />
-    <Compile Include="..\submodules\fex-api\net.fex.api.v1.tests\Extenders.cs" Link="Extenders.cs" />
+    <None Remove="StyleCop.Cache" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,10 +24,12 @@
     <PackageReference Include="MSTest.TestAdapter" Version="1.1.18" />
     <PackageReference Include="MSTest.TestFramework" Version="1.1.18" />
     <PackageReference Include="StyleCop.MSBuild" Version="5.0.0" />
+    <PackageReference Include="System.Diagnostics.Debug" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FexSync.Data\FexSync.Data.csproj" />
+    <ProjectReference Include="..\submodules\fex-api\net.fex.api.v1.tests\net.fex.api.v1.tests.csproj" />
     <ProjectReference Include="..\submodules\fex-api\net.fex.api.v1\net.fex.api.v1.csproj" />
   </ItemGroup>
 

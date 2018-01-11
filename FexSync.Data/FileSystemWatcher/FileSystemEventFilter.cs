@@ -5,10 +5,16 @@ namespace FexSync.Data
 {
     public class FileSystemEventFilter
     {
-        public DateTime StopMoment { get; set; }
+        public Func<FileSystemEventArgs, bool> FilterConditionShouldSuppress { get; private set; }
 
-        public Func<bool> Completed { get; set; }
+        public FileSystemEventFilter(Func<FileSystemEventArgs, bool> filterConditionShouldSuppress)
+        {
+            if (filterConditionShouldSuppress == null)
+            {
+                throw new ArgumentNullException("filterConditionShouldSuppress");
+            }
 
-        public Func<FileSystemEventArgs, bool> FilterConditionShouldSuppress { get; set; }
+            this.FilterConditionShouldSuppress = filterConditionShouldSuppress;
+        }
     }
 }

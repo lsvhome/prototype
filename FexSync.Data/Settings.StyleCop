@@ -1,0 +1,32 @@
+<StyleCopSettings Version="105">
+
+  <SourceFileList>
+
+    <!-- ConnectionCommands -->
+    <SourceFile>CommandPrepareLocalFileCreated.cs</SourceFile>
+    <SourceFile>CommandPrepareLocalFileDeleted.cs</SourceFile>
+    <SourceFile>CommandPrepareLocalFileModified.cs</SourceFile>
+    <SourceFile>CommandPrepareLocalFileMoved.cs</SourceFile>
+    <SourceFile>CommandPrepareLocalFolderDeleted.cs</SourceFile>
+    <SourceFile>CommandPrepareLocalFolderMoved.cs</SourceFile>
+    <!-- ConnectionCommands -->
+
+    <Settings>
+
+      <Analyzers>
+        <Analyzer AnalyzerId="StyleCop.CSharp.MaintainabilityRules">
+          <Rules>
+            <Rule Name="FileMayOnlyContainASingleClass">
+              <RuleSettings>
+                <BooleanProperty Name="Enabled">False</BooleanProperty>
+              </RuleSettings>
+            </Rule>
+          </Rules>
+          <AnalyzerSettings />
+        </Analyzer>
+      </Analyzers>
+
+    </Settings>
+  </SourceFileList>
+
+</StyleCopSettings>

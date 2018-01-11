@@ -4,12 +4,7 @@ using System.Text;
 
 namespace FexSync.Data
 {
-    public interface IConfigurable
-    {
-        void Configure(object settings);
-    }
-
-    public class Singleton<T> where T : IConfigurable, new()
+    public class Singleton<T> where T : new()
     {
         //// Special type, different for each T1 (T1 will get T type)
         private class LockObjectGenericType<T1>

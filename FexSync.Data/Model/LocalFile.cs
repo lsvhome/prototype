@@ -8,8 +8,21 @@ namespace FexSync.Data
     [Serializable]
     public class LocalFile
     {
+        [Obsolete("Only for (De)Serialization purposes", true)]
+        protected LocalFile()
+        {
+        }
+
+        public LocalFile(string path, string token)
+        {
+            this.Path = path;
+            this.Token = token;
+        }
+
         [Key]
         public int LocalFileId { get; set; }
+
+        public string Token { get; set; }
 
         [NotMapped]
         private string path;
@@ -24,6 +37,12 @@ namespace FexSync.Data
             set
             {
                 this.path = value.Trim(System.IO.Path.DirectorySeparatorChar);
+#if DEBUG
+                if (System.IO.Path.IsPathRooted(this.path))
+                {
+                    throw new ApplicationException();
+                }
+#endif
             }
         }
 

@@ -4,8 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-
+using System.Xml.Serialization;
 using FexSync.Data;
+using Net.Fex.Api;
 
 namespace FexSync
 {
@@ -15,14 +16,6 @@ namespace FexSync
 
     public static class ApplicationSettingsManager
     {
-        [Serializable]
-        public class ApplicationSettings : ISaveable
-        {
-            public string CurrentFexUserRootFolder { get; set; }
-
-            public List<string> InactiveAccountRootFolders { get; set; } = new List<string>();
-        }
-
         private static string GetExpanded(string key)
         {
             var ret = System.Configuration.ConfigurationManager.AppSettings[key];
@@ -39,14 +32,8 @@ namespace FexSync
             }
         }
 
-        public static string ApplicationConfigPath
-        {
-            get
-            {
-                var ret = Path.Combine(ApplicationDataFolder, "sync.config");
-                return ret;
-            }
-        }
+        [XmlIgnore]
+        public static string AccountCacheDbFile => Path.Combine(ApplicationDataFolder, "sync.db");
 
         public static string ApiHost
         {
@@ -59,75 +46,40 @@ namespace FexSync
 
         public const string DefaultFexSyncFolderName = "FexSyncFolder";
 
-        public static string CurrentFexUserRootFolder
+        public static string DefaultFexUserRootFolder
         {
             get
             {
-                try
-                {
-                    ApplicationSettings loadedSettings = new ApplicationSettings();
-
-                    if (File.Exists(ApplicationConfigPath))
-                    {
-                        loadedSettings = loadedSettings.Load(ApplicationConfigPath);
-
-                        //// Required for first run after reinstall (previous configuration file exists, but AccountDataFolder differ)
-                        if (!loadedSettings.InactiveAccountRootFolders.Contains(GetExpanded("DefaultFexUserRootFolder"))
-                            &&
-                            loadedSettings.CurrentFexUserRootFolder != GetExpanded("DefaultFexUserRootFolder"))
-                        {
-                            loadedSettings.InactiveAccountRootFolders.Add(loadedSettings.CurrentFexUserRootFolder);
-                            loadedSettings.CurrentFexUserRootFolder = GetExpanded("DefaultFexUserRootFolder");
-                            loadedSettings.Save(ApplicationConfigPath);
-                        }
-                    }
-                    else
-                    {
-                        //// Required for first run
-                        loadedSettings.CurrentFexUserRootFolder = GetExpanded("DefaultFexUserRootFolder");
-                        loadedSettings.Save(ApplicationConfigPath);
-                    }
-
-                    return loadedSettings.CurrentFexUserRootFolder;
-                }
-                catch (Exception)
-                {
-                    var ret = GetExpanded("DefaultFexUserRootFolder");
-                    CurrentFexUserRootFolder = ret;
-                    return ret;
-                }
-            }
-
-            set
-            {
-                ApplicationSettings loadedSettings = new ApplicationSettings().Load(ApplicationConfigPath);
-
-                if (loadedSettings.CurrentFexUserRootFolder != value)
-                {
-                    if (!loadedSettings.InactiveAccountRootFolders.Contains(loadedSettings.CurrentFexUserRootFolder))
-                    {
-                        loadedSettings.InactiveAccountRootFolders.Add(loadedSettings.CurrentFexUserRootFolder);
-                    }
-
-                    loadedSettings.CurrentFexUserRootFolder = value;
-                    loadedSettings.InactiveAccountRootFolders.Sort();
-                    loadedSettings.Save(ApplicationConfigPath);
-
-                    accountSettings = new AccountSettings(value, accountSettings);
-                    accountSettings.Save(accountSettings.AccountConfigFile);
-                }
-                else if (!accountSettings.Exists())
-                {
-                    accountSettings.Save(accountSettings.AccountConfigFile);
-                }
+                return GetExpanded("DefaultFexUserRootFolder");
             }
         }
 
-        public static string CurrentFexUserConfigPath
+        public static void EnsureAccountHasDefaultSyncObject(this Account account, ISyncDataDbContext syncDb, IConnection conn)
         {
-            get
+            CommandArchive.CommandArchiveResponseObject defaultServerObject;
+            using (var cmd = new CommandEnsureDefaultObjectExists(ApplicationSettingsManager.DefaultFexSyncFolderName))
             {
-                return new AccountSettings(CurrentFexUserRootFolder).AccountConfigFile;
+                cmd.Execute(conn);
+                defaultServerObject = cmd.Result;
+            }
+
+            var defaultSyncObject = syncDb.AccountSyncObjects.SingleOrDefault(x => x.Account == account && x.Token == defaultServerObject.Token);
+
+            if (defaultSyncObject == null)
+            {
+                defaultSyncObject = syncDb.AccountSyncObjects.SingleOrDefault(x => x.Account == account && string.Equals(x.Path, ApplicationSettingsManager.DefaultFexUserRootFolder, StringComparison.InvariantCultureIgnoreCase));
+                if (defaultSyncObject == null)
+                {
+                    defaultSyncObject = new AccountSyncObject();
+                    defaultSyncObject.Account = account;
+                    defaultSyncObject.Path = ApplicationSettingsManager.DefaultFexUserRootFolder;
+                    syncDb.AccountSyncObjects.Add(defaultSyncObject);
+                }
+
+                defaultSyncObject.Token = defaultServerObject.Token;
+                defaultSyncObject.Name = defaultServerObject.Preview;
+
+                syncDb.SaveChanges();
             }
         }
 
@@ -154,38 +106,6 @@ namespace FexSync
             using (var stream = File.Create(fileName))
             {
                 serializer.Serialize(stream, accountSettings);
-            }
-        }
-
-        private static AccountSettings accountSettings;
-
-        public static AccountSettings AccountSettings
-        {
-            get
-            {
-                try
-                {
-                    if (accountSettings == null)
-                    {
-                        accountSettings = new AccountSettings(CurrentFexUserRootFolder);
-                    }
-
-                    return accountSettings;
-                }
-                catch (Exception)
-                {
-                    if (!Directory.Exists(CurrentFexUserRootFolder))
-                    {
-                        Directory.CreateDirectory(CurrentFexUserRootFolder);
-                    }
-
-                    if (accountSettings == null)
-                    {
-                        accountSettings = new AccountSettings(CurrentFexUserRootFolder);
-                    }
-
-                    return accountSettings;
-                }
             }
         }
     }

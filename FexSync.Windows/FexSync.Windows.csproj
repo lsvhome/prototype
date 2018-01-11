@@ -78,6 +78,9 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="AccountSyncObjectEditWindow.xaml.cs">
+      <DependentUpon>AccountSyncObjectEditWindow.xaml</DependentUpon>
+    </Compile>
     <Compile Include="AlertsWindow.xaml.cs">
       <DependentUpon>AlertsWindow.xaml</DependentUpon>
     </Compile>
@@ -86,14 +89,16 @@
     </Compile>
     <Compile Include="Extenders.cs" />
     <Compile Include="FreeUserAccessDeniedException.cs" />
-    <Compile Include="Settings\AccountSettings.cs" />
     <Compile Include="DelegateCommand.cs" />
     <Compile Include="QuickStartImageList.cs" />
     <Compile Include="QuickStartWindow.xaml.cs">
       <DependentUpon>QuickStartWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Settings\ApplicationSettingsManager.cs" />
-    <Compile Include="FileSystemWatcher\WindowsFileSystemWatcher.cs" />
+    <Page Include="AccountSyncObjectEditWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="AlertsWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -153,6 +158,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FexSync.Data.Windows\FexSync.Data.Windows.csproj">
+      <Project>{05b735b8-f2b4-4916-95f7-278c64131963}</Project>
+      <Name>FexSync.Data.Windows</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FexSync.Data\FexSync.Data.csproj">
       <Project>{c74ecd46-32d8-4705-9be9-402c180eee4d}</Project>
       <Name>FexSync.Data</Name>
@@ -184,7 +193,7 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Design" Version="1.1.4" />
   </ItemGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
     <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.0" Visible="false" />
   </ItemGroup>
   <ItemGroup>

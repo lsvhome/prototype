@@ -15,7 +15,7 @@ namespace FexSync
     {
         public static readonly TimeSpan DefaultWaitPeriod = TimeSpan.FromMilliseconds(500);
 
-        private static object lockObj = new object();
+        public static readonly TimeSpan TaskScheduleDelay = TimeSpan.FromMilliseconds(100);
 
         private Dictionary<string, FileSystemWatcher> watchers = new Dictionary<string, FileSystemWatcher>();
 
@@ -23,28 +23,57 @@ namespace FexSync
 
         private void Watcher_Error(object sender, ErrorEventArgs e)
         {
-            e.GetException().Process();
+            if (this.OnError != null)
+            {
+                this.OnError(this, e);
+            }
+            else
+            {
+                Exception ex = e.GetException();
+                ex.Process();
+            }
         }
 
         public void Start(IEnumerable<DirectoryInfo> folders)
         {
-            foreach (var each in folders)
+            foreach (var eachFolder in folders)
             {
-                var watcher = new FileSystemWatcher
-                {
-                    Path = each.FullName,
-                    IncludeSubdirectories = true,
-                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName | NotifyFilters.Attributes | NotifyFilters.LastWrite | NotifyFilters.Size
-                };
+                var watcherForFiles = new FileSystemWatcher();
 
-                watcher.Created += this.Watcher_Created;
-                watcher.Changed += this.Watcher_Changed;
-                watcher.Renamed += this.Watcher_Renamed;
-                watcher.Deleted += this.Watcher_Deleted;
-                watcher.Disposed += this.Watcher_Disposed;
-                watcher.Error += this.Watcher_Error;
+                watcherForFiles.BeginInit();
 
-                this.watchers.Add(each.FullName, watcher);
+                watcherForFiles.Path = eachFolder.FullName;
+                watcherForFiles.IncludeSubdirectories = true;
+                watcherForFiles.NotifyFilter = NotifyFilters.FileName | NotifyFilters.Size;
+
+                watcherForFiles.Created += this.Watcher_CreatedFile;
+                watcherForFiles.Changed += this.Watcher_ChangedFile;
+                watcherForFiles.Renamed += this.Watcher_RenamedFile;
+                watcherForFiles.Deleted += this.Watcher_DeletedFile;
+                watcherForFiles.Disposed += this.Watcher_Disposed;
+                watcherForFiles.Error += this.Watcher_Error;
+
+                watcherForFiles.EndInit();
+
+                this.watchers.Add(eachFolder.FullName + "F", watcherForFiles);
+
+                var watcherForFolders = new FileSystemWatcher();
+
+                watcherForFolders.BeginInit();
+
+                watcherForFolders.Path = eachFolder.FullName;
+                watcherForFolders.IncludeSubdirectories = true;
+                watcherForFolders.NotifyFilter = NotifyFilters.DirectoryName;
+
+                watcherForFolders.Created += this.Watcher_CreatedFolder;
+                watcherForFolders.Renamed += this.Watcher_RenamedFolder;
+                watcherForFolders.Deleted += this.Watcher_DeletedFolder;
+                watcherForFolders.Disposed += this.Watcher_Disposed;
+                watcherForFolders.Error += this.Watcher_Error;
+
+                watcherForFolders.EndInit();
+
+                this.watchers.Add(eachFolder.FullName + "D", watcherForFolders);
             }
 
             this.watchers.Values.ToList().ForEach(watcher => watcher.EnableRaisingEvents = true);
@@ -55,12 +84,23 @@ namespace FexSync
             this.DebugMessage($"Watcher_Disposed");
         }
 
-        public void Stop()
+        public virtual void Stop()
         {
-            this.DebugMessage($"Watcher Stop() {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+            this.DebugMessage($"Watcher begin Stop() {DateTime.Now.ToString("HH:mm:ss:ffff")}");
+
+            //// wait all tasks comlpleted
             this.watchers.Values.ToList().ForEach(watcher => watcher.EnableRaisingEvents = false);
+
+            Task executingTask;
+            while ((executingTask = this.scheduledTasks.FirstOrDefault(x => !x.IsCompleted)) != null)
+            {
+                executingTask.Wait();
+            }
+
             this.watchers.Values.ToList().ForEach(watcher => watcher.Dispose());
             this.watchers.Clear();
+
+            this.DebugMessage($"Watcher finished Stop() {DateTime.Now.ToString("HH:mm:ss:ffff")}");
         }
 
         public void Dispose()
@@ -71,7 +111,7 @@ namespace FexSync
 
         public event EventHandler<FexSync.Data.FileCreatedEventArgs> OnFileCreated;
 
-        public event EventHandler<FexSync.Data.FileOrFolderDeletedEventArgs> OnFileOrFolderDeleted;
+        public event EventHandler<FexSync.Data.FileDeletedEventArgs> OnFileDeleted;
 
         public event EventHandler<FexSync.Data.FileModifiedEventArgs> OnFileModified;
 
@@ -83,231 +123,165 @@ namespace FexSync
 
         public event EventHandler<FexSync.Data.FolderMovedEventArgs> OnFolderMoved;
 
-        private ThreadSafeListWithLock<FileSystemEventFilter> eventFilter = new ThreadSafeListWithLock<FileSystemEventFilter>();
+        public event EventHandler<ErrorEventArgs> OnError;
 
-        private void Filter_Add(FileSystemEventFilter f)
-        {
-            this.eventFilter.Add(f);
-            this.DebugMessage($"Filter_Add {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-        }
+        private event EventHandler<CancellableFileSystemEventArgs> ShouldSuppressCreated = delegate { };
 
-        private bool ShouldSuppress(FileSystemEventArgs e)
-        {
-            this.DebugMessage($"ShouldSuppress begin {eventFilter.Count} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-            bool removed = false;
-            do
-            {
-                removed = false;
-                if (this.eventFilter.Any())
-                {
-                    var firstFilter = this.eventFilter.First();
-                    removed = firstFilter.StopMoment < DateTime.Now;
-                    removed |= firstFilter.Completed != null && firstFilter.Completed();
-                    if (removed)
-                    {
-                        this.DebugMessage("Filter removed");
-                        this.eventFilter.RemoveAt(0);
-                    }
-                }
-            }
-            while (removed);
-
-            foreach (var each in this.eventFilter)
-            {
-                this.DebugMessage($"each.filterConditionShouldSuppress != null => {each.FilterConditionShouldSuppress != null}");
-                this.DebugMessage($"each.filterConditionShouldSuppress(e) => {each.FilterConditionShouldSuppress(e)}");
-                this.DebugMessage($"each.dates => {each.StopMoment <= DateTime.Now}    {each.StopMoment.ToString("HH:mm:ss:ffff")} {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-                if (each.FilterConditionShouldSuppress != null && each.FilterConditionShouldSuppress(e) && each.StopMoment >= DateTime.Now)
-                {
-                    this.DebugMessage($"ShouldSuppress true {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-                    return true;
-                }
-            }
-
-            this.DebugMessage($"ShouldSuppress false {DateTime.Now.ToString("HH:mm:ss:ffff")}");
-            return false;
-        }
-
-        private void Watcher_Created(object sender, FileSystemEventArgs e)
+        private void Watcher_CreatedFile(object sender, FileSystemEventArgs e)
         {
             this.DebugMessage($"Watcher_Created {e.ChangeType.ToString()} : {e.FullPath}");
 
-            if (!this.ShouldSuppress(e))
-            {
-                //// File or directory created
-                this.Filter_Add(new FileSystemEventFilter { FilterConditionShouldSuppress = (FileSystemEventArgs e1) => { return e1.FullPath == e.FullPath && e1.ChangeType == WatcherChangeTypes.Changed; }, StopMoment = DateTime.Now.Add(DefaultWaitPeriod) });
-                this.Filter_Add(new FileSystemEventFilter { FilterConditionShouldSuppress = (FileSystemEventArgs e1) => { return e1.FullPath == Path.GetDirectoryName(e.FullPath) && e1.ChangeType == WatcherChangeTypes.Changed; }, StopMoment = DateTime.Now.Add(DefaultWaitPeriod) });
+            var createdArgs = new CancellableFileSystemEventArgs(e);
 
-                if (File.Exists(e.FullPath))
+            this.ShouldSuppressCreated(this, createdArgs);
+
+            if (!createdArgs.Suppress)
+            {
+                EventHandler<CancellableFileSystemEventArgs> fileChangedHandler = null;
+                object lockFileChangedHandler = new object(); 
+
+                fileChangedHandler = (sender1, args) =>
                 {
-                    if (this.OnFileCreated != null)
+                    if (args.FileSystemEventArgs.FullPath == e.FullPath)
                     {
-                        this.OnFileCreated(this, new FexSync.Data.FileCreatedEventArgs { FullPath = e.FullPath });
+                        args.Suppress = true;
                     }
-                }
-                else if (Directory.Exists(e.FullPath))
+                };
+
+                this.ShouldSuppressChangedFile += fileChangedHandler;
+
+                this.ScheduleTask(() => {
+                    while (true)
+                    {
+                        try
+                        {
+                            using (File.OpenWrite(e.FullPath))
+                            {
+                                lock (lockFileChangedHandler)
+                                {
+                                    if (fileChangedHandler != null)
+                                    {
+                                        this.ShouldSuppressChangedFile -= fileChangedHandler;
+                                        fileChangedHandler = null;
+                                    }
+                                }
+
+                                this.ScheduleTask(() =>
+                                {
+                                    var fileCreatedHandler = this.OnFileCreated;
+                                    if (fileCreatedHandler != null)
+                                    {
+                                        this.OnFileCreated?.Invoke(this, new FexSync.Data.FileCreatedEventArgs { FullPath = e.FullPath });
+                                    }
+                                });
+                            }
+                            return;
+                        }
+                        catch (Exception)
+                        {
+                            System.Threading.Thread.Sleep(1);
+                        }
+                    }
+                });
+            }
+        }
+
+        private void Watcher_CreatedFolder(object sender, FileSystemEventArgs e)
+        {
+            this.DebugMessage($"Watcher_CreatedFolder {e.ChangeType.ToString()} : {e.FullPath}");
+
+            var createdArgs = new CancellableFileSystemEventArgs(e);
+
+            this.ShouldSuppressCreated(this, createdArgs);
+
+            if (!createdArgs.Suppress)
+            {
+                if (this.OnFolderCreated != null)
                 {
-                    if (this.OnFolderCreated != null)
+                    this.ScheduleTask(() =>
                     {
                         this.OnFolderCreated(this, new FexSync.Data.FolderCreatedEventArgs { FullPath = e.FullPath });
-                    }
-                }
-                else
-                {
-                    throw new ApplicationException();
+                    });
                 }
             }
         }
 
-        private void Watcher_Deleted(object sender, FileSystemEventArgs e)
-        {
-            this.DebugMessage($"Watcher_Deleted {e.ChangeType.ToString()} : {e.FullPath}");
-            string moved = null; //// indicator move operation instead of delete (move = delete + create)
-            string deletedRoot = e.FullPath; //// For folder deletion: first deleted event may be file(s) within deleted folder, we want fire only event of deletion of higest folder
-            if (!this.ShouldSuppress(e))
-            {
-                var stopMoment = DateTime.Now.Add(DefaultWaitPeriod);
-                this.Filter_Add(new FileSystemEventFilter { FilterConditionShouldSuppress = (FileSystemEventArgs e1) => { return e1.FullPath == e.FullPath && e1.ChangeType == WatcherChangeTypes.Changed; }, StopMoment = stopMoment });
-                this.Filter_Add(new FileSystemEventFilter { FilterConditionShouldSuppress = (FileSystemEventArgs e1) => { return e1.FullPath == Path.GetDirectoryName(e.FullPath) && e1.ChangeType == WatcherChangeTypes.Changed; }, StopMoment = stopMoment });
+        private event EventHandler<CancellableFileSystemEventArgs> ShouldSuppressChangedFile = delegate { };
 
-                this.Filter_Add(new FileSystemEventFilter
-                {
-                    FilterConditionShouldSuppress = (FileSystemEventArgs e1) =>
-                    {
-                        var ret = e.FullPath.Contains(e1.FullPath) && e1.ChangeType == WatcherChangeTypes.Deleted;
-                        if (ret)
-                        {
-                            if (deletedRoot.Contains(e1.FullPath) && e1.ChangeType == WatcherChangeTypes.Deleted)
-                            {
-                                deletedRoot = e1.FullPath;
-                            }
-                        }
-
-                        return ret;
-                    },
-                    StopMoment = stopMoment
-                });
-
-                this.Filter_Add(new FileSystemEventFilter
-                {
-                    FilterConditionShouldSuppress = (FileSystemEventArgs e1) =>
-                    {
-                        this.DebugMessage($"suppressedEvent = {e1.Name} {e.Name} |  {e1.FullPath}  {e.FullPath} | {e1.ChangeType}");
-
-                        var ret = Path.GetFileName(e1.Name) == Path.GetFileName(e.Name) && e1.FullPath != e.FullPath && e1.ChangeType == WatcherChangeTypes.Created;
-                        if (ret)
-                        {
-                            moved = e1.FullPath;
-                            this.Filter_Add(new FileSystemEventFilter { FilterConditionShouldSuppress = (FileSystemEventArgs e2) => { return e2.FullPath == Path.GetDirectoryName(e1.FullPath) && e2.ChangeType == WatcherChangeTypes.Changed; }, StopMoment = stopMoment });
-                        }
-
-                        return ret;
-                    },
-                    StopMoment = stopMoment
-                });
-
-                Task.Run(() =>
-                {
-                    System.Threading.Thread.Sleep(DefaultWaitPeriod);
-                    if (!string.IsNullOrWhiteSpace(moved))
-                    {
-                        if (File.Exists(moved))
-                        {
-                            if (this.OnFileMoved != null)
-                            {
-                                this.OnFileMoved(this, new FexSync.Data.FileMovedEventArgs { OldPath = e.FullPath, NewPath = moved });
-                            }
-                        }
-                        else if (Directory.Exists(moved))
-                        {
-                            if (this.OnFolderMoved != null)
-                            {
-                                this.OnFolderMoved(this, new FexSync.Data.FolderMovedEventArgs { OldPath = e.FullPath, NewPath = moved });
-                            }
-                        }
-                        else
-                        {
-                            throw new ApplicationException();
-                        }
-                    }
-                    else
-                    {
-                        if (deletedRoot != e.FullPath)
-                        {
-                            if (this.OnFolderDeleted != null)
-                            {
-                                this.OnFolderDeleted(this, new FexSync.Data.FolderDeletedEventArgs { FullPath = deletedRoot });
-                            }
-                        }
-                        else
-                        {
-                            if (this.OnFileOrFolderDeleted != null)
-                            {
-                                this.OnFileOrFolderDeleted(this, new FexSync.Data.FileOrFolderDeletedEventArgs { FullPath = deletedRoot });
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        private void Watcher_Changed(object sender, FileSystemEventArgs e)
+        private void Watcher_ChangedFile(object sender, FileSystemEventArgs e)
         {
             this.DebugMessage($"Watcher_Changed {e.ChangeType.ToString()} : {e.FullPath}");
 
-            if (!this.ShouldSuppress(e))
+            var changedArgs = new CancellableFileSystemEventArgs(e);
+            this.ShouldSuppressChangedFile(this, changedArgs);
+
+            if (!changedArgs.Suppress)
             {
                 //// File modified
-                this.Filter_Add(new FileSystemEventFilter { FilterConditionShouldSuppress = (FileSystemEventArgs e1) => { return e1.FullPath == e.FullPath && e1.ChangeType == WatcherChangeTypes.Changed; }, StopMoment = DateTime.Now.Add(DefaultWaitPeriod) });
 
-                if (File.Exists(e.FullPath))
+                EventHandler<CancellableFileSystemEventArgs> nestedChangeCatcher = null;
+                nestedChangeCatcher = (sender1, testedChangedArgs) =>
                 {
-                    if (this.OnFileModified != null)
+                    if (testedChangedArgs.FileSystemEventArgs.FullPath == e.FullPath)
                     {
-                        this.OnFileModified(this, new FexSync.Data.FileModifiedEventArgs { FullPath = e.FullPath });
+                        this.ShouldSuppressChangedFile -= nestedChangeCatcher;
+                        testedChangedArgs.Suppress = true;
                     }
-                }
-                else
+                };
+
+                this.ShouldSuppressChangedFile += nestedChangeCatcher;
+
+                if (this.OnFileModified != null)
                 {
-                    throw new ApplicationException();
+                    this.ScheduleTask(() =>
+                    {
+                        while (true)
+                        {
+                            try
+                            {
+                                using (File.Open(e.FullPath, FileMode.Open))
+                                {
+                                }
+
+                                this.ShouldSuppressChangedFile -= nestedChangeCatcher;
+                                this.OnFileModified(this, new FexSync.Data.FileModifiedEventArgs { FullPath = e.FullPath });
+                                return;
+                            }
+                            catch (Exception)
+                            {
+                                System.Threading.Thread.Sleep(DefaultWaitPeriod);
+                            }
+                        }
+                    });
                 }
             }
         }
 
-        private void Watcher_Renamed(object sender, RenamedEventArgs e)
+        private void Watcher_RenamedFile(object sender, RenamedEventArgs e)
         {
             this.DebugMessage($"Watcher_Renamed {e.ChangeType.ToString()} : {e.FullPath}");
 
-            if (!this.ShouldSuppress(e))
+            if (this.OnFileMoved != null)
             {
-                //// File or folder renamed
-                this.Filter_Add(new FileSystemEventFilter { FilterConditionShouldSuppress = (FileSystemEventArgs e1) => { return e1.FullPath == Path.GetDirectoryName(e.FullPath) && e1.ChangeType == WatcherChangeTypes.Changed; }, StopMoment = DateTime.Now.Add(DefaultWaitPeriod) });
-
-                if (File.Exists(e.FullPath))
-                {
-                    if (this.OnFileMoved != null)
-                    {
-                        this.OnFileMoved(this, new FexSync.Data.FileMovedEventArgs { OldPath = e.OldFullPath, NewPath = e.FullPath });
-                    }
-                }
-                else if (Directory.Exists(e.FullPath))
-                {
-                    if (this.OnFolderMoved != null)
-                    {
-                        this.OnFolderMoved(this, new FexSync.Data.FolderMovedEventArgs { OldPath = e.OldFullPath, NewPath = e.FullPath });
-                    }
-                }
-                else
-                {
-                    throw new ApplicationException();
-                }
+                this.ScheduleTask(() => { this.OnFileMoved(this, new FexSync.Data.FileMovedEventArgs { OldPath = e.OldFullPath, NewPath = e.FullPath }); });
             }
         }
 
+        private void Watcher_RenamedFolder(object sender, RenamedEventArgs e)
+        {
+            this.DebugMessage($"Watcher_Renamed {e.ChangeType.ToString()} : {e.FullPath}");
+
+            if (this.OnFolderMoved != null)
+            {
+                this.ScheduleTask(() => { this.OnFolderMoved(this, new FexSync.Data.FolderMovedEventArgs { OldPath = e.OldFullPath, NewPath = e.FullPath }); });
+            }
+        }
+
+        [System.Diagnostics.Conditional("DEBUG")]
         private void DebugMessage(string msg)
         {
 #if FSEVENTS_DEBUG
-            System.Diagnostics.Debug.WriteLine(msg);
+            System.Diagnostics.Debug.WriteLine($"{DateTime.Now.ToString("HH:mm:ss:ffff")}  " + msg);
 #endif
         }
     }
