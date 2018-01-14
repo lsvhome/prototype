@@ -13,3 +13,6 @@
 [submodule "submodules/caching"]
 	path = submodules/caching
 	url = https://github.com/lsvhome/Caching.git
+[submodule "submodules/common"]
+	path = submodules/common
+	url = https://github.com/lsvhome/Common.git
