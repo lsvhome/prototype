@@ -16,3 +16,6 @@
 [submodule "submodules/common"]
 	path = submodules/common
 	url = https://github.com/lsvhome/Common.git
+[submodule "submodules/options"]
+	path = submodules/options
+	url = https://github.com/lsvhome/Options.git
