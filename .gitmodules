@@ -10,3 +10,6 @@
 [submodule "submodules/asplabs"]
 	path = submodules/asplabs
 	url = https://github.com/lsvhome/AspLabs.git
+[submodule "submodules/caching"]
+	path = submodules/caching
+	url = https://github.com/lsvhome/Caching.git
