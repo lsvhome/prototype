@@ -1,3 +1,12 @@
 [submodule "submodules/fex-api"]
 	path = submodules/fex-api
 	url = https://git.f1box.org/fex-desktop/fex-api.git
+[submodule "submodules/EntityFrameworkCore"]
+	path = submodules/EntityFrameworkCore
+	url = https://github.com/lsvhome/EntityFrameworkCore.git
+[submodule "submodules/corefx"]
+	path = submodules/corefx
+	url = https://github.com/lsvhome/corefx.git
+[submodule "submodules/asplabs"]
+	path = submodules/asplabs
+	url = https://github.com/lsvhome/AspLabs.git

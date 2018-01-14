@@ -103,7 +103,7 @@ namespace FexSync.Data
 #if DEBUG
             if (syncObjectCreated != syncObjectDeleted)
             {
-#warning cross-object moving isn't implemented
+//#warning cross-object moving isn't implemented
                 throw new NotImplementedException();
             }
 #endif

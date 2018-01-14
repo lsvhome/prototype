@@ -46,8 +46,15 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Mono.Data.Sqlite" />
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Xml.Serialization" />
     <Reference Include="Xamarin.Mac" />
   </ItemGroup>
   <ItemGroup>
@@ -64,7 +71,12 @@
     <ImageAsset Include="Assets.xcassets\AppIcon.appiconset\AppIcon-512%402x.png" />
     <ImageAsset Include="Assets.xcassets\Contents.json" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <ProjectReference Include="..\submodules\EntityFrameworkCore\src\EFCore\EFCore.csproj">
+      <Project>{f455d3a5-8e69-473c-9375-9c7df0dd04b0}</Project>
+      <Name>EFCore</Name>
+    </ProjectReference>
+  </ItemGroup>
   <ItemGroup>
     <None Include="Info.plist" />
     <None Include="Entitlements.plist" />
@@ -77,31 +89,320 @@
     <Compile Include="ViewController.designer.cs">
       <DependentUpon>ViewController.cs</DependentUpon>
     </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\Connection.cs">
+      <Link>net.fex.api.Contents\.\\Connection.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\Extenders.cs">
+      <Link>net.fex.api.Contents\.\\Extenders.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\HttpClientWrapper.cs">
+      <Link>net.fex.api.Contents\.\\HttpClientWrapper.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\IConnection.cs">
+      <Link>net.fex.api.Contents\.\\IConnection.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\IHttpClient.cs">
+      <Link>net.fex.api.Contents\.\\IHttpClient.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandAccess.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandAccess.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandArchive.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandArchive.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandArchiveAll.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandArchiveAll.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandCaptchaToken.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandCaptchaToken.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandCreateFolder.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandCreateFolder.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandCreateObject.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandCreateObject.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandDeleteFile.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandDeleteFile.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandExists.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandExists.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandGet.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandGet.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandGetChildren.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandGetChildren.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandIndex.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandIndex.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandLoad.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandLoad.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandLoginCheck.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandLoginCheck.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandMove.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandMove.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandObjectFolderList.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandObjectFolderList.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandObjectFolderView.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandObjectFolderView.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandObjectUpdate.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandObjectUpdate.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandObjectView.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandObjectView.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandSignIn.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandSignIn.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandSignOut.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandSignOut.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandSignUp.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandSignUp.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\CommandUpload.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\\CommandUpload.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\BaseConnectionCommands\CommandBase.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\BaseConnectionCommands\\CommandBase.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\BaseConnectionCommands\CommandBaseAuthorizedUser.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\BaseConnectionCommands\\CommandBaseAuthorizedUser.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\BaseConnectionCommands\CommandBaseUnAuthorizedUser.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\BaseConnectionCommands\\CommandBaseUnAuthorizedUser.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\BaseConnectionCommands\CommandCaptchaRequestPossible.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\BaseConnectionCommands\\CommandCaptchaRequestPossible.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\ConnectionCommands\BaseConnectionCommands\IConnectionCommand.cs">
+      <Link>net.fex.api.Contents\ConnectionCommands\BaseConnectionCommands\\IConnectionCommand.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\Exceptions\ApiErrorException.cs">
+      <Link>net.fex.api.Contents\Exceptions\\ApiErrorException.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\Exceptions\CaptchaRequiredException.cs">
+      <Link>net.fex.api.Contents\Exceptions\\CaptchaRequiredException.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\Exceptions\ConnectionException.cs">
+      <Link>net.fex.api.Contents\Exceptions\\ConnectionException.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\Exceptions\ExceptionEventArgs.cs">
+      <Link>net.fex.api.Contents\Exceptions\\ExceptionEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\Helpers\Logger.cs">
+      <Link>net.fex.api.Contents\Helpers\\Logger.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\WebSocket\WebSocketAction.cs">
+      <Link>net.fex.api.Contents\WebSocket\\WebSocketAction.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\WebSocket\WebSocketCommandType.cs">
+      <Link>net.fex.api.Contents\WebSocket\\WebSocketCommandType.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\WebSocket\WebSocketPackage.cs">
+      <Link>net.fex.api.Contents\WebSocket\\WebSocketPackage.cs</Link>
+    </Compile>
+    <Compile Include="..\submodules\fex-api\net.fex.api.v1\WebSocket\WebSocketWatcher.cs">
+      <Link>net.fex.api.Contents\WebSocket\\WebSocketWatcher.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\ConnectionFactory.cs">
+      <Link>FexSync.Data.Contents\.\\ConnectionFactory.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Constants.cs">
+      <Link>FexSync.Data.Contents\.\\Constants.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Extenders.cs">
+      <Link>FexSync.Data.Contents\.\\Extenders.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\IConnectionFactory.cs">
+      <Link>FexSync.Data.Contents\.\\IConnectionFactory.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\ISyncDataDbContext.cs">
+      <Link>FexSync.Data.Contents\.\\ISyncDataDbContext.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Log4NetTraceListener.cs">
+      <Link>FexSync.Data.Contents\.\\Log4NetTraceListener.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Singleton.cs">
+      <Link>FexSync.Data.Contents\.\\Singleton.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncDataDbContext.cs">
+      <Link>FexSync.Data.Contents\.\\SyncDataDbContext.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow.cs">
+      <Link>FexSync.Data.Contents\.\\SyncWorkflow.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Alerts\Alert.cs">
+      <Link>FexSync.Data.Contents\Alerts\\Alert.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Alerts\CaptchaRequiredAlert.cs">
+      <Link>FexSync.Data.Contents\Alerts\\CaptchaRequiredAlert.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\FileCreatedEventArgs.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\FileCreatedEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\FileDeletedEventArgs.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\FileDeletedEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\FileModifiedEventArgs.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\FileModifiedEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\FileMovedEventArgs.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\FileMovedEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\FilePathChangedEventArgs.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\FilePathChangedEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\FilePathEventArgs.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\FilePathEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\FileSystemEventFilter.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\FileSystemEventFilter.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\FolderCreatedEventArgs.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\FolderCreatedEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\FolderDeletedEventArgs.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\FolderDeletedEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\FolderMovedEventArgs.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\FolderMovedEventArgs.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\FileSystemWatcher\IFileSystemWatcher.cs">
+      <Link>FexSync.Data.Contents\FileSystemWatcher\\IFileSystemWatcher.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\Account.cs">
+      <Link>FexSync.Data.Contents\Model\\Account.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\AccountSyncObject.cs">
+      <Link>FexSync.Data.Contents\Model\\AccountSyncObject.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\ConflictItem.cs">
+      <Link>FexSync.Data.Contents\Model\\ConflictItem.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\DownloadItem.cs">
+      <Link>FexSync.Data.Contents\Model\\DownloadItem.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\LocalFile.cs">
+      <Link>FexSync.Data.Contents\Model\\LocalFile.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\LocalFileModified.cs">
+      <Link>FexSync.Data.Contents\Model\\LocalFileModified.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\RemoteFile.cs">
+      <Link>FexSync.Data.Contents\Model\\RemoteFile.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\RemoteFileBase.cs">
+      <Link>FexSync.Data.Contents\Model\\RemoteFileBase.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\RemoteFileModified.cs">
+      <Link>FexSync.Data.Contents\Model\\RemoteFileModified.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\RemoteTree.cs">
+      <Link>FexSync.Data.Contents\Model\\RemoteTree.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Model\UploadItem.cs">
+      <Link>FexSync.Data.Contents\Model\\UploadItem.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\CommandBuildRemoteTree.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\\CommandBuildRemoteTree.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\CommandClearObject.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\\CommandClearObject.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\CommandDownloadQueue.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\\CommandDownloadQueue.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\CommandEnsureDefaultObjectExists.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\\CommandEnsureDefaultObjectExists.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\CommandEnsureFolderExists.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\\CommandEnsureFolderExists.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\CommandPrepareDownload.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\\CommandPrepareDownload.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\CommandPrepareUpload.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\\CommandPrepareUpload.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\CommandSaveLocalTree.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\\CommandSaveLocalTree.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\CommandSaveRemoteTree.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\\CommandSaveRemoteTree.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\CommandUploadQueue.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\\CommandUploadQueue.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\FSWarcherCommands\CommandPrepareLocalFileCreated.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\FSWarcherCommands\\CommandPrepareLocalFileCreated.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\FSWarcherCommands\CommandPrepareLocalFileDeleted.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\FSWarcherCommands\\CommandPrepareLocalFileDeleted.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\FSWarcherCommands\CommandPrepareLocalFileModified.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\FSWarcherCommands\\CommandPrepareLocalFileModified.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\FSWarcherCommands\CommandPrepareLocalFileMoved.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\FSWarcherCommands\\CommandPrepareLocalFileMoved.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\FSWarcherCommands\CommandPrepareLocalFolderDeleted.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\FSWarcherCommands\\CommandPrepareLocalFolderDeleted.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\SyncWorkflow\FSWarcherCommands\CommandPrepareLocalFolderMoved.cs">
+      <Link>FexSync.Data.Contents\SyncWorkflow\FSWarcherCommands\\CommandPrepareLocalFolderMoved.cs</Link>
+    </Compile>
+    <Compile Include="..\FexSync.Data\Utility\ThreadSafeListWithLock.cs">
+      <Link>FexSync.Data.Contents\Utility\\ThreadSafeListWithLock.cs</Link>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterfaceDefinition Include="Main.storyboard" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\submodules\fex-api\net.fex.api.v1\net.fex.api.v1.csproj">
-      <Project>{e2baeb61-e7f8-4717-8328-b97c5da29126}</Project>
-      <Name>net.fex.api.v1</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <PackageReference Include="Autofac">
       <Version>4.6.2</Version>
     </PackageReference>
-    <PackageReference Include="sqlite">
-      <Version>3.13.0</Version>
+    <PackageReference Include="log4net">
+      <Version>2.0.8</Version>
+    </PackageReference>
+    <PackageReference Include="Newtonsoft.Json">
+      <Version>10.0.3</Version>
+    </PackageReference>
+    <PackageReference Include="SQLitePCLRaw.bundle_green">
+      <Version>1.1.9</Version>
     </PackageReference>
     <PackageReference Include="StyleCop.MSBuild">
       <Version>5.0.0</Version>
     </PackageReference>
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="2.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="2.0.1" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite.Design" Version="1.1.4" />
+    <PackageReference Include="System.Net.Http">
+      <Version>4.3.3</Version>
+    </PackageReference>
+    <PackageReference Include="System.Private.DataContractSerialization">
+      <Version>4.3.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Runtime.Serialization.Formatters">
+      <Version>4.3.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Runtime.Serialization.Json">
+      <Version>4.3.0</Version>
+    </PackageReference>
+    <PackageReference Include="System.Runtime.Serialization.Xml">
+      <Version>4.3.0</Version>
+    </PackageReference>
+    <PackageReference Include="WebSocketSharp-netstandard">
+      <Version>1.0.1</Version>
+    </PackageReference>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite">
+      <Version>2.0.1</Version>
+    </PackageReference>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
     <DotNetCliToolReference Include="Microsoft.EntityFrameworkCore.Tools.DotNet" Version="2.0.0" Visible="false" />
@@ -110,4 +411,30 @@
     <BundleResource Include="Resources\AppIcon-16.png" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Mac\Xamarin.Mac.CSharp.targets" />
+  <Target Name="BeforeBuild" BeforeTargets="Build">
+    <Message Importance="high" Text="TargetFramework=$(TargetFramework)" />
+    <Message Importance="high" Text="TargetFrameworks=$(TargetFrameworks)" />
+    <Message Importance="high" Text="Reference: @(Reference->'%(RequiredTargetFramework)')" />
+  </Target>
+  <ItemGroup>
+    <!--
+    <Compile Remove="fex-backup-api\*.cs" />
+    <Compile Include="fex-backup-api\*.cs"><ExcludeFromStyleCop>true</ExcludeFromStyleCop></Compile>
+    <Compile Remove="fex-backup-api\Responses\*.cs" />
+    <Compile Include="fex-backup-api\Responses\*.cs"><ExcludeFromStyleCop>true</ExcludeFromStyleCop></Compile>
+-->
+    <Compile Remove="..\submodules\fex-api\net.fex.api.v1\obj\**\*.cs" />
+    <Compile Remove="..\submodules\fex-api\net.fex.api.v1\bin\**\*.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="..\FexSync.Data\Support\Program.cs">
+    </Compile>
+    <Compile Remove="..\FexSync.Data\obj\**\*.cs" />
+    <Compile Remove="..\FexSync.Data\bin\**\*.cs" />
+    <!--
+    <Compile Include="..\FexSync.Data\**\*.cs" >
+<Link>FexSync.Data.Contents\%(RecursiveDir)\%(Filename)%(Extension)</Link>
+    </Compile>
+-->
+  </ItemGroup>
 </Project>
