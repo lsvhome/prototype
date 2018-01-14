@@ -15,6 +15,11 @@
     <DefineConstants>TRACE;DEBUG;NETCOREAPP2_0</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <IsNetCore Condition=" '$(MSBuildSDKsPath)' == '' ">false</IsNetCore>
+    <IsNetCore Condition=" '$(MSBuildSDKsPath)' != '' ">true</IsNetCore>
+  </PropertyGroup>
+
   <ItemGroup>
     <None Remove="StyleCop.Cache" />
   </ItemGroup>
@@ -23,12 +28,16 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0-preview-20170628-02" />
     <PackageReference Include="MSTest.TestAdapter" Version="1.1.18" />
     <PackageReference Include="MSTest.TestFramework" Version="1.1.18" />
-    <PackageReference Include="StyleCop.MSBuild" Version="5.0.0" />
+    <PackageReference Include="StyleCop.MSBuild" Version="5.0.0" Condition=" '$(IsNetCore)' == 'false' " />
     <PackageReference Include="System.Diagnostics.Debug" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FexSync.Data\FexSync.Data.csproj" />
+    <ProjectReference Include="..\submodules\EntityFrameworkCore\src\EFCore.Design\EFCore.Design.csproj" />
+    <ProjectReference Include="..\submodules\EntityFrameworkCore\src\EFCore.Relational\EFCore.Relational.csproj" />
+    <ProjectReference Include="..\submodules\EntityFrameworkCore\src\EFCore.Sqlite.Core\EFCore.Sqlite.Core.csproj" />
+    <ProjectReference Include="..\submodules\EntityFrameworkCore\src\EFCore\EFCore.csproj" />
     <ProjectReference Include="..\submodules\fex-api\net.fex.api.v1.tests\net.fex.api.v1.tests.csproj" />
     <ProjectReference Include="..\submodules\fex-api\net.fex.api.v1\net.fex.api.v1.csproj" />
   </ItemGroup>

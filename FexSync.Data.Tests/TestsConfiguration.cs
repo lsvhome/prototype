@@ -17,6 +17,8 @@ namespace FexSync.Data.Tests
         [AssemblyInitialize]
         public static void AssemblyInit(TestContext context)
         {
+            System.Diagnostics.Logger.Enabled = false;
+            /*
             System.Configuration.Configuration config = System.Configuration.ConfigurationManager.OpenExeConfiguration(System.Configuration.ConfigurationUserLevel.None);
             string value = "false";
             if (!config.AppSettings.Settings.AllKeys.Contains("net.fex.api.trace"))
@@ -29,14 +31,17 @@ namespace FexSync.Data.Tests
             }
 
             config.Save(System.Configuration.ConfigurationSaveMode.Modified);
+            */
         }
 
         [AssemblyCleanup]
         public static void AssemblyCleanup()
         {
+            /*
             System.Configuration.Configuration config = System.Configuration.ConfigurationManager.OpenExeConfiguration(System.Configuration.ConfigurationUserLevel.None);
             config.AppSettings.Settings.Remove("net.fex.api.trace");
             config.Save(System.Configuration.ConfigurationSaveMode.Modified);
+            */
         }
     }
 }

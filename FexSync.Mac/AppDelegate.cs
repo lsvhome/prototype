@@ -24,14 +24,20 @@ namespace FexSync.Mac
 #if DEBUG
         public void SignInSignOuTestOk()
         {
+
+
+            var t = new FexSync.Data.SyncDataDbContext("~/aaa.db");
+            /*
             string loginValid = "username";
             string passwordValid = "password";
-            using (var conn = new Net.Fex.Api.Connection(new Net.Fex.Api.HttpClientWrapper(), new Uri("https://fex.net"), string.Format("FEX Sync ({0})", Net.Fex.Api.Connection.GetOSName())))
+            var conn = this.Container.Resolve<Net.Fex.Api.IConnection>();
+            //// using (var conn = new Net.Fex.Api.Connection(new Net.Fex.Api.HttpClientWrapper(), new Uri("https://fex.net"), string.Format("FEX Sync ({0})", Net.Fex.Api.Connection.GetOSName())))
             {
                 var user = conn.SignIn(loginValid, passwordValid, false);
                 System.Threading.Thread.Sleep(10000);
                 conn.SignOut();
             }
+            */
         }
 #endif
 
@@ -54,8 +60,10 @@ namespace FexSync.Mac
                     {
                         SignInSignOuTestOk();
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
+                    System.Diagnostics.Trace.WriteLine(ex.ToString());
+                    System.Diagnostics.Debug.WriteLine(ex.ToString());
                         System.Diagnostics.Debugger.Break();
                         throw;
                     }

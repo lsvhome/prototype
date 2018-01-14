@@ -37,6 +37,8 @@ namespace FexSync
 
         public App()
         {
+            System.Diagnostics.Logger.Enabled = System.Configuration.ConfigurationManager.AppSettings["net.fex.api.trace"] == "true";
+
             try
             {
                 AppDomain.CurrentDomain.UnhandledException += (source, exceptionObjectParam) =>
