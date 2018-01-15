@@ -19,3 +19,9 @@
 [submodule "submodules/options"]
 	path = submodules/options
 	url = https://github.com/lsvhome/Options.git
+[submodule "submodules/DependencyInjection"]
+	path = submodules/DependencyInjection
+	url = https://github.com/lsvhome/DependencyInjection.git
+[submodule "submodules/logging"]
+	path = submodules/logging
+	url = https://github.com/lsvhome/Logging.git
