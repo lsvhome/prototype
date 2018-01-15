@@ -72,6 +72,10 @@
     <ImageAsset Include="Assets.xcassets\Contents.json" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\submodules\EntityFrameworkCore\src\EFCore.Sqlite.Core\EFCore.Sqlite.Core.csproj">
+      <Project>{89bffb04-584d-4d38-b96f-dbe433b93a63}</Project>
+      <Name>EFCore.Sqlite.Core</Name>
+    </ProjectReference>
     <ProjectReference Include="..\submodules\EntityFrameworkCore\src\EFCore\EFCore.csproj">
       <Project>{f455d3a5-8e69-473c-9375-9c7df0dd04b0}</Project>
       <Name>EFCore</Name>
@@ -399,9 +403,6 @@
     </PackageReference>
     <PackageReference Include="WebSocketSharp-netstandard">
       <Version>1.0.1</Version>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite">
-      <Version>2.0.1</Version>
     </PackageReference>
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">

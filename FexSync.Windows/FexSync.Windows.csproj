@@ -247,13 +247,13 @@ System.Threading.Thread.Sleep(this.Delay);
   <Target Name="BeforeBuild">
     <Message Importance="high" Text="TargetFramework=$(TargetFramework)" />
     <Message Importance="high" Text="TargetFrameworks=$(TargetFrameworks)" />
-    <Message Importance="high" Text="Reference: @(Reference-&gt;'%(RequiredTargetFramework)')" />
+    <Message Importance="high" Text="Reference: @(Reference->'%(RequiredTargetFramework)')" />
   </Target>
   <Target Name="AfterBuild" Condition=" '$(Configuration)|$(Platform)' == 'Deploy|AnyCPU' AND '$(WixTasksPath)' != ''">
     <RemoveDir Directories="obj\wix" />
     <Delete Files="bin\fexsync-setup-$(Configuration).msi" />
     <Sleep Delay="10000" />
-    <Message Importance="high" Text="Reference: @(Reference-&gt;'%(RequiredTargetFramework)')" />
+    <Message Importance="high" Text="Reference: @(Reference->'%(RequiredTargetFramework)')" />
     <HeatDirectory Directory="bin\$(Configuration)" OutputFile="Wix\ProductDir-$(Configuration).wxs" ToolPath="$(WixInstallPath)" PreprocessorVariable="wix.BinariesDir" GenerateGuidsNow="yes" SuppressCom="yes" SuppressRootDirectory="yes" SuppressRegistry="yes" SuppressUniqueIds="yes" DirectoryRefId="INSTALLDIR" ComponentGroupName="ComponentGroupFexSync" AdditionalOptions=" -svb6 -generate container -pog Binaries -pog Satellites -pog Content" Transforms="Wix\XSLT\ProductDir-wxs.xslt" />
     <Candle SourceFiles="Wix\Product.wxs;Wix\ProductDir-$(Configuration).wxs" OutputFile="obj\wix\" ToolPath="$(WixInstallPath)" AdditionalOptions="-ext WixUtilExtension" />
     <Light ObjectFiles="obj\wix\Product.wixobj;obj\wix\ProductDir-$(Configuration).wixobj" LocalizationFiles="Wix\UI\strings.wxl" OutputFile="bin\fexsync-setup-$(Configuration).msi" AdditionalOptions="-ext WixUIExtension -ext WixUtilExtension" ToolPath="$(WixInstallPath)" WixVariables="BinariesDir=$(TargetDir)" />
